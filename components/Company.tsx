@@ -1,6 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
+import { Button } from "./ui/button";
 
 export default function Company() {
   const [paused, setPaused] = useState(false);
@@ -14,91 +15,96 @@ export default function Company() {
     { name: "Ford", img: "/ford.webp" },
   ];
 
-  // duplicate for seamless scrolling
+  // duplicate brands for seamless infinite scroll
   const items = useMemo(() => [...BRANDS, ...BRANDS], []);
 
-  const duration = 18; // seconds for a full loop
-
-  const marqueeStyle: React.CSSProperties = {
-    display: "inline-flex",
-    gap: "1.5rem",
-    alignItems: "center",
-    willChange: "transform",
-    animation: `scroll ${duration}s linear infinite`,
-    animationPlayState: paused ? "paused" : "running",
-  };
+  const duration = 14;
 
   return (
-    <section className="py-8 relative">
+    <section className="py-8 mt-10 mx-8">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Browse by Make
-          </h3>
-          <a className="text-sm text-gray-600 dark:text-gray-300 hover:underline">
-            View All &rarr;
-          </a>
+        {/* HEADER */}
+        <div className="flex items-center justify-between mb-10">
+          <h2 className="relative inline-block text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100">
+            Featured Cars
+            <span className="absolute left-0 -bottom-1 h-1 w-20 rounded-full bg-linear-to-r from-orange-500 to-orange-500" />
+          </h2>
+
+          <Button
+            variant="ghost"
+            className="hidden sm:inline-flex items-center gap-2"
+          >
+            View All Company
+          </Button>
         </div>
 
-        <div className="relative">
-          {/* marquee viewport */}
-          <div className="overflow-hidden">
-            <div style={marqueeStyle} onMouseLeave={() => setPaused(false)}>
-              {items.map((b, idx) => (
-                <div
-                  key={`${b.name}-${idx}`}
-                  className="flex-shrink-0 w-40 text-center px-2"
-                  onMouseEnter={() => setPaused(true)}
-                  onMouseLeave={() => setPaused(false)}
-                >
-                  <div className="mx-auto w-28 h-28 rounded-lg flex items-center justify-center bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                    <Image
-                      src={b.img}
-                      alt={b.name}
-                      width={112}
-                      height={112}
-                      className="object-contain"
-                    />
-                  </div>
-                  <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-                    {b.name}
-                  </div>
+        {/* MARQUEE */}
+        <div className="relative overflow-hidden px-6">
+          {/* TRACK */}
+          <div
+            className="marquee-track relative z-0"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            style={{
+              animationPlayState: paused ? "paused" : "running",
+              animationDuration: `${duration}s`,
+            }}
+          >
+            {items.map((b, i) => (
+              <div
+                key={`${b.name}-${i}`}
+                className="mx-6 flex-shrink-0 text-center w-40"
+              >
+                <div className="w-36 h-28 mx-auto bg-white dark:bg-slate-800 rounded-lg border shadow-sm flex items-center justify-center">
+                  <Image
+                    src={b.img}
+                    alt={b.name}
+                    width={112}
+                    height={112}
+                    className="object-contain"
+                  />
                 </div>
-              ))}
-            </div>
+                <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                  {b.name}
+                </p>
+              </div>
+            ))}
           </div>
 
-          {/* left & right fades for low opacity at edges */}
+          {/* LEFT FADE */}
           <div
-            className="pointer-events-none absolute left-0 top-0 h-full w-20"
+            className="pointer-events-none absolute left-0 top-0 h-full w-24 z-10"
             style={{
               background:
-                "linear-gradient(90deg, rgba(0,0,0,0.85), transparent)",
+                "linear-gradient(to right, rgba(0,0,0,0.45), rgba(0,0,0,0))",
             }}
           />
+
+          {/* RIGHT FADE */}
           <div
-            className="pointer-events-none absolute right-0 top-0 h-full w-20"
+            className="pointer-events-none absolute right-0 top-0 h-full w-24 z-10"
             style={{
               background:
-                "linear-gradient(270deg, rgba(0,0,0,0.85), transparent)",
+                "linear-gradient(to left, rgba(0,0,0,0.45), rgba(0,0,0,0))",
             }}
           />
         </div>
       </div>
 
+      {/* CSS */}
       <style jsx>{`
-        @keyframes scroll {
-          0% {
-            transform: translateX(0%);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
+        .marquee-track {
+          display: flex;
+          width: max-content;
+          animation: scroll linear infinite;
         }
 
-        @media (max-width: 640px) {
-          .container > div > div > div > div {
-            width: 140px;
+        @keyframes scroll {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(-50%);
           }
         }
       `}</style>

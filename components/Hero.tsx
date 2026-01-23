@@ -33,11 +33,12 @@ const Hero = () => {
     },
   ];
   return (
-    <section className="py-8">
+    <section className="py-8 mt-10 mx-8">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="mb-5 pb-1 relative inline-block text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100">
             Featured Cars
+            <span className="absolute left-0 -bottom-1 h-1 w-20 rounded-full bg-linear-to-r from-orange-500 to-orange-500"></span>
           </h2>
 
           <Button
