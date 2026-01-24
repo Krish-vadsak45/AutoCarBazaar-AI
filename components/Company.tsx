@@ -27,7 +27,7 @@ export default function Company() {
         <div className="flex items-center justify-between mb-10">
           <h2 className="relative inline-block text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100">
             Featured Cars
-            <span className="absolute left-0 -bottom-1 h-1 w-20 rounded-full bg-linear-to-r from-orange-500 to-orange-500" />
+            <span className="absolute left-0 -bottom-1 h-1 w-32 rounded-full bg-linear-to-r from-orange-500 to-orange-500" />
           </h2>
 
           <Button

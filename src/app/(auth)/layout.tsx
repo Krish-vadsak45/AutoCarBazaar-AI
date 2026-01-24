@@ -15,7 +15,6 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
           <CardTitle>Welcome to AutoCarBazaar</CardTitle>
           <CardDescription>Sign in or create an account</CardDescription>
         </CardHeader>
-
         <CardContent>{children}</CardContent>
       </Card>
     </div>
