@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import CarCard from "./CarCard";
 import { Button } from "./ui/button";
+import axios from "axios";
 
 type Car = {
   image: string;
@@ -14,25 +15,76 @@ type Car = {
   tags?: string[];
 };
 
-export default function AllCars() {
+type AllCarsProps = {
+  searchQuery?: string;
+  company?: string[];
+  yearFrom?: string;
+  yearTo?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  transmission?: string;
+  fuel?: string;
+};
+
+export default function AllCars({
+  searchQuery = "",
+  company = [],
+  yearFrom = "",
+  yearTo = "",
+  minPrice = "",
+  maxPrice = "",
+  transmission = "",
+  fuel = "",
+}: AllCarsProps) {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-    fetch("/api/cars")
-      .then((res) => res.json())
-      .then((data) => {
+
+    // Debounce network calls when filters/search change
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        setLoading(true);
+
+        const params = new URLSearchParams();
+        if (searchQuery) params.append("searchQuery", searchQuery);
+        (company || []).forEach((c) => params.append("company", c));
+        if (yearFrom) params.append("yearFrom", yearFrom);
+        if (yearTo) params.append("yearTo", yearTo);
+        if (minPrice) params.append("minPrice", minPrice);
+        if (maxPrice) params.append("maxPrice", maxPrice);
+        if (transmission) params.append("transmission", transmission);
+        if (fuel) params.append("fuel", fuel);
+
+        const url = `/api/cars?${params.toString()}`;
+        console.log("Fetching cars with URL:", url);
+        const res = await axios.get(url, { signal: controller.signal });
         if (!mounted) return;
-        setCars(data?.cars ?? []);
-      })
-      .catch(() => setCars([]))
-      .finally(() => mounted && setLoading(false));
+        setCars(res?.data?.cars ?? []);
+      } catch (err) {
+        if (mounted) setCars([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }, 300);
 
     return () => {
       mounted = false;
+      controller.abort();
+      clearTimeout(timer);
     };
-  }, []);
+  }, [
+    searchQuery,
+    company,
+    yearFrom,
+    yearTo,
+    minPrice,
+    maxPrice,
+    transmission,
+    fuel,
+  ]);
 
   return (
     <section className="py-8 mt-10 mx-8">
@@ -42,6 +94,12 @@ export default function AllCars() {
             Browse Cars
             <span className="absolute left-0 -bottom-1 h-1 w-27 rounded-full bg-linear-to-r from-orange-500 to-orange-500"></span>
           </h2>
+        </div>
+
+        <div className="mb-4">
+          <div className="text-sm text-muted-foreground">
+            {loading ? "Loading cars..." : `${cars.length} total cars`}
+          </div>
         </div>
 
         <div className="grid gap-6 place-items-center max-sm:w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

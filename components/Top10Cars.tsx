@@ -106,20 +106,20 @@ export default function Top10Cars() {
           {cars.map((c, idx) => (
             <div
               key={c.title + idx}
+              onMouseEnter={() => setActive(idx)}
+              onMouseLeave={() => setActive(null)}
               className={`relative origin-bottom rounded-lg transform transition-all duration-300 will-change-transform overflow-visible ${
                 active === idx ? "z-50 scale-110 -translate-y-3" : "z-10"
               }`}
             >
               {/* base card */}
               <div
-                onMouseOver={() => setActive(idx)}
-                onMouseLeave={() => setActive(null)}
                 className={`w-full h-40 z-0 bg-gray-200 dark:bg-slate-800 rounded-lg overflow-hidden shadow-sm transform transition-transform duration-300 ${
                   active === idx ? "scale-105" : ""
                 }`}
               >
                 <img
-                  src={c.image}
+                  src={c.image || "/placeholder.svg"}
                   alt={c.title}
                   className="w-full h-full object-cover"
                 />
@@ -131,17 +131,16 @@ export default function Top10Cars() {
               </div>
               {/* Hover overlay - visible only when base image is hovered (non-interactive) */}
               <div
-                onMouseOver={() => setActive(idx)}
                 className={`absolute left-1/2 bottom-0 -translate-x-1/2 transition-all duration-300 z-50 w-[380px] ${
                   active === idx
-                    ? "translate-y-0 opacity-100 scale-100 pointer-events-none"
+                    ? "translate-y-0 opacity-100 scale-100 pointer-events-auto"
                     : "translate-y-6 opacity-0 scale-95 pointer-events-none"
                 }`}
               >
                 <div className="rounded-lg overflow-hidden shadow-2xl bg-transparent">
                   {/* Top: full width image */}
                   <img
-                    src={c.image}
+                    src={c.image || "/placeholder.svg"}
                     alt={c.title}
                     className="w-full h-44 object-cover block"
                   />
