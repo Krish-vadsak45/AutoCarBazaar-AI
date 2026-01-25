@@ -87,7 +87,7 @@ export default function AllCars({
   ]);
 
   return (
-    <section className="py-8 mt-10 mx-8">
+    <section className="py-8 mt-16 mx-8">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="mb-5 pb-1 relative inline-block text-2xl sm:text-3xl font-semibold text-gray-900 dark:text-gray-100">
@@ -102,7 +102,7 @@ export default function AllCars({
           </div>
         </div>
 
-        <div className="grid gap-6 place-items-center max-sm:w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 place-items-center max-sm:w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             <div>Loading cars...</div>
           ) : cars.length === 0 ? (

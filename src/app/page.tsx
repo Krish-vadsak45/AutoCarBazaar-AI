@@ -1,6 +1,5 @@
 import Company from "@/components/Company";
 import Faq from "@/components/FAQ";
-import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
 import HeroCTA from "@/components/HeroCTA";
 import LandingPage from "@/components/LandingPage";
@@ -17,7 +16,6 @@ export default function Home() {
       <Platform />
       <Faq />
       <HeroCTA />
-      <Footer />
     </>
   );
 }

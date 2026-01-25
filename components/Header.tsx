@@ -35,7 +35,7 @@ const Header = () => {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "All Cars", href: "/all-cars" },
-    { name: "About Us", href: "/about" },
+    { name: "About Us", href: "/aboutus" },
     { name: "Contact Us", href: "/contact" },
   ];
 
@@ -45,7 +45,7 @@ const Header = () => {
         "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out border-b pt-1.5",
         isScrolled
           ? "bg-background/80 backdrop-blur-md border-border/50 shadow-sm"
-          : "bg-transparent border-transparent",
+          : "bg-transparent border-transparent"
       )}
     >
       <div className="container mx-auto flex items-center justify-between px-4 py-3 md:px-8">
@@ -85,14 +85,14 @@ const Header = () => {
                 pathname === link.href
                   ? "text-primary"
                   : "text-muted-foreground",
-                "group",
+                "group"
               )}
             >
               {link.name}
               <span
                 className={cn(
                   "absolute -bottom-1 left-0 h-0.5 w-0 bg-primary transition-all duration-300 group-hover:w-full",
-                  pathname === link.href ? "w-full" : "w-0",
+                  pathname === link.href ? "w-full" : "w-0"
                 )}
               />
             </Link>
