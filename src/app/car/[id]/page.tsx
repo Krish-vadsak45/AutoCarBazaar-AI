@@ -15,40 +15,34 @@ async function fetchCar(id: string) {
     // fallback mock data matching the screenshots
     return {
       id,
-      title: "2023 Honda City",
-      price: 18000,
-      mileage: "13 miles",
-      fuelType: "Diesel",
-      transmission: "Semi-Automatic",
-      bodyType: "Sedan",
-      color: "Blue",
       images: [
-        "/images/cars/honda-city-1.jpg",
-        "/images/cars/honda-city-2.jpg",
-        "/images/cars/honda-city-3.jpg",
+        "https://example.com/images/cars/honda-city-front.jpg",
+        "https://example.com/images/cars/honda-city-interior.jpg",
       ],
+      image: "https://example.com/images/cars/honda-city-front.jpg", // legacy
+      title: "Honda City ZX Petrol",
+      price: 1350000,
+      transmission: "Automatic",
+      bodyType: "Sedan",
       description:
-        "Experience the sleek and stylish 2023 Honda City! This stunning blue sedan offers a comfortable ride and impressive fuel efficiency. Enjoy modern features and reliable performance!",
+        "Well-maintained single-owner car with smooth performance and excellent fuel efficiency.",
       features: [
-        "Semi-Automatic Transmission",
-        "Diesel Engine",
-        "Sedan Body Style",
-        "Blue Exterior",
+        "Sunroof",
+        "Touchscreen Infotainment",
+        "Reverse Camera",
+        "Cruise Control",
+        "ABS",
+        "Airbags",
       ],
       specs: {
         make: "Honda",
-        year: 2023,
         model: "City",
-        fuelType: "Diesel",
-        mileage: "13 miles",
-        color: "Blue",
+        year: 2022,
+        fuelType: "Petrol",
+        mileage: "18 km/l",
+        color: "White",
       },
-      dealer: {
-        name: "Vehiql Motors",
-        address: "69 Car Street, Autoville, CA 69420",
-        phone: "+1 (555) 123-4567",
-        email: "contact@vehiql.com",
-      },
+      tags: ["sedan", "automatic", "petrol", "single-owner"],
     };
   }
 }
@@ -56,5 +50,9 @@ async function fetchCar(id: string) {
 export default async function Page({ params: { id } }: Params) {
   const car = await fetchCar(id);
 
-  return <CarDetailClient car={car} />;
+  return (
+    <>
+      <CarDetailClient />
+    </>
+  );
 }
