@@ -1,11 +1,8 @@
 "use client";
-import React, { useMemo, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { EmiCalculatorModal } from "./emi-calculator-modal"; // Import the modal
 import Image from "next/image";
-import * as z from "zod";
 import {
   Car as CarIcon,
   Fuel,
@@ -51,14 +48,25 @@ export default function CarDetailClient({ car }: { car: any }) {
     car.images && car.images.length > 0
       ? car.images
       : car.image
-        ? [car.image]
-        : [];
+      ? [car.image]
+      : [];
+  const [isEmiModalOpen, setIsEmiModalOpen] = useState(false); // State for EMI modal
   const [mainImage, setMainImage] = useState(images[0] || "/placeholder.svg");
   const [isSaved, setIsSaved] = useState(false);
   const router = useRouter();
   const [shareStatus, setShareStatus] = useState<
     "idle" | "shared" | "copied" | "error"
   >("idle");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMainImage((prev: string) => {
+        const currentIndex = images.indexOf(prev);
+        return images[(currentIndex + 1) % images.length];
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleShare = async () => {
     if (typeof window === "undefined") return;
@@ -77,7 +85,7 @@ export default function CarDetailClient({ car }: { car: any }) {
       ) {
         await (navigator as any).clipboard.writeText(shareUrl);
         setShareStatus("copied");
-      } else { 
+      } else {
         // Last resort: fallback to selecting the URL (very old browsers)
         setShareStatus("error");
       }
@@ -125,15 +133,27 @@ export default function CarDetailClient({ car }: { car: any }) {
     },
   ];
 
+  // Handler to open EMI modal
+  const handleOpenEmiModal = () => {
+    setIsEmiModalOpen(true);
+  };
+
+  // Handler to close EMI modal
+  const handleCloseEmiModal = () => {
+    setIsEmiModalOpen(false);
+  };
+
   return (
-    <div className="min-h-screen mt-20 bg-gray-50">
+    <div className="min-h-screen mt-20 bg-gray-50 dark:bg-slate-950">
       {/* Main Content Container */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto  px-6 py-20">
         {/* Two Column Layout: Image Left, Info Right */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* LEFT COLUMN - IMAGE GALLERY */}
           <div>
-            <div className="rounded-xl overflow-hidden shadow-lg mb-4 bg-white">
+            <div
+              className={`rounded-xl overflow-hidden shadow-lg mb-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800`}
+            >
               <div className="relative h-96 bg-gray-100 group">
                 <Image
                   src={mainImage}
@@ -150,37 +170,13 @@ export default function CarDetailClient({ car }: { car: any }) {
                       onClick={prevImage}
                       className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
                     >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 19l-7-7 7-7"
-                        />
-                      </svg>
+                      <ChevronLeft className="w-5 h-5 text-gray-900" />
                     </button>
                     <button
                       onClick={nextImage}
                       className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/90 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
                     >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
+                      <ChevronRight className="w-5 h-5 text-gray-900" />
                     </button>
                   </>
                 )}
@@ -197,11 +193,11 @@ export default function CarDetailClient({ car }: { car: any }) {
                     className={`relative w-20 h-16 rounded-lg overflow-hidden border-2 transition-all hover:border-blue-600 ${
                       mainImage === img
                         ? "border-blue-600 ring-2 ring-blue-300"
-                        : "border-gray-200"
+                        : "dark:border-slate-700 border-gray-200"
                     }`}
                   >
                     <Image
-                      src={img}
+                      src={img || "/placeholder.svg"}
                       alt={`Thumbnail ${idx + 1}`}
                       fill
                       className="object-cover"
@@ -221,10 +217,10 @@ export default function CarDetailClient({ car }: { car: any }) {
                   {car.bodyType}
                 </span>
               </div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 {car.title}
               </h1>
-              <p className="text-4xl font-bold text-blue-600">
+              <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                 {formatCurrency(car.price)}
               </p>
             </div>
@@ -245,7 +241,7 @@ export default function CarDetailClient({ car }: { car: any }) {
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   {car.specs?.mileage || car.mileage || "N/A"}
                 </span>
               </div>
@@ -263,7 +259,7 @@ export default function CarDetailClient({ car }: { car: any }) {
                     d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   {car.specs?.fuelType || car.fuelType || "N/A"}
                 </span>
               </div>
@@ -281,16 +277,19 @@ export default function CarDetailClient({ car }: { car: any }) {
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   {car.transmission || "N/A"}
                 </span>
               </div>
             </div>
 
             {/* EMI Calculator Card */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div
+              onClick={handleOpenEmiModal}
+              className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+            >
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-600 rounded text-white flex-shrink-0">
+                <div className="p-2 bg-blue-600 dark:bg-blue-500 rounded text-white flex-shrink-0">
                   <svg
                     className="w-5 h-5"
                     fill="currentColor"
@@ -300,17 +299,17 @@ export default function CarDetailClient({ car }: { car: any }) {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                     EMI Calculator
                   </h3>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Estimated Monthly Payment:{" "}
-                    <span className="font-bold text-gray-900">
+                    <span className="font-bold text-gray-900 dark:text-gray-100">
                       {formatCurrency(Math.round(car.price / 60))}
                     </span>{" "}
                     for 60 months
                   </p>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     *Based on $0 down payment and 4.5% interest rate
                   </p>
                 </div>
@@ -318,9 +317,9 @@ export default function CarDetailClient({ car }: { car: any }) {
             </div>
 
             {/* Have Questions Card */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-100 rounded text-blue-600 flex-shrink-0">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 flex-shrink-0">
                   <svg
                     className="w-5 h-5"
                     fill="currentColor"
@@ -330,14 +329,14 @@ export default function CarDetailClient({ car }: { car: any }) {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                     Have Questions?
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Our representatives are available to answer all your queries
                     about this vehicle.
                   </p>
-                  <button className="mt-3 w-full text-center py-2 px-4 bg-white border border-gray-300 rounded hover:bg-gray-50 font-medium text-gray-900 transition-colors">
+                  <button className="mt-3 w-full text-center py-2 px-4 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded hover:bg-gray-50 dark:hover:bg-slate-700 font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     Request Info
                   </button>
                 </div>
@@ -353,7 +352,7 @@ export default function CarDetailClient({ car }: { car: any }) {
             className={`py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg flex items-center justify-center gap-2 ${
               isSaved
                 ? "bg-red-50 text-red-600 border border-red-200"
-                : "bg-white text-gray-900 border border-gray-300 hover:border-gray-400"
+                : "bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600"
             }`}
           >
             <Heart className={`w-5 h-5 ${isSaved ? "fill-red-600" : ""}`} />
@@ -361,7 +360,7 @@ export default function CarDetailClient({ car }: { car: any }) {
           </button>
           <button
             onClick={handleShare}
-            className="py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg bg-white text-gray-900 border border-gray-300 hover:border-gray-400 flex items-center justify-center gap-2"
+            className="py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600 flex items-center justify-center gap-2"
           >
             {shareStatus === "shared" ? (
               <Check className="w-5 h-5 text-green-600" />
@@ -371,14 +370,14 @@ export default function CarDetailClient({ car }: { car: any }) {
             {shareStatus === "copied"
               ? "Link copied"
               : shareStatus === "shared"
-                ? "Shared"
-                : shareStatus === "error"
-                  ? "Unable to share"
-                  : "Share"}
+              ? "Shared"
+              : shareStatus === "error"
+              ? "Unable to share"
+              : "Share"}
           </button>
           <button
             onClick={() => router.push(`/test-drive/${car.id}`)}
-            className="py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg bg-gray-900 text-white hover:bg-gray-800 flex items-center justify-center gap-2"
+            className="py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg bg-gray-900 dark:bg-slate-800 text-white hover:bg-gray-800 dark:hover:bg-slate-700 flex items-center justify-center gap-2"
           >
             <Calendar className="w-5 h-5" />
             Book Test Drive
@@ -387,17 +386,19 @@ export default function CarDetailClient({ car }: { car: any }) {
 
         {/* DESCRIPTION & FEATURES */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-slate-800">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Description
             </h2>
-            <p className="text-gray-700 leading-relaxed text-justify">
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
               {car.description || "No description available for this vehicle."}
             </p>
           </div>
 
-          <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Features</h2>
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-slate-800">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Features
+            </h2>
             <ul className="space-y-3">
               {(car.features && car.features.length > 0
                 ? car.features
@@ -407,7 +408,10 @@ export default function CarDetailClient({ car }: { car: any }) {
                     "Body: " + (car.bodyType || "N/A"),
                   ]
               ).map((feature: string, idx: number) => (
-                <li key={idx} className="flex items-center gap-3 text-gray-700">
+                <li
+                  key={idx}
+                  className="flex items-center gap-3 text-gray-700 dark:text-gray-300"
+                >
                   <span className="flex-shrink-0">
                     <Check className="w-5 h-5 text-blue-600" />
                   </span>
@@ -419,25 +423,29 @@ export default function CarDetailClient({ car }: { car: any }) {
         </div>
 
         {/* SPECIFICATIONS */}
-        <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200 mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">
+        <div className="bg-white dark:bg-slate-900 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-slate-800 mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">
             Specifications
           </h2>
           <div className="grid grid-cols-2 gap-8">
             {carSpecs.map((spec, idx) => (
               <div
                 key={idx}
-                className="flex justify-between items-start py-4 border-b border-gray-100 last:border-b-0"
+                className="flex justify-between items-start py-4 border-b border-gray-100 dark:border-slate-800 last:border-b-0"
               >
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">{spec.label}</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    {spec.label}
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {spec.value}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600 mb-1">{spec.value2}</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    {spec.value2}
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {spec.value2Content}
                   </p>
                 </div>
@@ -447,33 +455,49 @@ export default function CarDetailClient({ car }: { car: any }) {
         </div>
 
         {/* DEALERSHIP LOCATION */}
-        <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">
+        <div className="bg-white dark:bg-slate-900 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-slate-800">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">
             Dealership Location
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Left - Contact Info */}
             <div>
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-100 rounded text-blue-600 flex-shrink-0">
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
-                  </svg>
+              <div className="space-y-4">
+                {/* Address */}
+                <div className="flex items-start gap-3">
+                  <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                      Vehicl Motors
+                    </h3>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm mt-1">
+                      69 Car Street, Autoville, CA 69420
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Vehicl Motors</h3>
-                  <p className="text-gray-600 text-sm mt-1">
-                    69 Car Street, Autoville, CA 69420
+
+                {/* Phone */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                    <Phone className="w-5 h-5" />
+                  </div>
+
+                  <p className="text-gray-700 dark:text-gray-300 text-sm">
+                    +1 (555) 123-4567
                   </p>
-                  <p className="text-gray-600 text-sm mt-2">
-                    Phone: +1 (555) 123-4567
-                  </p>
-                  <p className="text-gray-600 text-sm">
-                    Email: contact@vehicl.com
+                </div>
+
+                {/* Email */}
+                <div className="flex items-center gap-3">
+                  <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                    <Mail className="w-5 h-5" />
+                  </div>
+
+                  <p className="text-gray-700 dark:text-gray-300 text-sm">
+                    contact@vehicl.com
                   </p>
                 </div>
               </div>
@@ -481,16 +505,20 @@ export default function CarDetailClient({ car }: { car: any }) {
 
             {/* Right - Working Hours */}
             <div>
-              <h3 className="font-bold text-gray-900 mb-4">Working Hours</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Working Hours
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
                 {workingHours.map((hour, idx) => (
                   <div key={idx} className="flex justify-between">
-                    <p className="text-gray-700 text-sm">{hour.day}</p>
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">
+                      {hour.day}
+                    </p>
                     <p
-                      className={`font-medium text-sm ${
+                      className={`font-medium text-sm text-gray-900 dark:text-gray-100 ${
                         hour.hours === "Closed"
-                          ? "text-gray-500"
-                          : "text-gray-900"
+                          ? "text-gray-500 dark:text-gray-600"
+                          : ""
                       }`}
                     >
                       {hour.hours}
@@ -502,6 +530,16 @@ export default function CarDetailClient({ car }: { car: any }) {
           </div>
         </div>
       </div>
+
+      {/* EMI Calculator Modal - Conditionally render based on state */}
+      {isEmiModalOpen && (
+        <EmiCalculatorModal
+          isOpen={isEmiModalOpen}
+          setIsEmiModalOpen={setIsEmiModalOpen}
+          onClose={handleCloseEmiModal}
+          carPrice={car.price}
+        />
+      )}
     </div>
   );
 }
