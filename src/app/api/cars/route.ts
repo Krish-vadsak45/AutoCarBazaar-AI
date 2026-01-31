@@ -11,75 +11,96 @@ export async function GET(request: Request) {
     const qp = url.searchParams;
 
     // Build Mongo filter
-    const filter: any = {};
+    const andFilters: any[] = [];
 
     // Search query across multiple fields
     const q = qp.get("searchQuery")?.trim();
     if (q) {
       const regex = new RegExp(q, "i");
-      filter.$or = [
-        { title: regex },
-        { transmission: regex },
-        { fuel: regex },
-        { year: regex },
-        { price: regex },
-        { tags: { $in: [regex] } },
-      ];
+      andFilters.push({
+        $or: [
+          { title: regex },
+          { transmission: regex },
+          { "specs.fuelType": regex },
+          { "specs.year": isNaN(Number(q)) ? undefined : Number(q) },
+          { description: regex },
+          { tags: { $in: [regex] } },
+        ].filter(Boolean),
+      });
     }
-    console.log("Search query filter:", q);
-    // Company filter: multiple companies OR'd (match title or tags)
+
+    // Company filter: multiple companies OR'd
     const companies = qp.getAll("company");
-    console.log("Company params:", companies);
     if (companies && companies.length > 0) {
-      const compOr: any[] = [];
-      for (const c of companies) {
+      const companyOr = companies.map((c) => {
         const r = new RegExp(c.trim(), "i");
-        compOr.push({ title: r }, { tags: { $in: [r] } });
-      }
-      if (!filter.$or) filter.$or = [];
-      filter.$or = filter.$or.concat(compOr);
+        return {
+          $or: [{ title: r }, { "specs.make": r }, { tags: { $in: [r] } }],
+        };
+      });
+      andFilters.push({ $or: companyOr });
     }
 
     // Transmission & fuel
     const transmission = qp.get("transmission");
-    if (transmission)
-      filter.transmission = { $regex: transmission, $options: "i" };
+    if (transmission) {
+      andFilters.push({
+        transmission: { $regex: transmission, $options: "i" },
+      });
+    }
     const fuel = qp.get("fuel");
-    if (fuel) filter.fuel = { $regex: fuel, $options: "i" };
+    if (fuel) {
+      andFilters.push({ "specs.fuelType": { $regex: fuel, $options: "i" } });
+    }
 
-    // Year range (years stored as strings like '2018')
+    // Year range
     const yearFrom = qp.get("yearFrom");
     const yearTo = qp.get("yearTo");
     if (yearFrom || yearTo) {
-      filter.year = {};
-      if (yearFrom) filter.year.$gte = Number(yearFrom);
-      if (yearTo) filter.year.$lte = Number(yearTo);
+      const yearCond: any = {};
+      if (yearFrom && !isNaN(Number(yearFrom)))
+        yearCond.$gte = Number(yearFrom);
+      if (yearTo && !isNaN(Number(yearTo))) yearCond.$lte = Number(yearTo);
+      if (Object.keys(yearCond).length) {
+        andFilters.push({ "specs.year": yearCond });
+      }
     }
-    console.log("Year filter:", yearFrom, yearTo, filter.year);
-    // Price range (assumes numeric prices stored as numbers; best-effort)
+
+    // Price range
     const minPrice = qp.get("minPrice");
     const maxPrice = qp.get("maxPrice");
     if (minPrice || maxPrice) {
-      // If price is stored as number in many docs, this will work.
-      // Use $or to try both numeric and string variants (best-effort simple approach).
       const priceCond: any = {};
-      if (minPrice && !Number.isNaN(Number(minPrice)))
+      if (minPrice && !isNaN(Number(minPrice)))
         priceCond.$gte = Number(minPrice);
-      if (maxPrice && !Number.isNaN(Number(maxPrice)))
+      if (maxPrice && !isNaN(Number(maxPrice)))
         priceCond.$lte = Number(maxPrice);
       if (Object.keys(priceCond).length) {
-        filter.$or = filter.$or || [];
-        filter.$or.push({ price: priceCond });
+        andFilters.push({ price: priceCond });
       }
     }
+
+    // Combine all filters with $and
+    const filter = andFilters.length > 0 ? { $and: andFilters } : {};
 
     // Log final filter for diagnostics
     console.log("Final cars filter:", JSON.stringify(filter));
 
-    let cars;
+    let carsRaw;
     try {
-      cars = await Car.find(filter).lean();
-      console.log("Found", cars.length, "cars");
+      carsRaw = await Car.find(filter).lean();
+      console.log("Found", carsRaw.length, "cars");
+
+      const cars = carsRaw.map((c: any) => ({
+        ...c,
+        id: c._id?.toString() || "",
+        image: c.images?.[0] || c.image || "",
+        year: c.specs?.year || c.year,
+        fuel: c.specs?.fuelType || c.fuel,
+        make: c.specs?.make || c.make,
+      }));
+
+      return NextResponse.json({ cars });
     } catch (err) {
       console.error("Error running Car.find with filter:", filter, err);
       return NextResponse.json(
@@ -88,7 +109,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ cars });
+    // return NextResponse.json({ cars });
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message ?? "Unknown" },

@@ -1,33 +1,31 @@
 "use client";
 
-import React from "react";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { ChevronLeft, Check } from "lucide-react";
 import Image from "next/image";
 import { SuccessModal } from "@/components/success-modal";
 
-const carImage =
-  "https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=800&h=600&fit=crop";
-
-const carDetails = {
-  name: "2023 Honda City",
-  price: "$18,000",
-  mileage: "13 miles",
-  fuelType: "Diesel",
-  transmission: "Semi-Automatic",
-  bodyType: "Sedan",
-  color: "Blue",
-};
-
 export default function TestDrivePage() {
   const router = useRouter();
+  const params = useParams();
+  const carId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
+
+  const [carDetails, setCarDetails] = useState<any>({
+    name: "Loading...",
+    price: "$0",
+    mileage: "N/A",
+    fuelType: "N/A",
+    transmission: "N/A",
+    bodyType: "N/A",
+    color: "N/A",
+    image: "/placeholder.svg",
+  });
 
   const timeSlots = [
     "08:00 AM",
@@ -85,6 +83,36 @@ export default function TestDrivePage() {
 
   const availableDates = generateDates();
 
+  useEffect(() => {
+    if (!carId) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const axios = (await import("axios")).default;
+        const res = await axios.get(`/api/cars/${carId}`);
+        const json = res.data;
+        const fetched = json?.car ?? json;
+        if (mounted && fetched) {
+          setCarDetails({
+            name: fetched.title || fetched.name || `Car ${carId}`,
+            price: fetched.price ? String(fetched.price) : "$0",
+            mileage: fetched.specs?.mileage || fetched.mileage || "N/A",
+            fuelType: fetched.specs?.fuelType || fetched.fuelType || "N/A",
+            transmission: fetched.transmission || "N/A",
+            bodyType: fetched.bodyType || fetched.specs?.bodyType || "N/A",
+            color: fetched.specs?.color || fetched.color || "N/A",
+            image: fetched.images?.[0] || fetched.image,
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [carId]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with Back Button */}
@@ -117,8 +145,8 @@ export default function TestDrivePage() {
             {/* Car Image */}
             <div className="rounded-lg overflow-hidden mb-6 bg-gray-100">
               <Image
-                src={carImage || "/placeholder.svg"}
-                alt="2023 Honda City"
+                src={carDetails.image || "/placeholder.svg"}
+                alt={carDetails.name || "Car image"}
                 width={400}
                 height={300}
                 className="w-full h-56 object-cover"
@@ -268,7 +296,7 @@ export default function TestDrivePage() {
           details={bookingDetails}
           onClose={() => {
             setShowSuccess(false);
-            router.push("/");
+            router.push("/car/" + carId);
           }}
         />
       )}

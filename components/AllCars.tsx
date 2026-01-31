@@ -6,6 +6,8 @@ import { Button } from "./ui/button";
 import axios from "axios";
 
 type Car = {
+  id?: string;
+  _id?: string;
   image: string;
   title: string;
   price: string | number;

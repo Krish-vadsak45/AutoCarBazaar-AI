@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Heart as HeartIcon } from "lucide-react";
 
 type Car = {
+  id?: string;
+  _id?: string;
   image: string;
   title: string;
   price: string | number;
@@ -22,18 +25,35 @@ type CarCardProps = {
 };
 
 export default function CarCard({ cars, onView }: CarCardProps) {
-  const { image, title, price, year, transmission, fuel, tags = [] } = cars;
+  const router = useRouter();
+  const {
+    id,
+    _id,
+    image,
+    title,
+    price,
+    year,
+    transmission,
+    fuel,
+    tags = [],
+  } = cars;
   const [fav, setFav] = useState(false);
 
   return (
     <article className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-md dark:shadow-none overflow-hidden border border-gray-100 dark:border-slate-700 transform-gpu transition-transform duration-300 transition-shadow hover:scale-105 hover:shadow-xl dark:hover:shadow-[0_30px_80px_rgba(6,182,212,0.12),0_8px_30px_rgba(6,182,212,0.08),0_0_0_12px_rgba(6,182,212,0.06)] dark:hover:ring-1 dark:hover:ring-cyan-400/25 group will-change-transform">
       <div className="relative w-full h-52 overflow-hidden">
-        <Image
-          src={image}
-          alt={title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        {image ? (
+          <Image
+            src={image}
+            alt={title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-sm text-gray-500">
+            No image
+          </div>
+        )}
         <button
           aria-label={fav ? "Remove from saved" : "Save car"}
           onClick={() => setFav((s) => !s)}
@@ -78,7 +98,11 @@ export default function CarCard({ cars, onView }: CarCardProps) {
           <Button
             variant="default"
             className="w-full bg-black text-white hover:opacity-95 transform transition-transform hover:-translate-y-0.5 cursor-pointer"
-            onClick={onView}
+            onClick={() => {
+              if (onView) return onView();
+              const carId = id ?? _id;
+              if (carId) router.push(`/car/${carId}`);
+            }}
           >
             View Car
           </Button>

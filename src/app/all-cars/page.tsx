@@ -8,8 +8,8 @@ const page = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [toolFilter, setToolFilter] = useState("");
   const [company, setCompany] = useState<string[]>([]);
-  const [yearFrom, setYearFrom] = useState("2000");
-  const [yearTo, setYearTo] = useState("2026");
+  const [yearFrom, setYearFrom] = useState("");
+  const [yearTo, setYearTo] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [transmission, setTransmission] = useState("");
