@@ -114,7 +114,7 @@ const Header = () => {
                 Saved Cars
               </Button>
             </Link>
-            <Link href="/admin" className="hidden md:block">
+            <Link href="/admin/dashboard" className="hidden md:block">
               <Button
                 variant="ghost"
                 size="sm"
