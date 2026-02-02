@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EmiCalculatorModal } from "./emi-calculator-modal"; // Import the modal
+import { PDFButton } from "./pdf-button";
+import { PDFModal } from "./pdf-modal";
 import Image from "next/image";
 import {
   Car as CarIcon,
@@ -51,6 +53,7 @@ export default function CarDetailClient({ car }: { car: any }) {
       ? [car.image]
       : [];
   const [isEmiModalOpen, setIsEmiModalOpen] = useState(false); // State for EMI modal
+  const [isPDFModalOpen, setIsPDFModalOpen] = useState(false); // State for PDF modal
   const [mainImage, setMainImage] = useState(images[0] || "/placeholder.svg");
   const [isSaved, setIsSaved] = useState(false);
   const router = useRouter();
@@ -145,6 +148,14 @@ export default function CarDetailClient({ car }: { car: any }) {
 
   return (
     <div className="min-h-screen mt-20 bg-gray-50 dark:bg-slate-950">
+      {/* PDF Modal */}
+      <PDFModal
+        isOpen={isPDFModalOpen}
+        onClose={() => setIsPDFModalOpen(false)}
+        carData={car}
+        // images={images} // Removed as it is not part of PDFModalProps
+      />
+
       {/* Main Content Container */}
       <div className="max-w-7xl mx-auto  px-6 py-20">
         {/* Two Column Layout: Image Left, Info Right */}
@@ -156,7 +167,7 @@ export default function CarDetailClient({ car }: { car: any }) {
             >
               <div className="relative h-96 bg-gray-100 group">
                 <Image
-                  src={mainImage}
+                  src={mainImage || "/placeholder.svg"}
                   alt={car.title || "Car main view"}
                   width={800}
                   height={600}
@@ -345,8 +356,8 @@ export default function CarDetailClient({ car }: { car: any }) {
           </div>
         </div>
 
-        {/* THREE ACTION BUTTONS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+        {/* FOUR ACTION BUTTONS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
           <button
             onClick={() => setIsSaved(!isSaved)}
             className={`py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg flex items-center justify-center gap-2 ${
@@ -375,6 +386,7 @@ export default function CarDetailClient({ car }: { car: any }) {
               ? "Unable to share"
               : "Share"}
           </button>
+          <PDFButton onClick={() => setIsPDFModalOpen(true)} />
           <button
             onClick={() => router.push(`/test-drive/${car.id}`)}
             className="py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg bg-gray-900 dark:bg-slate-800 text-white hover:bg-gray-800 dark:hover:bg-slate-700 flex items-center justify-center gap-2"
