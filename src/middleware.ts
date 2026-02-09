@@ -1,25 +1,41 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-const isProtectedRoute = createRouteMatcher([
-  "/admin/:path*",
-  "/saved-cars/:path*",
-  "/reservations/:path*",
-]);
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
+  // Get session token from NextAuth
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-  if (!userId && isProtectedRoute(req)) {
-    const { redirectToSignIn } = await auth();
-    return redirectToSignIn();
+  const isAuthPage =
+    pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
+
+  const isProtectedRoute =
+    pathname.startsWith("/aboutus") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/admin");
+
+  // ✅ If NOT logged in & trying to access protected route → redirect to sign-in
+  if (!token && isProtectedRoute) {
+    const url = new URL("/sign-in", req.url);
+    return NextResponse.redirect(url);
   }
-});
 
+  // ✅ If logged in & trying to access sign-in/sign-up → redirect to dashboard
+  if (token && isAuthPage) {
+    const url = new URL("/", req.url);
+    return NextResponse.redirect(url);
+  }
+
+  // ✅ Otherwise allow request
+  return NextResponse.next();
+}
+
+// Apply middleware only to specific routes
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
-    "/(api|trpc)(.*)",
-  ],
+  matcher: ["/profile/:path*", "/admin/:path*", "/sign-in", "/sign-up"],
 };

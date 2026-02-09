@@ -8,7 +8,9 @@ import ThemeProvider from "@/components/ThemeProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
-
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
+import AuthProvider from "./providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 // export const metadata: Metadata = {
@@ -35,11 +37,25 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body className={`${inter.className}`}>
-          <ThemeProvider>
-            {!adminContainer && <Header />}
-            {children}
-            {!adminContainer && <Footer />}{" "}
-          </ThemeProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              {!adminContainer && <Header />}
+              {children}
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+              />
+              {!adminContainer && <Footer />}{" "}
+            </ThemeProvider>
+          </AuthProvider>
         </body>
       </html>
     </ClerkProvider>

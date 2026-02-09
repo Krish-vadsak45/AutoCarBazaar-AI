@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Upload, Plus } from "lucide-react";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 export default function AddCarPage() {
   const [formData, setFormData] = useState({
@@ -72,6 +73,7 @@ export default function AddCarPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    toast.success("Car added successfully!");
     console.log("Form submitted:", formData);
     // Handle form submission
   };
@@ -115,6 +117,7 @@ export default function AddCarPage() {
                     <Input
                       id="make"
                       name="make"
+                      required
                       placeholder="e.g. Toyota"
                       value={formData.make}
                       onChange={handleInputChange}

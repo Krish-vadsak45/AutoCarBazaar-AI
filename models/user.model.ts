@@ -1,24 +1,20 @@
 import mongoose, { Document, Model } from "mongoose";
 
 export interface IUser extends Document {
-  clerkId: string;
   email?: string;
   name?: string;
-  image?: string;
+  password?: string;
   role?: string;
-  meta?: Record<string, any>;
 }
 
 const UserSchema = new mongoose.Schema<IUser>(
   {
-    clerkId: { type: String, required: true, unique: true, index: true },
-    email: { type: String },
+    email: { type: String, required: true, unique: true, sparse: true },
     name: { type: String },
-    image: { type: String },
-    role: { type: String, enum: ["user", "admin"], default: "user" },
-    meta: { type: mongoose.Schema.Types.Mixed },
+    password: { type: String },
+    role: { type: String, enum: ["admin", "user", "vendor"], default: "user" },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const User: Model<IUser> =
