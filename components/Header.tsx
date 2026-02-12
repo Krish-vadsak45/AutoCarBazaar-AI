@@ -160,10 +160,10 @@ const Header = () => {
                         <span>Profile</span>
                       </DropdownMenuItem>
                     </Link>
-                    <Link href="/dashboard">
+                    <Link href="/my-reservation">
                       <DropdownMenuItem className="cursor-pointer">
                         <Layout className="mr-2 h-4 w-4" />
-                        <span>Dashboard</span>
+                        <span>My Reservation</span>
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuSeparator />
