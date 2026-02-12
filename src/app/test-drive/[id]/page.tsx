@@ -72,6 +72,8 @@ export default function TestDrivePage() {
       return;
     }
 
+    console.log("form data", { selectedDate, selectedTime, notes });
+
     setBookingDetails({
       car: carDetails.name,
       date: formatDisplayDate(selectedDate),

@@ -57,7 +57,9 @@ const Hero = () => {
           ) : cars.length === 0 ? (
             <div>No cars available.</div>
           ) : (
-            cars.map((c, i) => <CarCard key={`${c.title}-${i}`} cars={c} />)
+            cars
+              .slice(0, 4)
+              .map((c, i) => <CarCard key={`${c.title}-${i}`} cars={c} />)
           )}
         </div>
 

@@ -3,10 +3,12 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import ThemeProvider from "@/components/ThemeProvider";
-import { ClerkProvider } from "@clerk/nextjs";
 import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
-
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
+import AuthProvider from "./providers";
+import { usePathname } from "next/navigation";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export default function RootLayout({
@@ -24,17 +26,33 @@ export default function RootLayout({
       setAdminContainer(false);
     }
   }, [currentURl]);
+
+  const pathname = usePathname();
+
+  const isAdminTab = pathname.includes("/admin");
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.className} scrollbar-hide`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className}`}>
+        <AuthProvider>
           <ThemeProvider>
-            {!adminContainer && <Header />}
+            {!isAdminTab && <Header />}
             {children}
-            {!adminContainer && <Footer />}{" "}
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
+            {!isAdminTab && <Footer />}{" "}
           </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

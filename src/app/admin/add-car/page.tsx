@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-
-import { useState } from "react";
+import React, { useState } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import {
   Card,
   CardContent,
@@ -13,7 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,29 +23,51 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Upload, Plus } from "lucide-react";
+import { Upload, Plus, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-export default function AddCarPage() {
-  const [formData, setFormData] = useState({
-    make: "",
-    model: "",
-    year: "",
-    price: "",
-    mileage: "",
-    color: "",
-    fuelType: "",
-    transmission: "",
-    bodyType: "",
-    seats: "",
-    status: "Available",
-    description: "",
-    featured: false,
-  });
+interface CarFormData {
+  title: string;
+  price: string;
+  transmission: string;
+  bodyType: string;
+  description: string;
+  // Specs (Nested)
+  make: string;
+  model: string;
+  year: string;
+  fuelType: string;
+  mileage: string;
+  color: string;
+  // Arrays
+  features: string; // Comma separated for input
+  tags: string; // Comma separated for input
+}
 
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+const initialForm: CarFormData = {
+  title: "",
+  price: "",
+  transmission: "Automatic",
+  bodyType: "Sedan",
+  description: "",
+  make: "",
+  model: "",
+  year: "",
+  fuelType: "Petrol",
+  mileage: "",
+  color: "",
+  features: "",
+  tags: "",
+};
+
+export default function AddCarPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState<CarFormData>(initialForm);
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // --- Handlers ---
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -56,343 +80,353 @@ export default function AddCarPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, featured: checked }));
-  };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages = Array.from(files).map((file) =>
-        URL.createObjectURL(file)
-      );
-      setUploadedImages((prev) => [...prev, ...newImages]);
+      const newFiles = Array.from(files);
+      setImages((prev) => [...prev, ...newFiles]);
+
+      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Handle form submission
+    setLoading(true);
+
+    try {
+      // 1. Upload Images First (If using Cloudinary/S3)
+      // Since I don't have your upload logic, I'll simulate uploading
+      // and construct the payload. In a real app, you'd upload 'images' state
+      // to cloud storage here and get URLs back.
+
+      // For now, I'll assume you might handle base64 or have an upload endpoint.
+      // But typically JSON payloads work best with URLs.
+
+      // Construct Payload based on ICar model
+      const payload = {
+        title: formData.title,
+        price: Number(formData.price),
+        transmission: formData.transmission,
+        bodyType: formData.bodyType,
+        description: formData.description,
+        images: imagePreviews, // Replace with real URLs in production
+        // Nested Specs
+        specs: {
+          make: formData.make,
+          model: formData.model,
+          year: Number(formData.year),
+          fuelType: formData.fuelType,
+          mileage: formData.mileage,
+          color: formData.color,
+        },
+        // Arrays
+        features: formData.features
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        tags: formData.tags
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      };
+
+      const res = await axios.post("/api/cars", payload);
+
+      if (res.status === 201 || res.status === 200) {
+        toast.success("Car added successfully!");
+        router.push("/admin/dashboard"); // Redirect usually to list
+      }
+    } catch (error: any) {
+      console.error("Error adding car:", error);
+      toast.error(error.response?.data?.error || "Failed to add car");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto pb-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Add New Car
+            Add New Vehicle
           </h1>
+          <p className="text-muted-foreground">
+            Add a new car to your inventory based on standard specs.
+          </p>
         </div>
-        <Link href="/admin/add-car">
-          <Button variant="outline">Back to Cars</Button>
+        <Link href="/admin/cars">
+          <Button variant="outline">Back to Inventory</Button>
         </Link>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="manual" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="manual">Manual Entry</TabsTrigger>
-          <TabsTrigger value="ai">AI Upload</TabsTrigger>
-        </TabsList>
-
-        {/* Manual Entry Tab */}
-        <TabsContent value="manual">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Car Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Car Details</CardTitle>
-                <CardDescription>
-                  Enter the details of the car you want to add.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Row 1 */}
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="make">Make</Label>
-                    <Input
-                      id="make"
-                      name="make"
-                      placeholder="e.g. Toyota"
-                      value={formData.make}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="model">Model</Label>
-                    <Input
-                      id="model"
-                      name="model"
-                      placeholder="e.g. Camry"
-                      value={formData.model}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="year">Year</Label>
-                    <Input
-                      id="year"
-                      name="year"
-                      placeholder="e.g. 2022"
-                      value={formData.year}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                {/* Row 2 */}
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price ($)</Label>
-                    <Input
-                      id="price"
-                      name="price"
-                      placeholder="e.g. 25000"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mileage">Mileage</Label>
-                    <Input
-                      id="mileage"
-                      name="mileage"
-                      placeholder="e.g. 15000"
-                      value={formData.mileage}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="color">Color</Label>
-                    <Input
-                      id="color"
-                      name="color"
-                      placeholder="e.g. Blue"
-                      value={formData.color}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                {/* Row 3 */}
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="fuelType">Fuel Type</Label>
-                    <Select
-                      value={formData.fuelType}
-                      onValueChange={(value) =>
-                        handleSelectChange("fuelType", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select fuel type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="petrol">Petrol</SelectItem>
-                        <SelectItem value="diesel">Diesel</SelectItem>
-                        <SelectItem value="electric">Electric</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="transmission">Transmission</Label>
-                    <Select
-                      value={formData.transmission}
-                      onValueChange={(value) =>
-                        handleSelectChange("transmission", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select transmission" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="manual">Manual</SelectItem>
-                        <SelectItem value="automatic">Automatic</SelectItem>
-                        <SelectItem value="cvt">CVT</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bodyType">Body Type</Label>
-                    <Select
-                      value={formData.bodyType}
-                      onValueChange={(value) =>
-                        handleSelectChange("bodyType", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select body type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sedan">Sedan</SelectItem>
-                        <SelectItem value="suv">SUV</SelectItem>
-                        <SelectItem value="coupe">Coupe</SelectItem>
-                        <SelectItem value="hatchback">Hatchback</SelectItem>
-                        <SelectItem value="truck">Truck</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Row 4 */}
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="seats">Number of Seats (Optional)</Label>
-                    <Input
-                      id="seats"
-                      name="seats"
-                      placeholder="e.g. 5"
-                      value={formData.seats}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) =>
-                        handleSelectChange("status", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Available">Available</SelectItem>
-                        <SelectItem value="Sold">Sold</SelectItem>
-                        <SelectItem value="Coming Soon">Coming Soon</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="Enter detailed description of the car..."
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={5}
-                  />
-                </div>
-
-                {/* Featured Checkbox */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="featured"
-                    checked={formData.featured}
-                    onCheckedChange={handleCheckboxChange}
-                  />
-                  <Label
-                    htmlFor="featured"
-                    className="font-normal cursor-pointer"
-                  >
-                    Feature this car
-                  </Label>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Images */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Images</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Upload Area */}
-                <label className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <div className="text-center">
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      Drag & drop or click to upload multiple images
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      (JPG, PNG, WebP, max 5MB each)
-                    </p>
-                  </div>
-                </label>
-
-                {/* Uploaded Images */}
-                {uploadedImages.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">
-                      Uploaded images ({uploadedImages.length})
-                    </p>
-                    <div className="grid gap-4 md:grid-cols-3">
-                      {uploadedImages.map((image, index) => (
-                        <div
-                          key={index}
-                          className="relative aspect-video rounded-lg overflow-hidden bg-muted"
-                        >
-                          <img
-                            src={image || "/placeholder.svg"}
-                            alt={`Uploaded ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Submit Button */}
-            <div className="flex gap-3">
-              <Button type="submit" size="lg">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Car
-              </Button>
-              <Link href="/admin/cars">
-                <Button type="button" variant="outline" size="lg">
-                  Cancel
-                </Button>
-              </Link>
-            </div>
-          </form>
-        </TabsContent>
-
-        {/* AI Upload Tab */}
-        <TabsContent value="ai">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI-Powered Upload</CardTitle>
-              <CardDescription>
-                Upload car images and let AI fill in the details
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center w-full px-4 py-12 border-2 border-dashed border-border rounded-lg">
-                <div className="text-center">
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-lg font-medium mb-1">Upload car images</p>
-                  <p className="text-sm text-muted-foreground">
-                    Our AI will analyze the images and automatically fill in car
-                    details
-                  </p>
-                  <Button className="mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Select Images
-                  </Button>
-                </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Core Info */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="title">Listing Title</Label>
+                <Input
+                  id="title"
+                  name="title"
+                  required
+                  placeholder="e.g. 2023 Toyota Camry LE"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price ($)</Label>
+                <Input
+                  id="price"
+                  name="price"
+                  type="number"
+                  required
+                  placeholder="25000"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Transmission</Label>
+                <Select
+                  value={formData.transmission}
+                  onValueChange={(val) =>
+                    handleSelectChange("transmission", val)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Automatic">Automatic</SelectItem>
+                    <SelectItem value="Manual">Manual</SelectItem>
+                    <SelectItem value="CVT">CVT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Body Type</Label>
+                <Select
+                  value={formData.bodyType}
+                  onValueChange={(val) => handleSelectChange("bodyType", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Sedan">Sedan</SelectItem>
+                    <SelectItem value="SUV">SUV</SelectItem>
+                    <SelectItem value="Truck">Truck</SelectItem>
+                    <SelectItem value="Coupe">Coupe</SelectItem>
+                    <SelectItem value="Hatchback">Hatchback</SelectItem>
+                    <SelectItem value="Van">Van</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Detailed vehicle description..."
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Technical Specs - Mapped to ISpecs */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Specifications</CardTitle>
+            <CardDescription>
+              Technical details stored in specs object
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Make</Label>
+                <Input
+                  name="make"
+                  placeholder="Toyota"
+                  value={formData.make}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Model</Label>
+                <Input
+                  name="model"
+                  placeholder="Camry"
+                  value={formData.model}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Year</Label>
+                <Input
+                  name="year"
+                  type="number"
+                  placeholder="2023"
+                  value={formData.year}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Fuel Type</Label>
+                <Select
+                  value={formData.fuelType}
+                  onValueChange={(val) => handleSelectChange("fuelType", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Petrol">Petrol</SelectItem>
+                    <SelectItem value="Diesel">Diesel</SelectItem>
+                    <SelectItem value="Electric">Electric</SelectItem>
+                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Mileage</Label>
+                <Input
+                  name="mileage"
+                  placeholder="e.g. 15,000 km"
+                  value={formData.mileage}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Color</Label>
+                <Input
+                  name="color"
+                  placeholder="e.g. Midnight Black"
+                  value={formData.color}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Features & Tags */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Features & Metadata</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label>Features (Comma separated)</Label>
+              <Textarea
+                name="features"
+                placeholder="Bluetooth, Backup Camera, Heated Seats, Navigation"
+                value={formData.features}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Tags (Comma separated)</Label>
+              <Input
+                name="tags"
+                placeholder="Best Seller, New Arrival, Low Mileage"
+                value={formData.tags}
+                onChange={handleInputChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Image Upload */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Vehicle Images</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {imagePreviews.map((src, index) => (
+                <div
+                  key={index}
+                  className="relative group aspect-square rounded-lg overflow-hidden border"
+                >
+                  <img
+                    src={src}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+
+              <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                <span className="text-xs text-muted-foreground font-medium">
+                  Upload Image
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-4">
+          <Link href="/admin/cars">
+            <Button variant="outline" type="button">
+              Cancel
+            </Button>
+          </Link>
+          <Button type="submit" disabled={loading} className="min-w-[150px]">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Vehicle
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

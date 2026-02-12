@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import Car from "@/models/car.model";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import Vendor from "@/models/vendor.model";
 
 export async function GET(request: Request) {
   try {
@@ -97,6 +100,7 @@ export async function GET(request: Request) {
       "Limit:",
       limit,
     );
+    // console.log("Final cars filter:", JSON.stringify(filter));
 
     let carsRaw;
     let totalCars;
@@ -124,7 +128,7 @@ export async function GET(request: Request) {
       console.error("Error running Car.find with filter:", filter, err);
       return NextResponse.json(
         { error: (err as any)?.message ?? "Query failed" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -132,22 +136,65 @@ export async function GET(request: Request) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message ?? "Unknown" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
+// export async function POST(request: Request) {
+//   try {
+//     const body = await request.json();
+//     await connectToDatabase();
+//     console.log(body);
+//     const created = await Car.create(body);
+//     return NextResponse.json({ car: created }, { status: 201 });
+//   } catch (error: any) {
+//     return NextResponse.json(
+//       { error: error?.message ?? "Unknown" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = session.user;
+    const userId = user._id;
+
     await connectToDatabase();
-    console.log(body);
-    const created = await Car.create(body);
-    return NextResponse.json({ car: created }, { status: 201 });
-  } catch (error: any) {
+
+    const vendor = await Vendor.findOne({ userId: userId });
+    if (!vendor) {
+      return NextResponse.json(
+        { error: "Vendor profile not found. Please register as a vendor." },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+
+    // ✅ Create Car (NO vendorId inside car)
+    const newCar = await Car.create(body);
+
+    // ✅ Push carId into vendor
+    vendor.cars.push(newCar._id.toString());
+    await vendor.save();
+
     return NextResponse.json(
-      { error: error?.message ?? "Unknown" },
-      { status: 500 },
+      { message: "Car created successfully", car: newCar },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error("Create Car Error:", error);
+    return NextResponse.json(
+      { error: error?.message ?? "Internal Server Error" },
+      { status: 500 }
     );
   }
 }

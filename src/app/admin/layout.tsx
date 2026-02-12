@@ -1,11 +1,22 @@
+"use client";
+
 import { AdminSidebar } from "@/components/admin-sidebar";
 import ThemeToggle from "@/components/ThemeToggle";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  const isLoginPage = pathname === "/admin/login";
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
