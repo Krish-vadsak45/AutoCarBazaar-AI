@@ -134,3 +134,79 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* Spinner animations */
+@keyframes spin-outer {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spin-inner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes dash-arc {
+  0% { stroke-dashoffset: 240; }
+  50% { stroke-dashoffset: 60; }
+  100% { stroke-dashoffset: 240; }
+}
+
+@keyframes dash-arc-reverse {
+  0% { stroke-dashoffset: 160; }
+  50% { stroke-dashoffset: 40; }
+  100% { stroke-dashoffset: 160; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.15; transform: scale(0.92); }
+  50% { opacity: 0.4; transform: scale(1); }
+}
+
+@keyframes fade-text {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes orbit-dot {
+  0% { transform: rotate(0deg) translateX(58px) rotate(0deg); opacity: 0.9; }
+  50% { opacity: 0.3; }
+  100% { transform: rotate(360deg) translateX(58px) rotate(-360deg); opacity: 0.9; }
+}
+
+@keyframes scale-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.animate-spin-outer {
+  animation: spin-outer 2.2s linear infinite;
+}
+
+.animate-spin-inner {
+  animation: spin-inner 3s linear infinite;
+}
+
+.animate-dash-arc {
+  animation: dash-arc 2.2s ease-in-out infinite;
+}
+
+.animate-dash-arc-reverse {
+  animation: dash-arc-reverse 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+.animate-fade-text {
+  animation: fade-text 2.5s ease-in-out infinite;
+}
+
+.animate-orbit-dot {
+  animation: orbit-dot 2.2s linear infinite;
+}
+
+.animate-scale-breathe {
+  animation: scale-breathe 3s ease-in-out infinite;
+}

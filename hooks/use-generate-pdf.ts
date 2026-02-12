@@ -9,61 +9,73 @@ export const useGeneratePDF = () => {
     async (container: HTMLElement, title?: string) => {
       if (!container) return;
 
-      try {
-        const pdf = new jsPDF({
-          orientation: "p",
-          unit: "mm",
-          format: "a4",
-          compress: true,
+    try {
+      const pages = Array.from(container.children) as HTMLElement[];
+      if (pages.length === 0) pages.push(container);
+
+      // We'll initialize the PDF on the first page to get correct dimensions
+      let pdf: jsPDF | null = null;
+
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        
+        // Ensure all images are ready
+        const imgs = Array.from(page.getElementsByTagName("img"));
+        await Promise.all(
+          imgs.map((img) => {
+            return new Promise((resolve) => {
+              if (img.complete && img.naturalHeight !== 0) return resolve(true);
+              const testImg = new Image();
+              testImg.onload = () => resolve(true);
+              testImg.onerror = () => {
+                img.style.visibility = "hidden";
+                resolve(false);
+              };
+              testImg.src = img.src;
+            });
+          })
+        );
+
+        // Allow styling to settle
+        await new Promise((r) => setTimeout(r, 600));
+
+        // Capture page as high-quality JPEG
+        const dataUrl = await toJpeg(page, {
+          quality: 1.0,
+          pixelRatio: 2, // Sharpness
+          backgroundColor: "#ffffff",
+          cacheBust: true,
+          skipFonts: false,
         });
 
-        const pages = Array.from(container.children) as HTMLElement[];
+        // Get actual dimensions of the captured image
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((resolve) => (img.onload = resolve));
 
-        if (pages.length === 0) {
-          pages.push(container);
-        }
+        // Calculate PDF dimensions in mm (A4 width is 210mm)
+        const pdfWidth = 210;
+        const pdfHeight = (img.height * pdfWidth) / img.width;
 
-        for (let i = 0; i < pages.length; i++) {
-          const page = pages[i];
-
-          // Let's force-load images by creating a new Image object for each to check validity
-          const imgs = Array.from(page.getElementsByTagName("img"));
-
-          await Promise.all(
-            imgs.map((img) => {
-              return new Promise((resolve) => {
-                if (img.complete && img.naturalHeight !== 0)
-                  return resolve(true);
-
-                const testImg = new Image();
-                testImg.onload = () => resolve(true);
-                testImg.onerror = () => {
-                  console.warn("Skipping broken image in PDF:", img.src);
-                  img.style.visibility = "hidden"; // Hide it if it's broken
-                  resolve(false);
-                };
-                testImg.src = img.src;
-              });
-            }),
-          );
-
-          // Small pause for any lazy-loaded styles
-          await new Promise((r) => setTimeout(r, 500));
-
-          const dataUrl = await toJpeg(page, {
-            quality: 0.9,
-            pixelRatio: 1.5, // Lowering slightly for better stability on memory-constrained devices
-            backgroundColor: "#ffffff",
-            cacheBust: true,
-            skipFonts: true,
+        if (!pdf) {
+          pdf = new jsPDF({
+            orientation: "p",
+            unit: "mm",
+            format: [pdfWidth, pdfHeight],
+            compress: true
           });
-
-          if (i > 0) pdf.addPage();
-          pdf.addImage(dataUrl, "JPEG", 0, 0, 210, 297, undefined, "FAST");
+        } else {
+          pdf.addPage([pdfWidth, pdfHeight], "p");
         }
 
+        // Add image without stretching
+        pdf.addImage(dataUrl, "JPEG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+      }
+
+      if (pdf) {
         pdf.save(`${title?.replace(/ /g, "_") || "Vehicle"}_Report.pdf`);
-      } catch (error: any) {
+      }
+    } catch (error: any) {
         console.error("PDF generation failed:", error);
         // We check if it's the "Event" error which usually means a specific resource failed
         const msg = error?.message || "Internal Capture Error";

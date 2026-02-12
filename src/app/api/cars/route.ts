@@ -83,13 +83,29 @@ export async function GET(request: Request) {
     // Combine all filters with $and
     const filter = andFilters.length > 0 ? { $and: andFilters } : {};
 
+    // Pagination
+    const page = parseInt(qp.get("page") || "1", 10);
+    const limit = parseInt(qp.get("limit") || "12", 10);
+    const skip = (page - 1) * limit;
+
     // Log final filter for diagnostics
-    console.log("Final cars filter:", JSON.stringify(filter));
+    console.log(
+      "Final cars filter:",
+      JSON.stringify(filter),
+      "Page:",
+      page,
+      "Limit:",
+      limit,
+    );
 
     let carsRaw;
+    let totalCars;
     try {
-      carsRaw = await Car.find(filter).lean();
-      console.log("Found", carsRaw.length, "cars");
+      [carsRaw, totalCars] = await Promise.all([
+        Car.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Car.countDocuments(filter),
+      ]);
+      console.log("Found", carsRaw.length, "cars (Total:", totalCars, ")");
 
       const cars = carsRaw.map((c: any) => ({
         ...c,
@@ -100,7 +116,10 @@ export async function GET(request: Request) {
         make: c.specs?.make || c.make,
       }));
 
-      return NextResponse.json({ cars });
+      return NextResponse.json({
+        cars,
+        hasMore: totalCars > skip + cars.length,
+      });
     } catch (err) {
       console.error("Error running Car.find with filter:", filter, err);
       return NextResponse.json(

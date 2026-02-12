@@ -59,9 +59,9 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
         {/* Scrollable Preview Content */}
         <div className="overflow-y-auto flex-1 bg-slate-200/50 mx-auto w-full shadow-inner scrollbar-hide py-10">
           {/* Main Document Body - THIS IS THE PORTION CAPTURED FOR PDF */}
-          <div ref={reportRef} className="flex flex-col gap-8 w-fit mx-auto">
+          <div ref={reportRef} className="flex flex-col gap-10 w-fit mx-auto">
             {/* PAGE 1 */}
-            <div className="bg-white h-[297mm] shadow-2xl relative overflow-hidden flex flex-col">
+            <div className="bg-white w-[210mm] min-h-[297mm] h-fit shadow-2xl relative overflow-hidden flex flex-col">
               {/* Image Report Header */}
               <div className="bg-[#0f172a] p-10 flex justify-between items-center text-white">
                 <div className="flex items-center gap-5">
@@ -203,7 +203,7 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
             </div>
 
             {/* PAGE 2 */}
-            <div className="bg-white h-[297mm] shadow-2xl relative overflow-hidden flex flex-col">
+            <div className="bg-white w-[210mm] min-h-[297mm] h-fit shadow-2xl relative overflow-hidden flex flex-col">
               <div className="p-12 space-y-12 flex-1">
                 {/* Vehicle Description */}
                 <section>
