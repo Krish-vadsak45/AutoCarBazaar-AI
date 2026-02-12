@@ -20,7 +20,7 @@ export default function HeroCTA() {
 
             <div className="mt-8">
               <Link
-                href="/cars"
+                href="/all-cars"
                 className="inline-flex items-center gap-3 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-6 py-3 rounded-full shadow-lg hover:shadow-2xl transform transition duration-200 hover:-translate-y-1 focus:outline-none focus:ring-4 dark:focus:ring-white/20 focus:ring-slate-900/20"
               >
                 View All Cars
