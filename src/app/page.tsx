@@ -10,7 +10,6 @@ import Top10Cars from "@/components/Top10Cars";
 export default function Home() {
   return (
     <>
-      <Loading />
       <LandingPage />
       <Hero />
       <Top10Cars />

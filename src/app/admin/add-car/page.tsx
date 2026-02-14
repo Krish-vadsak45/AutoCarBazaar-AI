@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
@@ -13,420 +14,248 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Upload, Plus, X, Loader2 } from "lucide-react";
-import Link from "next/link";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Eye,
+  Trash2,
+  Edit2,
+  CarFront,
+  Loader2,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-interface CarFormData {
+// Interface matching your Car Model structure
+interface ICar {
+  _id: string;
+  bodyType?: string;
   title: string;
-  price: string;
-  transmission: string;
-  bodyType: string;
-  description: string;
-  // Specs (Nested)
-  make: string;
-  model: string;
-  year: string;
-  fuelType: string;
-  mileage: string;
-  color: string;
-  // Arrays
-  features: string; // Comma separated for input
-  tags: string; // Comma separated for input
+  price: number;
+  featured?: boolean;
+  specs?: {
+    make?: string;
+    model?: string;
+    year?: number;
+    color?: string;
+  };
+  // Add other fields as needed
+  status?: string;
 }
 
-const initialForm: CarFormData = {
-  title: "",
-  price: "",
-  transmission: "Automatic",
-  bodyType: "Sedan",
-  description: "",
-  make: "",
-  model: "",
-  year: "",
-  fuelType: "Petrol",
-  mileage: "",
-  color: "",
-  features: "",
-  tags: "",
-};
-
-export default function AddCarPage() {
+export default function VendorCarsPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState<CarFormData>(initialForm);
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [cars, setCars] = useState<ICar[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // --- Handlers ---
+  // Fetch Cars on Mount
+  useEffect(() => {
+    const fetchCars = async () => {
+      try {
+        const { data } = await axios.get("/api/vend-cars");
+        console.log("Fetched cars:", data.cars);
+        setCars(data.cars);
+      } catch (error) {
+        console.error("Failed to load cars", error);
+        toast.error("Failed to load your inventory");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    fetchCars();
+  }, []);
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const newFiles = Array.from(files);
-      setImages((prev) => [...prev, ...newFiles]);
-
-      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-      setImagePreviews((prev) => [...prev, ...newPreviews]);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // Handle Delete (Example)
+  const handleDelete = async (carId: string) => {
+    if (!confirm("Are you sure you want to delete this car?")) return;
 
     try {
-      // 1. Upload Images First (If using Cloudinary/S3)
-      // Since I don't have your upload logic, I'll simulate uploading
-      // and construct the payload. In a real app, you'd upload 'images' state
-      // to cloud storage here and get URLs back.
-
-      // For now, I'll assume you might handle base64 or have an upload endpoint.
-      // But typically JSON payloads work best with URLs.
-
-      // Construct Payload based on ICar model
-      const payload = {
-        title: formData.title,
-        price: Number(formData.price),
-        transmission: formData.transmission,
-        bodyType: formData.bodyType,
-        description: formData.description,
-        images: imagePreviews, // Replace with real URLs in production
-        // Nested Specs
-        specs: {
-          make: formData.make,
-          model: formData.model,
-          year: Number(formData.year),
-          fuelType: formData.fuelType,
-          mileage: formData.mileage,
-          color: formData.color,
-        },
-        // Arrays
-        features: formData.features
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        tags: formData.tags
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-      };
-
-      const res = await axios.post("/api/cars", payload);
-
-      if (res.status === 201 || res.status === 200) {
-        toast.success("Car added successfully!");
-        router.push("/admin/dashboard"); // Redirect usually to list
-      }
-    } catch (error: any) {
-      console.error("Error adding car:", error);
-      toast.error(error.response?.data?.error || "Failed to add car");
-    } finally {
-      setLoading(false);
+      // Create DELETE route at /api/cars/[id]
+      await axios.delete(`/api/vend-cars/${carId}`);
+      setCars((prev) => prev.filter((c) => c._id !== carId));
+      toast.success("Car deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete car");
     }
   };
 
+  // Filter Cars
+  const filteredCars = cars.filter(
+    (car) =>
+      car.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      car.specs?.make?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Add New Vehicle
-          </h1>
-          <p className="text-muted-foreground">
-            Add a new car to your inventory based on standard specs.
+          <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your vehicle listings ({cars.length})
           </p>
         </div>
-        <Link href="/admin/cars">
-          <Button variant="outline">Back to Inventory</Button>
+        <Link href="/admin/add-car/new-car/new-car">
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" /> Add Vehicle
+          </Button>
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Core Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="title">Listing Title</Label>
-                <Input
-                  id="title"
-                  name="title"
-                  required
-                  placeholder="e.g. 2023 Toyota Camry LE"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Price ($)</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  required
-                  placeholder="25000"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                />
-              </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title or make..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
+          ) : filteredCars.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              {searchQuery
+                ? "No cars found matching your search."
+                : "No cars listed yet."}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Header Row - Updated Grid Columns */}
+              <div className="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <span>Image</span>
+                <span>Make & Model</span>
+                <span>Year</span>
+                <span>Price</span>
+                <span>Status</span>
+                <span className="text-center">Featured</span>
+                <span className="text-right">Actions</span>
+              </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Transmission</Label>
-                <Select
-                  value={formData.transmission}
-                  onValueChange={(val) =>
-                    handleSelectChange("transmission", val)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Automatic">Automatic</SelectItem>
-                    <SelectItem value="Manual">Manual</SelectItem>
-                    <SelectItem value="CVT">CVT</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Body Type</Label>
-                <Select
-                  value={formData.bodyType}
-                  onValueChange={(val) => handleSelectChange("bodyType", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sedan">Sedan</SelectItem>
-                    <SelectItem value="SUV">SUV</SelectItem>
-                    <SelectItem value="Truck">Truck</SelectItem>
-                    <SelectItem value="Coupe">Coupe</SelectItem>
-                    <SelectItem value="Hatchback">Hatchback</SelectItem>
-                    <SelectItem value="Van">Van</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Detailed vehicle description..."
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={4}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Technical Specs - Mapped to ISpecs */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Specifications</CardTitle>
-            <CardDescription>
-              Technical details stored in specs object
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Make</Label>
-                <Input
-                  name="make"
-                  placeholder="Toyota"
-                  value={formData.make}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Model</Label>
-                <Input
-                  name="model"
-                  placeholder="Camry"
-                  value={formData.model}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Year</Label>
-                <Input
-                  name="year"
-                  type="number"
-                  placeholder="2023"
-                  value={formData.year}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Fuel Type</Label>
-                <Select
-                  value={formData.fuelType}
-                  onValueChange={(val) => handleSelectChange("fuelType", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Petrol">Petrol</SelectItem>
-                    <SelectItem value="Diesel">Diesel</SelectItem>
-                    <SelectItem value="Electric">Electric</SelectItem>
-                    <SelectItem value="Hybrid">Hybrid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Mileage</Label>
-                <Input
-                  name="mileage"
-                  placeholder="e.g. 15,000 km"
-                  value={formData.mileage}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Color</Label>
-                <Input
-                  name="color"
-                  placeholder="e.g. Midnight Black"
-                  value={formData.color}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Features & Tags */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Features & Metadata</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label>Features (Comma separated)</Label>
-              <Textarea
-                name="features"
-                placeholder="Bluetooth, Backup Camera, Heated Seats, Navigation"
-                value={formData.features}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Tags (Comma separated)</Label>
-              <Input
-                name="tags"
-                placeholder="Best Seller, New Arrival, Low Mileage"
-                value={formData.tags}
-                onChange={handleInputChange}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Image Upload */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vehicle Images</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {imagePreviews.map((src, index) => (
+              {filteredCars.map((car) => (
                 <div
-                  key={index}
-                  className="relative group aspect-square rounded-lg overflow-hidden border"
+                  key={car._id}
+                  className="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_auto] items-center gap-4 p-3 rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all group"
                 >
-                  <img
-                    src={src}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  {/* Image Column */}
+                  <div className="h-14 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden border">
+                    <CarFront className="h-6 w-6 text-muted-foreground/50" />
+                  </div>
+
+                  {/* Make & Model Column */}
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                      {car.specs?.make || "Unknown"} {car.specs?.model}
+                    </h3>
+                    <p
+                      className="text-xs text-muted-foreground truncate"
+                      title={car.title}
+                    >
+                      {car.title}
+                    </p>
+                  </div>
+
+                  {/* Year Column */}
+                  <div className="text-sm font-medium">
+                    {car.specs?.year || "N/A"}
+                  </div>
+
+                  {/* Price Column */}
+                  <div className="font-bold text-sm">
+                    ${car.price.toLocaleString()}
+                  </div>
+
+                  {/* Status Column (Placeholder) */}
+                  <div>
+                    <Badge
+                      variant="outline"
+                      className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900"
+                    >
+                      Available
+                    </Badge>
+                  </div>
+
+                  {/* Featured Column (Icon) */}
+                  <div className="flex justify-center">
+                    {car.featured ? (
+                      <div className="bg-amber-100 dark:bg-amber-900/30 p-1.5 rounded-full text-amber-600 dark:text-amber-400">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 4.427 1.102 6.617c.225 1.335-1.317 2.227-2.31 1.6l-4.577-2.77-4.577 2.77c-.993.627-2.535-.265-2.31-1.6l1.102-6.617-4.117-4.427c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/30">-</span>
+                    )}
+                  </div>
+
+                  {/* Actions Column */}
+                  <div className="flex justify-end">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-muted"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuLabel>Manage Vehicle</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <Link href={`/cars/${car._id}`} target="_blank">
+                          <DropdownMenuItem className="cursor-pointer">
+                            <Eye className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
+                            View Live
+                          </DropdownMenuItem>
+                        </Link>
+                        <Link href={`/admin/add-car/new-car/${car._id}`}>
+                          <DropdownMenuItem className="cursor-pointer">
+                            <Edit2 className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
+                            Edit Details
+                          </DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50 cursor-pointer"
+                          onClick={() => handleDelete(car._id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete Listing
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               ))}
-
-              <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                <span className="text-xs text-muted-foreground font-medium">
-                  Upload Image
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </label>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-4">
-          <Link href="/admin/cars">
-            <Button variant="outline" type="button">
-              Cancel
-            </Button>
-          </Link>
-          <Button type="submit" disabled={loading} className="min-w-[150px]">
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Vehicle
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

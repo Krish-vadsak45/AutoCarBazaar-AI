@@ -1,6 +1,13 @@
 import mongoose, { Model, Schema } from "mongoose";
 import User from "./user.model";
 
+interface workingHours extends mongoose.Document {
+  day: string;
+  isOpen: boolean;
+  openTime?: string; // Format: HH:mm
+  closeTime?: string; // Format: HH:mm
+}
+
 export interface IVendor extends mongoose.Document {
   userId: string;
   cars: string[];
@@ -23,6 +30,7 @@ export interface IVendor extends mongoose.Document {
   //     ifscCode: string;
   // };
   verificationStatus: "PENDING" | "APPROVED" | "REJECTED";
+  workingHours?: workingHours[];
 }
 
 const VendorProfileSchema = new mongoose.Schema({
@@ -75,6 +83,30 @@ const VendorProfileSchema = new mongoose.Schema({
     enum: ["PENDING", "APPROVED", "REJECTED"],
     default: "PENDING",
   },
+  // "workingHours": [
+  //   { "day": "MONDAY", "isOpen": true, "openTime": "09:00", "closeTime": "18:00" },
+  //   { "day": "SUNDAY", "isOpen": false }
+  // ]
+  workingHours: [
+    {
+      day: {
+        type: String,
+        enum: [
+          "MONDAY",
+          "TUESDAY",
+          "WEDNESDAY",
+          "THURSDAY",
+          "FRIDAY",
+          "SATURDAY",
+          "SUNDAY",
+        ],
+        required: true,
+      },
+      isOpen: { type: Boolean, required: true },
+      openTime: { type: String }, // Format: HH:mm
+      closeTime: { type: String }, // Format: HH:mm
+    },
+  ],
 });
 
 const Vendor: Model<IVendor> =

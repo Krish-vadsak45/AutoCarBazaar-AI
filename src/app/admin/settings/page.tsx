@@ -1,92 +1,63 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card"; // Reduced imports to keep cards clean
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, Users, Search, Shield, MoreVertical } from "lucide-react";
-import { useState } from "react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Clock, Save, Loader2, CalendarDays, Moon, Sun } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-const workingHours = [
-  { day: "Monday", isOpen: true, openTime: "09:00 AM", closeTime: "06:00 PM" },
-  { day: "Tuesday", isOpen: true, openTime: "09:00 AM", closeTime: "06:00 PM" },
-  {
-    day: "Wednesday",
-    isOpen: true,
-    openTime: "09:00 AM",
-    closeTime: "06:00 PM",
-  },
-  {
-    day: "Thursday",
-    isOpen: true,
-    openTime: "09:00 AM",
-    closeTime: "06:00 PM",
-  },
-  { day: "Friday", isOpen: true, openTime: "09:00 AM", closeTime: "06:00 PM" },
-  {
-    day: "Saturday",
-    isOpen: true,
-    openTime: "10:00 AM",
-    closeTime: "04:00 PM",
-  },
-  { day: "Sunday", isOpen: false, openTime: "—", closeTime: "—" },
-];
+type DaySchedule = {
+  day: string;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+};
 
-const adminUsers = [
-  {
-    id: 1,
-    name: "Algo Agarwal",
-    email: "algo@example.com",
-    role: "USER",
-    avatar: "AA",
-  },
-  {
-    id: 2,
-    name: "Roadside Coder",
-    email: "coder@example.com",
-    role: "USER",
-    avatar: "RC",
-  },
-  {
-    id: 3,
-    name: "Piyush Agarwal",
-    email: "piyush@example.com",
-    role: "ADMIN",
-    avatar: "PA",
-  },
-];
+// Times for dropdown (00:00 to 23:30)
+const timeOptions = Array.from({ length: 48 }).map((_, i) => {
+  const hour = Math.floor(i / 2);
+  const minute = i % 2 === 0 ? "00" : "30";
+  const formattedHour = hour.toString().padStart(2, "0");
+  return `${formattedHour}:${minute}`;
+});
 
-export default function SettingsPage() {
-  const [hours, setHours] = useState(workingHours);
-  const [users, setUsers] = useState(adminUsers);
-  const [searchQuery, setSearchQuery] = useState("");
+export default function WorkingHoursPage() {
+  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch initial data
+  useEffect(() => {
+    const fetchHours = async () => {
+      try {
+        const { data } = await axios.get("/api/working-hours");
+        console.log("Fetched schedule:", data);
+        setSchedule(data.workingHours);
+      } catch (error) {
+        toast.error("Failed to load schedule");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHours();
+  }, []);
 
-  const handleToggleDay = (index: number) => {
-    const updated = [...hours];
-    updated[index].isOpen = !updated[index].isOpen;
-    setHours(updated);
+  const handleToggle = (index: number) => {
+    setSchedule((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, isOpen: !item.isOpen } : item
+      )
+    );
   };
 
   const handleTimeChange = (
@@ -94,243 +65,164 @@ export default function SettingsPage() {
     field: "openTime" | "closeTime",
     value: string
   ) => {
-    const updated = [...hours];
-    updated[index][field] = value;
-    setHours(updated);
+    setSchedule((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
   };
 
-  const handlePromoteUser = (userId: number) => {
-    setUsers(users.map((u) => (u.id === userId ? { ...u, role: "ADMIN" } : u)));
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await axios.patch("/api/working-hours", { workingHours: schedule });
+      toast.success("Schedule updated successfully");
+    } catch (error) {
+      toast.error("Failed to update schedule");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDemoteUser = (userId: number) => {
-    setUsers(users.map((u) => (u.id === userId ? { ...u, role: "USER" } : u)));
-  };
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Settings
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your dealership configuration and admin access
-        </p>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+            <Clock className="h-8 w-8 text-primary" />
+            Working Hours
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Configure your weekly availability and operation timings.
+          </p>
+        </div>
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          size="lg"
+          className="shadow-lg shadow-primary/20"
+        >
+          {saving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          Save Changes
+        </Button>
       </div>
 
-      <Tabs defaultValue="working-hours" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-96">
-          <TabsTrigger
-            value="working-hours"
-            className="flex items-center gap-2"
+      {/* Grid Layout for Columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {schedule.map((day, index) => (
+          <Card
+            key={day.day}
+            className={`transition-all duration-300 border-2 overflow-hidden ${
+              day.isOpen
+                ? "bg-card border-border shadow-sm hover:shadow-md"
+                : "bg-muted/30 border-dashed border-border opacity-70"
+            }`}
           >
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Working Hours</span>
-          </TabsTrigger>
-          <TabsTrigger value="admin-users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Admin Users</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Working Hours Tab */}
-        <TabsContent value="working-hours" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Working Hours</CardTitle>
-              <CardDescription>
-                Set your dealership's working hours for each day of the week
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {hours.map((hour, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col sm:flex-row sm:items-center gap-4 pb-4 border-b border-border last:border-0 last:pb-0"
-                >
-                  <div className="w-32 flex items-center gap-3">
-                    <Checkbox
-                      id={`day-${index}`}
-                      checked={hour.isOpen}
-                      onCheckedChange={() => handleToggleDay(index)}
-                    />
-                    <Label
-                      htmlFor={`day-${index}`}
-                      className="font-medium text-foreground cursor-pointer"
-                    >
-                      {hour.day}
-                    </Label>
+            <CardContent className="p-6 space-y-6">
+              {/* Card Header: Day & Switch */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-2 rounded-lg ${
+                      day.isOpen
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <CalendarDays className="h-5 w-5" />
                   </div>
-
-                  <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-3">
-                    {hour.isOpen ? (
-                      <>
-                        <span className="text-sm font-medium text-green-600">
-                          Open
-                        </span>
-                        <div className="flex items-center gap-2 flex-1">
-                          <Input
-                            type="time"
-                            value={hour.openTime}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                index,
-                                "openTime",
-                                e.target.value
-                              )
-                            }
-                            className="w-28"
-                          />
-                          <span className="text-muted-foreground text-sm">
-                            to
-                          </span>
-                          <Input
-                            type="time"
-                            value={hour.closeTime}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                index,
-                                "closeTime",
-                                e.target.value
-                              )
-                            }
-                            className="w-28"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <span className="text-sm text-muted-foreground italic">
-                        Closed all day
-                      </span>
-                    )}
+                  <div>
+                    <h3 className="font-bold text-base capitalize">
+                      {day.day}
+                    </h3>
+                    <Badge
+                      variant={day.isOpen ? "default" : "secondary"}
+                      className="text-[10px] h-5 px-2 mt-0.5"
+                    >
+                      {day.isOpen ? "Open" : "Closed"}
+                    </Badge>
                   </div>
                 </div>
-              ))}
-
-              <div className="pt-4">
-                <Button className="w-full sm:w-auto">Save Changes</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Admin Users Tab */}
-        <TabsContent value="admin-users" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">Admin Users</CardTitle>
-              <CardDescription>
-                Manage users with admin privileges
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                <Switch
+                  checked={day.isOpen}
+                  onCheckedChange={() => handleToggle(index)}
                 />
               </div>
 
-              {/* Users Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                        User
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                        Email
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                        Role
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="border-b border-border hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="px-4 py-4 text-sm">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage
-                                src={`https://avatar.vercel.sh/${user.avatar}`}
-                              />
-                              <AvatarFallback>{user.avatar}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium text-foreground">
-                              {user.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-muted-foreground">
-                          {user.email}
-                        </td>
-                        <td className="px-4 py-4 text-sm">
-                          <Badge
-                            variant={
-                              user.role === "ADMIN" ? "default" : "secondary"
-                            }
-                          >
-                            {user.role}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-4 text-sm">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {user.role === "USER" ? (
-                                <DropdownMenuItem
-                                  onClick={() => handlePromoteUser(user.id)}
-                                >
-                                  <Shield className="h-4 w-4 mr-2" />
-                                  Make Admin
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem
-                                  onClick={() => handleDemoteUser(user.id)}
-                                >
-                                  Remove Admin
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {/* Time Selection */}
+              <div
+                className={`space-y-4 pt-2 ${
+                  !day.isOpen &&
+                  "opacity-50 pointer-events-none filter grayscale"
+                }`}
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Open Time */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
+                      <Sun className="h-3 w-3" /> Opens at
+                    </div>
+                    <Select
+                      value={day.openTime}
+                      onValueChange={(val) =>
+                        handleTimeChange(index, "openTime", val)
+                      }
+                      disabled={!day.isOpen}
+                    >
+                      <SelectTrigger className="w-full bg-background">
+                        <SelectValue placeholder="--:--" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeOptions.map((time) => (
+                          <SelectItem key={`open-${time}`} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {filteredUsers.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">
-                    No users found matching your search.
-                  </p>
+                  {/* Close Time */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
+                      <Moon className="h-3 w-3" /> Closes at
+                    </div>
+                    <Select
+                      value={day.closeTime}
+                      onValueChange={(val) =>
+                        handleTimeChange(index, "closeTime", val)
+                      }
+                      disabled={!day.isOpen}
+                    >
+                      <SelectTrigger className="w-full bg-background">
+                        <SelectValue placeholder="--:--" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeOptions.map((time) => (
+                          <SelectItem key={`close-${time}`} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
     </div>
   );
 }
