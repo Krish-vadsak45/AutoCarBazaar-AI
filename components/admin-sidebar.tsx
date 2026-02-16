@@ -8,25 +8,32 @@ import { cn } from "@/lib/utils";
 export function AdminSidebar() {
   const pathname = usePathname();
 
+  const segments = pathname.split("/");
+  const isVendorPath = segments[1] === "vendor";
+  const isAdminPath = segments[1] === "admin" && segments[2] !== "login";
+  const vendorId = isVendorPath || isAdminPath ? segments[2] : null;
+
+  const basePath = isVendorPath ? `/vendor/${vendorId}` : `/admin/${vendorId}`;
+
   const navItems = [
     {
       label: "Dashboard",
-      href: "/admin/dashboard",
+      href: `${basePath}/dashboard`,
       icon: LayoutDashboard,
     },
     {
       label: "Cars",
-      href: "/admin/add-car",
+      href: `${basePath}/add-car`,
       icon: Car,
     },
     {
       label: "Test Drives",
-      href: "/admin/test-drives",
+      href: `${basePath}/test-drives`,
       icon: TestTube2,
     },
     {
       label: "Settings",
-      href: "/admin/settings",
+      href: `${basePath}/settings`,
       icon: Settings,
     },
   ];
@@ -36,7 +43,9 @@ export function AdminSidebar() {
       <div className="flex h-full flex-col overflow-y-auto">
         {/* Header */}
         <div className="border-b border-sidebar-border px-6 py-6">
-          <h1 className="text-xl font-bold">Vehicl Admin</h1>
+          <h1 className="text-xl font-bold">
+            {isVendorPath ? "Vendor Panel" : "Vehicl Admin"}
+          </h1>
         </div>
 
         {/* Navigation */}
@@ -53,7 +62,7 @@ export function AdminSidebar() {
                   "group flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all duration-200",
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -65,7 +74,7 @@ export function AdminSidebar() {
 
         {/* Footer */}
         <div className="border-t border-sidebar-border px-6 py-4 text-sm text-sidebar-foreground/70">
-          <p>© 2026 Vehicl Admin</p>
+          <p>© 2026 {isVendorPath ? "Vendor Panel" : "Vehicl Admin"}</p>
         </div>
       </div>
     </aside>

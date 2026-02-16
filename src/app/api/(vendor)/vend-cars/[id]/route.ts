@@ -20,11 +20,12 @@ export async function validateVendor(req: Request) {
 }
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectToDatabase();
-    const car = await Car.findById(params.id);
+    const { id } = await params;
+    const car = await Car.findById(id);
 
     if (!car) {
       return NextResponse.json({ error: "Car not found" }, { status: 404 });
@@ -39,7 +40,7 @@ export async function GET(
 // PATCH: Update Car
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
     const { params } = context;
@@ -65,7 +66,7 @@ export async function PATCH(
     const updatedCar = await Car.findByIdAndUpdate(
       id,
       { $set: body },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedCar) {
@@ -74,7 +75,7 @@ export async function PATCH(
 
     return NextResponse.json(
       { car: updatedCar, message: "Updated successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Update Error:", error);
@@ -85,7 +86,7 @@ export async function PATCH(
 // DELETE: Remove Car
 export async function DELETE(
   request: Request,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
     const { params } = context;
@@ -108,7 +109,7 @@ export async function DELETE(
 
     return NextResponse.json(
       { message: "Car deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Delete Error:", error);

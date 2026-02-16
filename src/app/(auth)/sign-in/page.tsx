@@ -9,16 +9,23 @@ import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (status === "authenticated") {
-      router.push("/"); // Redirect if already logged in
+    if (status === "authenticated" && session?.user) {
+      const user = session.user as any;
+      if (user.role === "admin") {
+        router.push(`/admin/${user._id}/dashboard`);
+      } else if (user.role === "vendor" && user.vendorId) {
+        router.push(`/admin/${user.vendorId}/dashboard`);
+      } else {
+        router.push("/");
+      }
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

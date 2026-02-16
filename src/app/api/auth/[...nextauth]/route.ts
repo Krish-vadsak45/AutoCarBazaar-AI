@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 
 import connectToDatabase from "@/lib/db";
 import User from "@/models/user.model";
+import Vendor from "@/models/vendor.model";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -48,19 +49,36 @@ export const authOptions: NextAuthOptions = {
         // ✅ Compare password
         const isPasswordCorrect = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password,
         );
 
         if (!isPasswordCorrect) {
           throw new Error("Invalid password");
         }
 
+        // ✅ If a specific role was requested (e.g. from admin/login), verify it
+        if (credentials.role && user.role !== credentials.role) {
+          throw new Error(
+            `Unauthorized: You do not have ${credentials.role} privileges`,
+          );
+        }
+
         // ✅ Return user (must match NextAuth User type)
-        return {
+        const userData: any = {
           _id: user._id.toString(),
           name: user.name,
           email: user.email,
+          role: user.role,
         };
+
+        if (user.role === "vendor") {
+          const vendor = await Vendor.findOne({ userId: user._id.toString() });
+          if (vendor) {
+            userData.vendorId = vendor._id.toString();
+          }
+        }
+
+        return userData;
       },
     }),
   ],
@@ -72,9 +90,28 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token._id = user._id;
+        // user object is only available on initial sign in
+        token._id = (user as any)._id;
+        token.role = (user as any).role;
+        token.vendorId = (user as any).vendorId;
         token.name = user.name;
         token.email = user.email;
+      } else if (!token.role) {
+        // Fetch role if missing
+        await connectToDatabase();
+        const dbUser = await User.findOne({ email: token.email });
+        if (dbUser) {
+          token._id = dbUser._id.toString();
+          token.role = dbUser.role;
+          if (dbUser.role === "vendor") {
+            const vendor = await Vendor.findOne({
+              userId: dbUser._id.toString(),
+            });
+            if (vendor) {
+              token.vendorId = vendor._id.toString();
+            }
+          }
+        }
       }
       return token;
     },
@@ -82,6 +119,8 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user._id = token._id as string;
+        session.user.role = token.role as string;
+        session.user.vendorId = token.vendorId as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
       }

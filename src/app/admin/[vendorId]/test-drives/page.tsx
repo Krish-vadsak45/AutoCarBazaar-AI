@@ -32,86 +32,106 @@ import {
   MoreVertical,
   Eye,
   X,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import axios from "axios";
+import { toast } from "sonner";
 
-const testDrives: {
-  id: number;
-  car: string;
-  date: string;
-  time: string;
-  customer: string;
-  status: Status;
-  notes: string;
-  image: string;
-}[] = [
-  {
-    id: 1,
-    car: "2023 Hyundai i20",
-    date: "Friday, March 21, 2025",
-    time: "12:00 PM - 1:00 PM",
-    customer: "Piyush Agarwal Biz",
-    status: "Pending",
-    notes: "This will be my first car",
-    image:
-      "https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=400&h=300&fit=crop",
-  },
-  {
-    id: 2,
-    car: "2024 Tata Nexon",
-    date: "Saturday, March 22, 2025",
-    time: "02:00 PM - 3:00 PM",
-    customer: "Raj Kumar",
-    status: "Confirmed",
-    notes: "Interested in electric variants",
-    image:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop",
-  },
-  {
-    id: 3,
-    car: "2023 Mahindra Thar",
-    date: "Sunday, March 23, 2025",
-    time: "10:00 AM - 11:00 AM",
-    customer: "Priya Singh",
-    status: "Completed",
-    notes: "Very interested, may purchase",
-    image:
-      "https://images.unsplash.com/photo-1605559424843-9e4c3ca4b2f7?w=400&h=300&fit=crop",
-  },
-];
+interface ITestDrive {
+  _id: string;
+  carId: {
+    _id: string;
+    title: string;
+    images: string[];
+    price: number;
+  };
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  startDate: string;
+  startTime: string;
+  endTime: string;
+  notes?: string;
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+}
 
-type Status = "Pending" | "Confirmed" | "Completed" | "Cancelled";
+type Status = "pending" | "confirmed" | "completed" | "cancelled";
 
 const statusColors: Record<Status, string> = {
-  Pending:
+  pending:
     "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300",
-  Confirmed:
+  confirmed:
     "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300",
-  Completed: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
-  Cancelled: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
+  completed: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
+  cancelled: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
 };
 
 export default function TestDrivesPage() {
+  const params = useParams();
+  const vendorId = params?.vendorId;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [drives, setDrives] = useState(testDrives);
+  const [drives, setDrives] = useState<ITestDrive[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch Test Drives
+  useEffect(() => {
+    const fetchDrives = async () => {
+      if (!vendorId) return;
+      try {
+        setLoading(true);
+        const { data } = await axios.get(`/api/vendor/test-drives/${vendorId}`);
+        setDrives(data);
+      } catch (error) {
+        console.error("Failed to fetch test drives:", error);
+        toast.error("Could not load test drives");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDrives();
+  }, [vendorId]);
 
   const filteredDrives = drives.filter((drive) => {
     const matchesSearch =
-      drive.car.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      drive.customer.toLowerCase().includes(searchQuery.toLowerCase());
+      drive.carId?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      drive.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || drive.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const updateStatus = (driveId: number, newStatus: string) => {
-    setDrives(
-      drives.map((d) =>
-        d.id === driveId ? { ...d, status: newStatus as Status } : d
-      )
-    );
+  const updateStatus = async (driveId: string, newStatus: string) => {
+    try {
+      await axios.patch("/api/vendor/test-drives", {
+        id: driveId,
+        status: newStatus,
+      });
+      setDrives(
+        drives.map((d) =>
+          d._id === driveId ? { ...d, status: newStatus as Status } : d,
+        ),
+      );
+      toast.success(`Status updated to ${newStatus}`);
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      toast.error("Failed to update status");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -141,10 +161,10 @@ export default function TestDrivesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Confirmed">Confirmed</SelectItem>
-            <SelectItem value="Completed">Completed</SelectItem>
-            <SelectItem value="Cancelled">Cancelled</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -161,17 +181,17 @@ export default function TestDrivesPage() {
           {filteredDrives.length > 0 ? (
             filteredDrives.map((drive) => (
               <div
-                key={drive.id}
+                key={drive._id}
                 className="flex flex-col md:flex-row gap-6 p-4 border border-border rounded-lg hover:bg-muted/30 transition-colors"
               >
                 {/* Car Image */}
-                <div className="md:w-48 flex-shrink-0">
-                  <img
-                    src={drive.image || "/placeholder.svg"}
-                    alt={drive.car}
+                {/* <div className="md:w-48 flex-shrink-0">
+                  <Image
+                    src={drive.carId?.images?.[0] || drive.carId?.images || "/placeholder.svg"}
+                    alt={drive.carId?.title}
                     className="w-full h-32 md:h-40 rounded-lg object-cover"
                   />
-                </div>
+                </div> */}
 
                 {/* Content */}
                 <div className="flex-1 space-y-4">
@@ -179,10 +199,12 @@ export default function TestDrivesPage() {
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                     <div>
                       <h3 className="text-lg font-semibold text-foreground">
-                        {drive.car}
+                        {drive.carId?.title}
                       </h3>
                       <Badge
-                        className={statusColors[drive.status] || "bg-gray-100"}
+                        className={
+                          statusColors[drive.status] || "bg-gray-100 uppercase"
+                        }
                       >
                         {drive.status}
                       </Badge>
@@ -199,25 +221,25 @@ export default function TestDrivesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Pending")}
+                          onClick={() => updateStatus(drive._id, "pending")}
                         >
                           <div className="h-2 w-2 rounded-full bg-orange-500 mr-2" />
                           Pending
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Confirmed")}
+                          onClick={() => updateStatus(drive._id, "confirmed")}
                         >
                           <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
                           Confirmed
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Completed")}
+                          onClick={() => updateStatus(drive._id, "completed")}
                         >
                           <div className="h-2 w-2 rounded-full bg-blue-500 mr-2" />
                           Completed
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Cancelled")}
+                          onClick={() => updateStatus(drive._id, "cancelled")}
                         >
                           <div className="h-2 w-2 rounded-full bg-red-500 mr-2" />
                           Cancelled
@@ -230,22 +252,29 @@ export default function TestDrivesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="h-4 w-4 flex-shrink-0" />
-                      <span>{drive.date}</span>
+                      <span>
+                        {new Date(drive.startDate).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Clock className="h-4 w-4 flex-shrink-0" />
-                      <span>{drive.time}</span>
+                      <span>
+                        {drive.startTime} - {drive.endTime}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <User className="h-4 w-4 flex-shrink-0" />
-                      <span>{drive.customer}</span>
+                      <span>
+                        {drive.userId?.name} ({drive.userId?.email})
+                      </span>
                     </div>
                   </div>
 
                   {/* Notes Section */}
                   <div className="bg-muted/50 p-3 rounded-lg">
                     <p className="text-sm text-foreground">
-                      <strong>Notes:</strong> {drive.notes}
+                      <strong>Notes:</strong>{" "}
+                      {drive.notes || "No notes provided"}
                     </p>
                   </div>
 
@@ -255,12 +284,20 @@ export default function TestDrivesPage() {
                       variant="outline"
                       size="sm"
                       className="gap-2 bg-transparent"
+                      asChild
                     >
-                      <Eye className="h-4 w-4" />
-                      View Car
+                      <a href={`/car/${drive.carId?._id}`} target="_blank">
+                        <Eye className="h-4 w-4" />
+                        View Car
+                      </a>
                     </Button>
-                    {drive.status === "Pending" && (
-                      <Button variant="destructive" size="sm" className="gap-2">
+                    {drive.status === "pending" && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => updateStatus(drive._id, "cancelled")}
+                      >
                         <X className="h-4 w-4" />
                         Cancel
                       </Button>

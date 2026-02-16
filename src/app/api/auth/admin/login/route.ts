@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import connectToDatabase from "@/lib/db";
 import User from "@/models/user.model";
+import Vendor from "@/models/vendor.model";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     if (!email || !password || !role) {
       return NextResponse.json(
         { error: "Email/Username, Password, and Role are required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     if (!user || !user.password) {
       return NextResponse.json(
         { error: "Invalid credentials." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     if (!isPasswordValid) {
       return NextResponse.json(
         { error: "Invalid credentials." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -47,29 +48,37 @@ export async function POST(request: Request) {
     if (user.role !== role) {
       return NextResponse.json(
         { error: `Access Denied: You are not authorized as a ${role}.` },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // 6. Success Response
-    // (In a real app, you would set a session/cookie here or rely on NextAuth)
+    let vendorId = null;
+    if (user.role === "vendor") {
+      const vendor = await Vendor.findOne({ userId: user._id });
+      if (vendor) {
+        vendorId = vendor._id.toString();
+      }
+    }
+
     return NextResponse.json(
       {
         message: "Login successful",
         user: {
-          id: user._id,
+          id: user._id.toString(),
           name: user.name,
           email: user.email,
           role: user.role,
+          vendorId,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Admin Login Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

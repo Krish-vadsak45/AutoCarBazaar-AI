@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { X, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGeneratePDF } from "@/hooks/use-generate-pdf";
+import { toast } from "react-toastify";
 
 interface PDFModalProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
       await generatePDF(reportRef.current, carData?.title);
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
+      toast.error("Failed to generate PDF. Please try again.");
     } finally {
       setIsGenerating(false);
     }

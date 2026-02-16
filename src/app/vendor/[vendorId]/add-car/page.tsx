@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
   Card,
@@ -53,6 +53,7 @@ interface ICar {
 
 export default function VendorCarsPage() {
   const router = useRouter();
+  const { vendorId } = useParams();
   const [cars, setCars] = useState<ICar[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,7 +94,7 @@ export default function VendorCarsPage() {
   const filteredCars = cars.filter(
     (car) =>
       car.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      car.specs?.make?.toLowerCase().includes(searchQuery.toLowerCase())
+      car.specs?.make?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -105,7 +106,7 @@ export default function VendorCarsPage() {
             Manage your vehicle listings ({cars.length})
           </p>
         </div>
-        <Link href="/admin/add-car/new-car/new-car">
+        <Link href={`/vendor/${vendorId}/add-car/new-car/new-car`}>
           <Button className="gap-2">
             <Plus className="h-4 w-4" /> Add Vehicle
           </Button>
@@ -234,7 +235,9 @@ export default function VendorCarsPage() {
                             View Live
                           </DropdownMenuItem>
                         </Link>
-                        <Link href={`/admin/add-car/new-car/${car._id}`}>
+                        <Link
+                          href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}
+                        >
                           <DropdownMenuItem className="cursor-pointer">
                             <Edit2 className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
                             Edit Details

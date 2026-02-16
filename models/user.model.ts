@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema<IUser>(
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User: Model<IUser> =

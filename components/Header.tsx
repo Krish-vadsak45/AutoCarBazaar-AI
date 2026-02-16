@@ -46,7 +46,7 @@ const Header = () => {
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
         isScrolled
           ? "bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-gray-200 dark:border-slate-800 shadow-sm py-3"
-          : "bg-transparent border-transparent py-5"
+          : "bg-transparent border-transparent py-5",
       )}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -86,14 +86,14 @@ const Header = () => {
                   "text-sm font-medium transition-colors hover:text-primary relative group",
                   pathname === link.href
                     ? "text-primary"
-                    : "text-gray-600 dark:text-gray-300"
+                    : "text-gray-600 dark:text-gray-300",
                 )}
               >
                 {link.name}
                 <span
                   className={cn(
                     "absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full",
-                    pathname === link.href ? "w-full" : ""
+                    pathname === link.href ? "w-full" : "",
                   )}
                 />
               </Link>
@@ -117,7 +117,17 @@ const Header = () => {
                     Saved Cars
                   </Button>
                 </Link>
-                <Link href="/admin/login" className="hidden md:block">
+
+                <Link
+                  href={
+                    (session as any)?.user?.role === "admin"
+                      ? `/admin/${session.user?._id}/dashboard`
+                      : (session as any)?.user?.role === "vendor"
+                        ? `/admin/${(session as any).user.vendorId}/dashboard`
+                        : "/admin/login"
+                  }
+                  className="hidden md:block"
+                >
                   <Button
                     variant="ghost"
                     size="sm"
@@ -180,6 +190,14 @@ const Header = () => {
             ) : (
               // SIGNED OUT STATE (NextAuth)
               <div className="flex items-center gap-3">
+                <Link href="/admin/login" className="hidden lg:block">
+                  <Button
+                    variant="ghost"
+                    className="font-semibold text-muted-foreground hover:text-primary"
+                  >
+                    Admin Portal
+                  </Button>
+                </Link>
                 <Link href="/sign-in">
                   <Button variant="ghost" className="font-semibold">
                     Sign In
@@ -219,7 +237,7 @@ const Header = () => {
                 "text-base font-medium py-2 px-4 rounded-lg transition-colors",
                 pathname === link.href
                   ? "bg-primary/10 text-primary"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-900"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-900",
               )}
               onClick={() => setIsMobileMenuOpen(false)}
             >
@@ -254,6 +272,23 @@ const Header = () => {
                   </span>
                 </div>
               </div>
+
+              <Link
+                href={
+                  (session as any)?.user?.role === "admin"
+                    ? `/admin/${session.user?._id}/dashboard`
+                    : (session as any)?.user?.role === "vendor"
+                      ? `/admin/${(session as any).user.vendorId}/dashboard`
+                      : "/admin/login"
+                }
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Button variant="ghost" className="w-full justify-start px-0">
+                  <Layout className="mr-2 h-4 w-4" />
+                  Admin Portal
+                </Button>
+              </Link>
+
               <Button
                 variant="destructive"
                 className="w-full justify-start"
@@ -265,6 +300,15 @@ const Header = () => {
             </div>
           ) : (
             <div className="flex flex-col gap-3 mt-2">
+              <Link
+                href="/admin/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Button variant="ghost" className="w-full justify-start px-4">
+                  <Layout className="mr-2 h-4 w-4" />
+                  Admin Portal
+                </Button>
+              </Link>
               <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button variant="outline" className="w-full justify-center">
                   Sign In

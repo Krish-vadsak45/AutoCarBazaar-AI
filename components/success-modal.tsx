@@ -13,8 +13,8 @@ import {
 export interface SuccessModalProps {
   details: {
     car: string;
-    date: string;
-    time: string;
+    start: string;
+    end: string;
     dealership: string;
   };
   onClose: () => void;
@@ -73,11 +73,11 @@ export function SuccessModal({ details, onClose }: SuccessModalProps) {
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-gray-500" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Date
+                  Starts
                 </span>
               </div>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {bookingDetails.date}
+                {bookingDetails.start}
               </span>
             </div>
 
@@ -85,11 +85,11 @@ export function SuccessModal({ details, onClose }: SuccessModalProps) {
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-gray-500" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Time
+                  Ends
                 </span>
               </div>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {bookingDetails.time}
+                {bookingDetails.end}
               </span>
             </div>
 

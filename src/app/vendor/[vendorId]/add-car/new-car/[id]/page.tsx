@@ -62,6 +62,7 @@ const initialForm: CarFormData = {
 export default function CarFormPage() {
   const router = useRouter();
   const params = useParams();
+  const vendorId = params?.vendorId;
 
   // Check if we are in "Edit Mode"
   const carId = params?.id as string;
@@ -122,7 +123,7 @@ export default function CarFormPage() {
   // --- Handlers ---
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -193,7 +194,7 @@ export default function CarFormPage() {
         toast.success("Vehicle added successfully");
       }
 
-      router.push("/admin/add-car");
+      router.push(`/admin/${vendorId}/add-car`);
       router.refresh();
     } catch (error: any) {
       console.error("Submission error:", error);
@@ -224,7 +225,7 @@ export default function CarFormPage() {
               : "Add a new car to your inventory based on standard specs."}
           </p>
         </div>
-        <Link href="/admin/cars">
+        <Link href={`/vendor/${params?.vendorId}/add-car`}>
           <Button variant="outline">Back to Inventory</Button>
         </Link>
       </div>
@@ -469,7 +470,7 @@ export default function CarFormPage() {
 
         {/* Actions */}
         <div className="flex justify-end gap-4">
-          <Link href="/admin/add-car">
+          <Link href={`/vendor/${params?.vendorId}/add-car`}>
             <Button variant="outline" type="button">
               Cancel
             </Button>

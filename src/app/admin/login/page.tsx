@@ -26,7 +26,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 
 // --- Schemas ---
 
@@ -96,13 +96,41 @@ export default function AdminAuthPage() {
     setIsLoading(true);
     setErrorMsg("");
     try {
-      const res = await axios.post("/api/auth/admin/login", data);
-      if (res.status === 200) {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+      });
+
+      if (result?.error) {
+        setErrorMsg(result.error);
+        toast.error(result.error);
+        return;
+      }
+
+      if (result?.ok) {
         toast.success("Welcome back!");
-        router.push("/admin/dashboard");
+        // We call the custom login API to get the user's data (role, vendorId) for redirection
+        const res = await axios.post("/api/auth/admin/login", data);
+        if (res.status === 200) {
+          const { role, vendorId, id } = res.data.user;
+          const targetId = role === "admin" ? id : vendorId;
+
+          if (!targetId) {
+            console.error("No target ID found for redirection", res.data.user);
+            router.push("/");
+            return;
+          }
+
+          // Use window.location.href to ensure a full reload and avoid middleware issues
+          // with stale client-side session state
+          window.location.href = `/admin/${targetId}/dashboard`;
+        }
       }
     } catch (e: any) {
-      setErrorMsg(e.response?.data?.error || "Login failed");
+      setErrorMsg("An unexpected error occurred");
+      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -135,8 +163,9 @@ export default function AdminAuthPage() {
       if (res.status === 201 || res.status === 200) {
         const message = res.data.message || "Vendor registration successful.";
         toast.success(message);
+        const { vendorId } = res.data;
         // Force refresh session to pick up new role
-        router.push("/admin/dashboard");
+        router.push(`/admin/${vendorId || "dashboard"}/dashboard`);
       }
     } catch (e: any) {
       setErrorMsg(e.response?.data?.error || "Registration failed");
@@ -183,7 +212,7 @@ export default function AdminAuthPage() {
                 "inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg mb-4 text-white",
                 isLoginMode
                   ? "bg-gradient-to-br from-blue-600 to-indigo-600"
-                  : "bg-gradient-to-br from-emerald-500 to-teal-500"
+                  : "bg-gradient-to-br from-emerald-500 to-teal-500",
               )}
             >
               {isLoginMode ? (
@@ -219,7 +248,7 @@ export default function AdminAuthPage() {
                   "flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors",
                   isLoginMode
                     ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-500"
+                    : "text-gray-500",
                 )}
               >
                 Login
@@ -233,7 +262,7 @@ export default function AdminAuthPage() {
                   "flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors",
                   !isLoginMode
                     ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-gray-500"
+                    : "text-gray-500",
                 )}
               >
                 Register Vendor
@@ -281,7 +310,7 @@ export default function AdminAuthPage() {
                               "py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2",
                               field.value === r
                                 ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm border border-zinc-200 dark:border-slate-600"
-                                : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
                             )}
                           >
                             {r === "admin" ? (
@@ -358,7 +387,7 @@ export default function AdminAuthPage() {
                           "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
                           step >= s
                             ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                            : "bg-zinc-100 dark:bg-slate-800 text-gray-400"
+                            : "bg-zinc-100 dark:bg-slate-800 text-gray-400",
                         )}
                       >
                         {s}

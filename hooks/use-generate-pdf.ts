@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
+import { toast } from "react-toastify";
 
 export const useGeneratePDF = () => {
   const generatePDF = useCallback(
@@ -79,7 +80,7 @@ export const useGeneratePDF = () => {
         console.error("PDF generation failed:", error);
         // We check if it's the "Event" error which usually means a specific resource failed
         const msg = error?.message || "Internal Capture Error";
-        alert(
+        toast.error(
           `Export Error: ${msg}. Please try scrolling through the preview once before exporting.`,
         );
         throw error;

@@ -2,18 +2,128 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ChevronLeft, Check } from "lucide-react";
+import { ChevronLeft, Check, CalendarIcon, Clock } from "lucide-react";
 import Image from "next/image";
 import { SuccessModal } from "@/components/success-modal";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { toast } from "react-toastify";
+
+const TimePicker = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) => {
+  const [hour, setHour] = useState(value.split(":")[0]);
+  const [minute, setMinute] = useState(value.split(":")[1]);
+  const [period, setPeriod] = useState("AM");
+
+  // Convert 24h to 12h for initialization
+  useEffect(() => {
+    const [h, m] = value.split(":");
+    let hNum = parseInt(h);
+    const p = hNum >= 12 ? "PM" : "AM";
+    if (hNum > 12) hNum -= 12;
+    if (hNum === 0) hNum = 12;
+    setHour(hNum.toString().padStart(2, "0"));
+    setMinute(m);
+    setPeriod(p);
+  }, []);
+
+  const updateTime = (h: string, m: string, p: string) => {
+    let hNum = parseInt(h);
+    if (p === "PM" && hNum < 12) hNum += 12;
+    if (p === "AM" && hNum === 12) hNum = 0;
+    onChange(`${hNum.toString().padStart(2, "0")}:${m}`);
+  };
+
+  return (
+    <div className="flex gap-2">
+      <Select
+        value={hour}
+        onValueChange={(v) => {
+          setHour(v);
+          updateTime(v, minute, period);
+        }}
+      >
+        <SelectTrigger className="w-[70px] border-gray-300 dark:border-slate-700">
+          <SelectValue placeholder="HH" />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+            <SelectItem key={h} value={h.toString().padStart(2, "0")}>
+              {h.toString().padStart(2, "0")}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <span className="flex items-center">:</span>
+      <Select
+        value={minute}
+        onValueChange={(v) => {
+          setMinute(v);
+          updateTime(hour, v, period);
+        }}
+      >
+        <SelectTrigger className="w-[70px] border-gray-300 dark:border-slate-700">
+          <SelectValue placeholder="MM" />
+        </SelectTrigger>
+        <SelectContent>
+          {["00", "15", "30", "45"].map((m) => (
+            <SelectItem key={m} value={m}>
+              {m}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={period}
+        onValueChange={(v) => {
+          setPeriod(v);
+          updateTime(hour, minute, v);
+        }}
+      >
+        <SelectTrigger className="w-[75px] border-gray-300 dark:border-slate-700">
+          <SelectValue placeholder="AM/PM" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="AM">AM</SelectItem>
+          <SelectItem value="PM">PM</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
 
 export default function TestDrivePage() {
   const router = useRouter();
   const params = useParams();
   const carId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
   const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
 
   const [carDetails, setCarDetails] = useState<any>({
@@ -27,63 +137,39 @@ export default function TestDrivePage() {
     image: "/placeholder.svg",
   });
 
-  const timeSlots = [
-    "08:00 AM",
-    "09:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "01:00 PM",
-    "02:00 PM",
-    "03:00 PM",
-    "04:00 PM",
-  ];
-
-  const generateDates = () => {
-    const dates = [];
-    const today = new Date();
-    for (let i = 1; i <= 30; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + i);
-      if (date.getDay() !== 0 && date.getDay() !== 1) {
-        dates.push(date);
-      }
-    }
-    return dates;
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toISOString().split("T")[0];
-  };
-
-  const formatDisplayDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !selectedTime) {
-      alert("Please select both date and time");
+    if (!startDate || !startTime || !endDate || !endTime) {
+      toast.error("Please select both start and end date and time");
       return;
     }
 
-    console.log("form data", { selectedDate, selectedTime, notes });
+    setIsSubmitting(true);
+    try {
+      const axios = (await import("axios")).default;
+      await axios.post("/api/test-drive", {
+        carId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        startTime,
+        endTime,
+        notes,
+      });
 
-    setBookingDetails({
-      car: carDetails.name,
-      date: formatDisplayDate(selectedDate),
-      time: selectedTime,
-      dealership: "Vehicl Motors",
-    });
-    setShowSuccess(true);
+      setBookingDetails({
+        car: carDetails.name,
+        start: `${format(startDate, "PPP")} at ${startTime}`,
+        end: `${format(endDate, "PPP")} at ${endTime}`,
+        dealership: "Vehicl Motors",
+      });
+      setShowSuccess(true);
+    } catch (error: any) {
+      console.error("Booking error:", error);
+      toast.error(error.response?.data?.error || "Failed to book test drive");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  const availableDates = generateDates();
 
   useEffect(() => {
     if (!carId) return;
@@ -135,9 +221,9 @@ export default function TestDrivePage() {
           Book a Test Drive
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           {/* LEFT COLUMN - CAR DETAILS */}
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-6 flex flex-col h-full">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
               Car Details
             </h2>
@@ -149,127 +235,155 @@ export default function TestDrivePage() {
                 alt={carDetails.name || "Car image"}
                 width={400}
                 height={300}
-                className="w-full h-56 object-cover"
+                className="w-full h-64 object-cover"
               />
             </div>
 
             {/* Car Info */}
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {carDetails.name}
-            </h3>
-            <p className="text-2xl font-bold text-blue-600 mb-6">
-              {carDetails.price}
-            </p>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                {carDetails.name}
+              </h3>
+              <p className="text-3xl font-bold text-blue-600 mb-8">
+                {carDetails.price}
+              </p>
 
-            {/* Specifications */}
-            <div className="space-y-4">
-              {[
-                { label: "Mileage", value: carDetails.mileage },
-                { label: "Fuel Type", value: carDetails.fuelType },
-                { label: "Transmission", value: carDetails.transmission },
-                { label: "Body Type", value: carDetails.bodyType },
-                { label: "Color", value: carDetails.color },
-              ].map((spec, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between text-gray-700 dark:text-gray-300"
-                >
-                  <span>{spec.label}</span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {spec.value}
-                  </span>
-                </div>
-              ))}
+              {/* Specifications */}
+              <div className="space-y-4">
+                {[
+                  { label: "Mileage", value: carDetails.mileage },
+                  { label: "Fuel Type", value: carDetails.fuelType },
+                  { label: "Transmission", value: carDetails.transmission },
+                  { label: "Body Type", value: carDetails.bodyType },
+                  { label: "Color", value: carDetails.color },
+                ].map((spec, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between py-2 border-b border-gray-50 dark:border-slate-800 last:border-0 text-gray-700 dark:text-gray-300"
+                  >
+                    <span className="text-sm">{spec.label}</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">
+                      {spec.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* RIGHT COLUMN - FORM */}
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-6 flex flex-col h-full">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
               Schedule Your Test Drive
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Date Selection */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                  Select a Date
-                </label>
-                <div className="relative">
-                  <svg
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    min={formatDate(new Date())}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
-                    placeholder="Pick a date"
-                  />
+            <form
+              onSubmit={handleSubmit}
+              className="flex-1 flex flex-col space-y-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Start Date & Time */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    Start Date & Time
+                  </Label>
+                  <div className="space-y-3">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
+                            !startDate && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDate ? (
+                            format(startDate, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={setStartDate}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <TimePicker value={startTime} onChange={setStartTime} />
+                  </div>
+                </div>
+
+                {/* End Date & Time */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    End Date & Time
+                  </Label>
+                  <div className="space-y-3">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
+                            !endDate && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDate ? (
+                            format(endDate, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={setEndDate}
+                          disabled={(date) =>
+                            date <
+                            (startDate ||
+                              new Date(new Date().setHours(0, 0, 0, 0)))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <TimePicker value={endTime} onChange={setEndTime} />
+                  </div>
                 </div>
               </div>
 
-              {/* Time Slot Selection */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                  Select a Time Slot
-                </label>
-                {!selectedDate ? (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm py-3">
-                    Please select a date first
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                    {timeSlots.map((time, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedTime(time)}
-                        className={`py-2 px-3 rounded-lg border-2 transition-all text-sm font-medium ${
-                          selectedTime === time
-                            ? "border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                            : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:border-blue-300 dark:hover:border-blue-600"
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {/* Additional Notes */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              <div className="flex-1 flex flex-col">
+                <Label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
                   Additional Notes (Optional)
-                </label>
+                </Label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any specific questions or requests for your test drive?"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent resize-none"
-                  rows={4}
+                  className="flex-1 w-full px-4 py-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent resize-none min-h-[120px]"
                 />
               </div>
 
               {/* Submit Button */}
-              <button
+              <Button
                 type="submit"
-                className="w-full py-3 px-4 bg-gray-900 dark:bg-slate-800 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-slate-700 transition-colors font-semibold"
+                disabled={isSubmitting}
+                className="w-full py-7 text-lg font-bold bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all shadow-lg hover:shadow-blue-500/25 mt-auto"
               >
-                Book Test Drive
-              </button>
+                {isSubmitting ? "Booking..." : "Confirm Test Drive Booking"}
+              </Button>
             </form>
           </div>
         </div>
