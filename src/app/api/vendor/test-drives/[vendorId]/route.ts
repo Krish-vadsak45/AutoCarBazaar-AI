@@ -8,7 +8,7 @@ import { authOptions } from "../../../auth/[...nextauth]/route";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ vendorId: string }> },
+  { params }: { params: Promise<{ vendorId: string }> }
 ) {
   try {
     await connectToDatabase();
@@ -23,7 +23,7 @@ export async function GET(
     if (!vendorId) {
       return NextResponse.json(
         { error: "Vendor ID is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -41,6 +41,7 @@ export async function GET(
         select: "name email",
         model: User,
       })
+      .lean()
       .sort({ createdAt: -1 });
 
     return NextResponse.json(testDrives, { status: 200 });
@@ -48,7 +49,7 @@ export async function GET(
     console.error("Error fetching vendor test drives:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -28,11 +28,13 @@ import {
   Calendar,
   Clock,
   User,
-  MapPin,
-  MoreVertical,
+  Mail,
   Eye,
+  EyeOff,
+  MoreVertical,
   X,
   Loader2,
+  Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -41,33 +43,32 @@ import { toast } from "sonner";
 
 interface ITestDrive {
   _id: string;
-  carId: {
-    _id: string;
-    title: string;
-    images: string[];
-    price: number;
-  };
-  userId: {
-    _id: string;
-    name: string;
-    email: string;
-  };
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
   startDate: string;
+  endDate: string;
   startTime: string;
   endTime: string;
   notes?: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
+  carId: {
+    title: string;
+    transmission?: string;
+    images?: string[];
+  };
+  userId: {
+    name: string;
+    email: string;
+  };
 }
 
-type Status = "pending" | "confirmed" | "completed" | "cancelled";
+type Status = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
 const statusColors: Record<Status, string> = {
-  pending:
+  PENDING:
     "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300",
-  confirmed:
+  CONFIRMED:
     "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300",
-  completed: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
-  cancelled: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
+  COMPLETED: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
+  CANCELLED: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
 };
 
 export default function TestDrivesPage() {
@@ -78,6 +79,9 @@ export default function TestDrivesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [drives, setDrives] = useState<ITestDrive[]>([]);
   const [loading, setLoading] = useState(true);
+  const [emailVisibility, setEmailVisibility] = useState<
+    Record<string, boolean>
+  >({});
 
   // Fetch Test Drives
   useEffect(() => {
@@ -115,14 +119,29 @@ export default function TestDrivesPage() {
       });
       setDrives(
         drives.map((d) =>
-          d._id === driveId ? { ...d, status: newStatus as Status } : d,
-        ),
+          d._id === driveId ? { ...d, status: newStatus as Status } : d
+        )
       );
       toast.success(`Status updated to ${newStatus}`);
     } catch (error) {
       console.error("Failed to update status:", error);
       toast.error("Failed to update status");
     }
+  };
+
+  const toggleEmailVisibility = (driveId: string) => {
+    setEmailVisibility((prev) => ({
+      ...prev,
+      [driveId]: !prev[driveId],
+    }));
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   if (loading) {
@@ -134,22 +153,23 @@ export default function TestDrivesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
+      {/* Header Section */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Test Drive Management
         </h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="mt-2 text-muted-foreground">
           Manage all test drive reservations and update their status
         </p>
       </div>
 
-      {/* Filters */}
+      {/* Filter Section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-3">
-        <div className="flex-1 relative">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by car or customer..."
+            placeholder="Search by car title or customer name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -161,20 +181,20 @@ export default function TestDrivesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Test Drive Cards */}
+      {/* Test Drive Cards Section */}
       <Card>
         <CardHeader>
           <CardTitle>Test Drive Bookings</CardTitle>
           <CardDescription>
-            Manage all test drive reservations and update their status
+            Total Bookings: {filteredDrives.length}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -182,132 +202,248 @@ export default function TestDrivesPage() {
             filteredDrives.map((drive) => (
               <div
                 key={drive._id}
-                className="flex flex-col md:flex-row gap-6 p-4 border border-border rounded-lg hover:bg-muted/30 transition-colors"
+                className="overflow-hidden rounded-lg border border-border transition-colors hover:bg-muted/30"
               >
-                {/* Car Image */}
-                {/* <div className="md:w-48 flex-shrink-0">
-                  <Image
-                    src={drive.carId?.images?.[0] || drive.carId?.images || "/placeholder.svg"}
-                    alt={drive.carId?.title}
-                    className="w-full h-32 md:h-40 rounded-lg object-cover"
-                  />
-                </div> */}
-
-                {/* Content */}
-                <div className="flex-1 space-y-4">
-                  {/* Header with Status */}
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">
-                        {drive.carId?.title}
-                      </h3>
-                      <Badge
-                        className={
-                          statusColors[drive.status] || "bg-gray-100 uppercase"
-                        }
-                      >
-                        {drive.status}
-                      </Badge>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(drive._id, "pending")}
-                        >
-                          <div className="h-2 w-2 rounded-full bg-orange-500 mr-2" />
-                          Pending
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(drive._id, "confirmed")}
-                        >
-                          <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
-                          Confirmed
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(drive._id, "completed")}
-                        >
-                          <div className="h-2 w-2 rounded-full bg-blue-500 mr-2" />
-                          Completed
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(drive._id, "cancelled")}
-                        >
-                          <div className="h-2 w-2 rounded-full bg-red-500 mr-2" />
-                          Cancelled
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                {/* Top Section - Status and Actions */}
+                <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-2">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {drive.carId?.title}
+                    </h3>
+                    <Badge className={statusColors[drive.status]}>
+                      {drive.status}
+                    </Badge>
                   </div>
-
-                  {/* Details Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4 flex-shrink-0" />
-                      <span>
-                        {new Date(drive.startDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-4 w-4 flex-shrink-0" />
-                      <span>
-                        {drive.startTime} - {drive.endTime}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <User className="h-4 w-4 flex-shrink-0" />
-                      <span>
-                        {drive.userId?.name} ({drive.userId?.email})
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Notes Section */}
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-sm text-foreground">
-                      <strong>Notes:</strong>{" "}
-                      {drive.notes || "No notes provided"}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 flex-wrap pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 bg-transparent"
-                      asChild
-                    >
-                      <a href={`/car/${drive.carId?._id}`} target="_blank">
-                        <Eye className="h-4 w-4" />
-                        View Car
-                      </a>
-                    </Button>
-                    {drive.status === "pending" && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => updateStatus(drive._id, "cancelled")}
-                      >
-                        <X className="h-4 w-4" />
-                        Cancel
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4" />
                       </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => updateStatus(drive._id, "PENDING")}
+                      >
+                        <div className="mr-2 h-2 w-2 rounded-full bg-orange-500" />
+                        Pending
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateStatus(drive._id, "CONFIRMED")}
+                      >
+                        <div className="mr-2 h-2 w-2 rounded-full bg-green-500" />
+                        Confirmed
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateStatus(drive._id, "COMPLETED")}
+                      >
+                        <div className="mr-2 h-2 w-2 rounded-full bg-blue-500" />
+                        Completed
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateStatus(drive._id, "CANCELLED")}
+                      >
+                        <div className="mr-2 h-2 w-2 rounded-full bg-red-500" />
+                        Cancelled
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Main Content - Image and Details */}
+                <div className="flex flex-col gap-4 p-4 lg:flex-row">
+                  {/* Image Placeholder */}
+                  <div className="flex-shrink-0 lg:w-48">
+                    <div className="flex h-40 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20 bg-muted/20">
+                      <div className="text-center">
+                        <div className="mb-2 flex justify-center">
+                          <svg
+                            className="h-8 w-8 text-muted-foreground/40"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Car Image
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details Section */}
+                  <div className="flex-1 space-y-4">
+                    {/* Car Details */}
+                    <div className="rounded-lg bg-muted/30 p-3">
+                      <p className="text-sm font-medium text-foreground mb-1">
+                        Car Details
+                      </p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Title:</span>
+                          <span className="font-medium">
+                            {drive.carId?.title}
+                          </span>
+                        </div>
+                        {drive.carId?.transmission && (
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              Transmission:
+                            </span>
+                            <span className="font-medium">
+                              {drive.carId.transmission}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Test Drive Schedule */}
+                    <div className="rounded-lg bg-muted/30 p-3">
+                      <p className="text-sm font-medium text-foreground mb-2">
+                        Test Drive Schedule
+                      </p>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Start Date
+                            </p>
+                            <p className="text-sm font-medium">
+                              {formatDate(drive.startDate)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              End Date
+                            </p>
+                            <p className="text-sm font-medium">
+                              {formatDate(drive.endDate)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              Start Time
+                            </p>
+                            <p className="text-sm font-medium">
+                              {drive.startTime}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">
+                              End Time
+                            </p>
+                            <p className="text-sm font-medium">
+                              {drive.endTime}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Customer Details */}
+                    <div className="rounded-lg bg-muted/30 p-3">
+                      <p className="text-sm font-medium text-foreground mb-2">
+                        Booking Customer
+                      </p>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {drive.userId?.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            {emailVisibility[drive._id] ? (
+                              <span className="text-sm font-medium">
+                                {drive.userId?.email}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                ••••••••••••••••
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleEmailVisibility(drive._id)}
+                            className="h-6 w-6 p-0"
+                            title={
+                              emailVisibility[drive._id]
+                                ? "Hide email"
+                                : "Show email"
+                            }
+                          >
+                            {emailVisibility[drive._id] ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes Section */}
+                    {drive.notes && (
+                      <div className="rounded-lg bg-muted/30 p-3">
+                        <p className="text-sm font-medium text-foreground mb-1">
+                          Notes
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {drive.notes}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    {drive.status === "PENDING" && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateStatus(drive._id, "CONFIRMED")}
+                          className="flex-1 sm:flex-none"
+                        >
+                          Confirm Booking
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => updateStatus(drive._id, "CANCELLED")}
+                          className="gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-12">
+            <div className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground">
                 No test drives found matching your filters.
               </p>

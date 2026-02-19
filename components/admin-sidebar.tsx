@@ -9,7 +9,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   const segments = pathname.split("/");
-  const isVendorPath = segments[1] === "vendor";
+  const isVendorPath = segments[1] === "admin";
   const isAdminPath = segments[1] === "admin" && segments[2] !== "login";
   const vendorId = isVendorPath || isAdminPath ? segments[2] : null;
 
@@ -62,7 +62,7 @@ export function AdminSidebar() {
                   "group flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all duration-200",
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
                 <Icon className="h-5 w-5" />

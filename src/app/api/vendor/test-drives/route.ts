@@ -25,7 +25,7 @@ export async function GET() {
       console.log("DEBUG: User ID missing in session object");
       return NextResponse.json(
         { error: "User ID not found in session" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -37,7 +37,7 @@ export async function GET() {
       console.log("DEBUG: No vendor profile matches userId:", userId);
       return NextResponse.json(
         { error: "Vendor profile not found" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -62,7 +62,7 @@ export async function GET() {
     console.error("Error fetching vendor test drives:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -80,48 +80,49 @@ export async function PATCH(request: Request) {
 
     if (!id || !status) {
       return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
+        { error: "Booking ID and Status are required" },
+        { status: 400 }
       );
     }
 
-    const userId = (session.user as any)._id;
+    const userId = (session.user as any)._id; // Logged in user's ID
     const userRole = (session.user as any).role;
 
+    // Secure Query:
+    // 1. If Admin: Can update any record
+    // 2. If Vendor: Can only update records where vendorId matches their profile
     let query: any = { _id: id };
 
-    // If not admin, restrict to vendor's own test drives
     if (userRole !== "admin") {
       const vendor = await Vendor.findOne({ userId });
-
       if (!vendor) {
         return NextResponse.json(
-          { error: "Vendor profile not found" },
-          { status: 404 },
+          { error: "Vendor profile not found for this user" },
+          { status: 403 }
         );
       }
       query.vendorId = vendor._id;
     }
 
-    const testDrive = await TestDrive.findOneAndUpdate(
+    const updatedDrive = await TestDrive.findOneAndUpdate(
       query,
-      { status: status.toLowerCase() },
-      { new: true },
+      { status: status.toUpperCase() }, // Ensure consistency (PENDING, CONFIRMED)
+      { new: true }
     );
 
-    if (!testDrive) {
+    if (!updatedDrive) {
       return NextResponse.json(
-        { error: "Test drive booking not found or unauthorized" },
-        { status: 404 },
+        { error: "Test drive not found or access denied" },
+        { status: 404 }
       );
     }
 
-    return NextResponse.json(testDrive);
+    return NextResponse.json(updatedDrive, { status: 200 });
   } catch (error: any) {
-    console.error("Error updating test drive status:", error);
+    console.error("Update Error:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
