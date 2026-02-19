@@ -7,6 +7,7 @@ import Vendor from "@/models/vendor.model";
 import Car from "@/models/car.model";
 import TestDrive from "@/models/test-drive.model";
 import { carSchema } from "@/lib/validations/car";
+import transporter from "@/lib/nodemailer";
 
 // Helper to validate session & vendor ownership
 export async function validateVendor(req: Request) {
@@ -22,7 +23,7 @@ export async function validateVendor(req: Request) {
 }
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
@@ -42,7 +43,7 @@ export async function GET(
 // PATCH: Update Car
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string }> | { id: string } },
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const { params } = context;
@@ -70,7 +71,7 @@ export async function PATCH(
     if (!validation.success) {
       return NextResponse.json(
         { error: "Validation failed", details: validation.error.format() },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -79,7 +80,7 @@ export async function PATCH(
     const updatedCar = await Car.findByIdAndUpdate(
       id,
       { $set: validatedData },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
 
     if (!updatedCar) {
@@ -88,7 +89,7 @@ export async function PATCH(
 
     return NextResponse.json(
       { car: updatedCar, message: "Updated successfully" },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error: any) {
     console.error("Update Error:", error);
@@ -96,49 +97,96 @@ export async function PATCH(
   }
 }
 
-// DELETE: Remove Car
+// DELETE: Remove Car & Notify Users
 export async function DELETE(
   request: Request,
-  context: { params: Promise<{ id: string }> | { id: string } },
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { params } = context;
-    const { id } = (await params) || {};
+    const { id } = await params; // Car ID
+
+    // 1. Authorization Check
     const vendor = await validateVendor(request);
     if (!vendor) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 1. Check for active bookings (Test Drives)
-    const activeBooking = await TestDrive.findOne({
-      carId: id,
-      status: { $in: [ "confirmed"] },
-    });
+    await connectToDatabase();
 
-    if (activeBooking) {
-      return NextResponse.json(
-        { 
-          error: "Cannot delete car with active bookings.",
-          details: "Please complete or cancel all bookings before deleting." 
-        }, 
-        { status: 400 }
+    // 2. Find All Active Bookings (Pending or Confirmed)
+    const activeBookings = await TestDrive.find({
+      carId: id,
+      status: { $in: ["PENDING", "CONFIRMED"] },
+    }).populate("userId", "name email"); // Get User Email & Name
+
+    // 3. Notify Users & Cancel Bookings
+    if (activeBookings && activeBookings.length > 0) {
+      const emailPromises = activeBookings.map(async (booking: any) => {
+        if (booking.userId && booking.userId.email) {
+          const mailOptions = {
+            from: "samarthgabani2005@gmail.com",
+            to: "samarthpatel1011@gmail.com",
+            subject: "⚠️ Booking Cancelled - Vehicle Removed",
+            html: `
+              <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2 style="color: #DC2626;">Booking Cancelled</h2>
+                <p>Dear <strong>${booking.userId.name}</strong>,</p>
+                <p>We regret to inform you that the vendor has removed the vehicle you booked from their inventory.</p>
+                
+                <div style="background: #FFF5F5; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                  <p><strong>Booking ID:</strong> ${booking._id}</p>
+                  <p><strong>Date:</strong> ${new Date(
+                    booking.startDate
+                  ).toLocaleDateString()}</p>
+                  <p><strong>Status:</strong> <span style="color: red;">CANCELLED</span></p>
+                </div>
+
+                <p>Consequently, your booking booking request has been automatically cancelled.</p>
+                <p>We apologize for the inconvenience.</p>
+                <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #666;">The CarRental Team</p>
+              </div>
+            `,
+          };
+
+          // Send Email
+          return transporter
+            .sendMail(mailOptions)
+            .catch((err) =>
+              console.error(`Failed to email ${booking.userId.email}`, err)
+            );
+        }
+      });
+
+      // Execute all emails in parallel
+      await Promise.all(emailPromises);
+
+      // Update Booking Statuses in DB
+      await TestDrive.updateMany(
+        { carId: id, status: { $in: ["pending", "confirmed"] } },
+        {
+          status: "CANCELLED",
+          notes: "Automatically cancelled: Vendor deleted the vehicle.",
+        }
       );
     }
 
-    // 2. Delete the Car Document
+    // 4. Delete the Car Document
     const deletedCar = await Car.findByIdAndDelete(id);
 
     if (!deletedCar) {
       return NextResponse.json({ error: "Car not found" }, { status: 404 });
     }
 
-    // 3. Remove reference from Vendor's car list
-    // Use $pull to remove the ID from the array
+    // 5. Cleanup: Remove car from Vendor's listing array
     await Vendor.updateOne({ _id: vendor._id }, { $pull: { cars: id } });
 
     return NextResponse.json(
-      { message: "Car deleted successfully" },
-      { status: 200 },
+      {
+        message: "Car deleted successfully. Affected users have been notified.",
+        affectedBookings: activeBookings.length,
+      },
+      { status: 200 }
     );
   } catch (error: any) {
     console.error("Delete Error:", error);
