@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import {
@@ -49,6 +50,7 @@ interface ICar {
   };
   // Add other fields as needed
   status?: string;
+  images?: string[];
 }
 
 export default function VendorCarsPage() {
@@ -156,7 +158,17 @@ export default function VendorCarsPage() {
                 >
                   {/* Image Column */}
                   <div className="h-14 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden border">
-                    <CarFront className="h-6 w-6 text-muted-foreground/50" />
+                    {car.images && car.images.length > 0 ? (
+                      <Image
+                        src={car.images[0]}
+                        alt={car.title}
+                        width={80}
+                        height={56}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <CarFront className="h-6 w-6 text-muted-foreground/50" />
+                    )}
                   </div>
 
                   {/* Make & Model Column */}

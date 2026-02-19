@@ -1,42 +1,45 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Image as ImageIcon, X as XIcon } from "lucide-react";
+import { Image as ImageIcon, X as XIcon, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import FileUpload, { FileUploadRef } from "./FileUpload";
 
 export default function LandingPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const uploadRef = useRef<FileUploadRef>(null);
 
-  const onFiles = (files: FileList | null) => {
-    if (!files) return;
-    const arr: string[] = [];
-    Array.from(files)
-      .slice(0, 1)
-      .forEach((f) => {
-        const url = URL.createObjectURL(f);
-        arr.push(url);
-      });
-    setPreviews(arr);
+  const handleUploadSuccess = (res: any) => {
+    setPreviews([res.url]);
+    setIsUploading(false);
+    setShowUpload(true);
+  };
+
+  const handleUploadProgress = (progress: number) => {
+    setIsUploading(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiles(e.target.files);
     setShowUpload(true);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    onFiles(e.dataTransfer.files);
-    setShowUpload(true);
+    const file = e.dataTransfer.files?.[0];
+    if (file && uploadRef.current) {
+      setShowUpload(true);
+      await uploadRef.current.uploadFile(file);
+    }
   };
 
   const handleClear = () => {
-    previews.forEach((p) => URL.revokeObjectURL(p));
     setPreviews([]);
-    if (fileRef.current) fileRef.current.value = "";
+    setUploadError(null);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -89,14 +92,14 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleInputChange}
-            />
+            <div className="hidden">
+              <FileUpload
+                ref={uploadRef}
+                inputRef={fileRef}
+                onSuccess={handleUploadSuccess}
+                onProgress={handleUploadProgress}
+              />
+            </div>
 
             {(showUpload || previews.length > 0) && (
               <div
@@ -133,22 +136,43 @@ export default function LandingPage() {
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-3">
-                  {previews.length === 0 ? (
+                  {isUploading ? (
+                    <div className="col-span-full py-8 flex flex-col items-center justify-center text-primary animate-pulse">
+                      <Loader2 className="w-12 h-12 mb-2 animate-spin" />
+                      <div className="text-sm">Uploading to ImageKit...</div>
+                    </div>
+                  ) : previews.length === 0 ? (
                     <div className="col-span-full py-8 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                       <ImageIcon className="w-12 h-12 mb-2" />
-                      <div className="text-sm">No image selected</div>
+                      <div className="text-sm">
+                        {uploadError ? (
+                          <span className="text-red-500">{uploadError}</span>
+                        ) : (
+                          "No image selected"
+                        )}
+                      </div>
                     </div>
                   ) : (
                     previews.map((p, idx) => (
                       <div
                         key={p}
-                        className="relative rounded overflow-hidden bg-gray-50"
+                        className="relative rounded-xl overflow-hidden bg-gray-50 shadow-lg border-2 border-primary/20"
                       >
                         <img
                           src={p}
                           alt={`preview-${idx}`}
-                          className="w-full h-36 object-cover"
+                          className="w-full h-48 object-cover"
                         />
+                        <div className="absolute top-2 right-2">
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={handleClear}
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))
                   )}

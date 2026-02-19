@@ -5,6 +5,8 @@ import connectToDatabase from "@/lib/db";
 import User from "@/models/user.model";
 import Vendor from "@/models/vendor.model";
 import Car from "@/models/car.model";
+import TestDrive from "@/models/test-drive.model";
+import { carSchema } from "@/lib/validations/car";
 
 // Helper to validate session & vendor ownership
 export async function validateVendor(req: Request) {
@@ -63,9 +65,20 @@ export async function PATCH(
 
     const body = await request.json();
 
+    // ✅ Validate Body (Partial validation could be used, but since the form sends the full data, we'll use carSchema)
+    const validation = carSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validation.error.format() },
+        { status: 400 },
+      );
+    }
+
+    const validatedData = validation.data;
+
     const updatedCar = await Car.findByIdAndUpdate(
       id,
-      { $set: body },
+      { $set: validatedData },
       { new: true, runValidators: true },
     );
 
@@ -96,14 +109,30 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 1. Delete the Car Document
+    // 1. Check for active bookings (Test Drives)
+    const activeBooking = await TestDrive.findOne({
+      carId: id,
+      status: { $in: [ "confirmed"] },
+    });
+
+    if (activeBooking) {
+      return NextResponse.json(
+        { 
+          error: "Cannot delete car with active bookings.",
+          details: "Please complete or cancel all bookings before deleting." 
+        }, 
+        { status: 400 }
+      );
+    }
+
+    // 2. Delete the Car Document
     const deletedCar = await Car.findByIdAndDelete(id);
 
     if (!deletedCar) {
       return NextResponse.json({ error: "Car not found" }, { status: 404 });
     }
 
-    // 2. Remove reference from Vendor's car list
+    // 3. Remove reference from Vendor's car list
     // Use $pull to remove the ID from the array
     await Vendor.updateOne({ _id: vendor._id }, { $pull: { cars: id } });
 

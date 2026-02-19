@@ -4,6 +4,7 @@ import Car from "@/models/car.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import Vendor from "@/models/vendor.model";
+import { carSchema } from "@/lib/validations/car";
 
 export async function GET(request: Request) {
   try {
@@ -179,8 +180,19 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
+    // ✅ Validate Body
+    const validation = carSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: validation.error.format() },
+        { status: 400 },
+      );
+    }
+
+    const validatedData = validation.data;
+
     // ✅ Create Car (NO vendorId inside car)
-    const newCar = await Car.create(body);
+    const newCar = await Car.create(validatedData);
 
     // ✅ Push carId into vendor
     vendor.cars.push(newCar._id.toString());

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
   CardContent,
@@ -24,40 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Upload, Plus, X, Loader2, Save } from "lucide-react";
 import Link from "next/link";
-
-interface CarFormData {
-  title: string;
-  price: string;
-  transmission: string;
-  bodyType: string;
-  description: string;
-  // Specs (Nested)
-  make: string;
-  model: string;
-  year: string;
-  fuelType: string;
-  mileage: string;
-  color: string;
-  // Arrays
-  features: string; // Comma separated for input
-  tags: string; // Comma separated for input
-}
-
-const initialForm: CarFormData = {
-  title: "",
-  price: "",
-  transmission: "Automatic",
-  bodyType: "Sedan",
-  description: "",
-  make: "",
-  model: "",
-  year: "",
-  fuelType: "Petrol",
-  mileage: "",
-  color: "",
-  features: "",
-  tags: "",
-};
+import FileUpload, { FileUploadRef } from "@/components/FileUpload";
+import { carSchema, CarFormValues } from "@/lib/validations/car";
 
 export default function CarFormPage() {
   const router = useRouter();
@@ -68,11 +38,38 @@ export default function CarFormPage() {
   const carId = params?.id as string;
   const isEditMode = carId && carId !== "new-car";
 
-  const [formData, setFormData] = useState<CarFormData>(initialForm);
-  const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const uploadRef = React.useRef<FileUploadRef>(null);
   const [fetching, setFetching] = useState(isEditMode); // Loading state for fetching existing data
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<CarFormValues>({
+    resolver: zodResolver(carSchema) as any,
+    defaultValues: {
+      title: "",
+      price: 0,
+      transmission: "Automatic",
+      bodyType: "Sedan",
+      description: "",
+      specs: {
+        make: "",
+        model: "",
+        year: new Date().getFullYear(),
+        fuelType: "Petrol",
+        mileage: "",
+        color: "",
+      },
+      features: "",
+      tags: "",
+    },
+  });
 
   // --- 1. Fetch Existing Data (Edit Mode) ---
   useEffect(() => {
@@ -83,20 +80,20 @@ export default function CarFormPage() {
           const car = data.car;
 
           if (car) {
-            setFormData({
+            reset({
               title: car.title || "",
-              price: String(car.price || ""),
+              price: car.price || 0,
               transmission: car.transmission || "Automatic",
               bodyType: car.bodyType || "Sedan",
               description: car.description || "",
-              // Specs
-              make: car.specs?.make || "",
-              model: car.specs?.model || "",
-              year: String(car.specs?.year || ""),
-              fuelType: car.specs?.fuelType || "Petrol",
-              mileage: car.specs?.mileage || "",
-              color: car.specs?.color || "",
-              // Arrays -> String
+              specs: {
+                make: car.specs?.make || "",
+                model: car.specs?.model || "",
+                year: car.specs?.year || new Date().getFullYear(),
+                fuelType: car.specs?.fuelType || "Petrol",
+                mileage: car.specs?.mileage || "",
+                color: car.specs?.color || "",
+              },
               features: car.features?.join(", ") || "",
               tags: car.tags?.join(", ") || "",
             });
@@ -118,70 +115,38 @@ export default function CarFormPage() {
     } else {
       setFetching(false);
     }
-  }, [carId, isEditMode]);
+  }, [carId, isEditMode, reset]);
 
   // --- Handlers ---
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const newFiles = Array.from(files);
-      setImages((prev) => [...prev, ...newFiles]);
-
-      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-      setImagePreviews((prev) => [...prev, ...newPreviews]);
+  const handleUploadSuccess = (res: any) => {
+    if (imagePreviews.length >= 5) {
+      toast.error("You can only upload up to 5 images");
+      setIsUploading(false);
+      return;
     }
+    setImagePreviews((prev) => [...prev, res.url]);
+    setIsUploading(false);
+    toast.success("Image uploaded successfully");
+  };
+
+  const handleUploadProgress = (progress: number) => {
+    setIsUploading(true);
   };
 
   const removeImage = (index: number) => {
-    // Note: In a real app with file uploads, you'd need logic to separate
-    // files to delete vs files to keep (existing vs new)
-    setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   // --- Submit Handler (Create or Update) ---
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: CarFormValues) => {
     setLoading(true);
 
     try {
-      // 1. Prepare Payload
-      // In production, upload images first -> get URLs -> send URLs in payload
+      // 1. Prepare Payload (Zod handles transform for features/tags)
       const payload = {
-        title: formData.title,
-        price: Number(formData.price),
-        transmission: formData.transmission,
-        bodyType: formData.bodyType,
-        description: formData.description,
-        images: imagePreviews, // Assuming URLs are ready (or passed as is for now)
-        specs: {
-          make: formData.make,
-          model: formData.model,
-          year: Number(formData.year),
-          fuelType: formData.fuelType,
-          mileage: formData.mileage,
-          color: formData.color,
-        },
-        features: formData.features
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        tags: formData.tags
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        ...data,
+        images: imagePreviews,
       };
 
       if (isEditMode) {
@@ -194,7 +159,7 @@ export default function CarFormPage() {
         toast.success("Vehicle added successfully");
       }
 
-      router.push(`/admin/${vendorId}/add-car`);
+      router.push(`/vendor/${vendorId}/add-car`);
       router.refresh();
     } catch (error: any) {
       console.error("Submission error:", error);
@@ -203,6 +168,8 @@ export default function CarFormPage() {
       setLoading(false);
     }
   };
+
+  const fileRef = React.useRef<HTMLInputElement>(null);
 
   if (fetching) {
     return (
@@ -230,7 +197,7 @@ export default function CarFormPage() {
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Core Info */}
         <Card>
           <CardHeader>
@@ -242,64 +209,74 @@ export default function CarFormPage() {
                 <Label htmlFor="title">Listing Title</Label>
                 <Input
                   id="title"
-                  name="title"
-                  required
+                  {...register("title")}
                   placeholder="e.g. 2023 Toyota Camry LE"
-                  value={formData.title}
-                  onChange={handleInputChange}
                 />
+                {errors.title && (
+                  <p className="text-sm text-destructive">{errors.title.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="price">Price ($)</Label>
                 <Input
                   id="price"
-                  name="price"
                   type="number"
-                  required
+                  {...register("price")}
                   placeholder="25000"
-                  value={formData.price}
-                  onChange={handleInputChange}
                 />
+                {errors.price && (
+                  <p className="text-sm text-destructive">{errors.price.message}</p>
+                )}
               </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Transmission</Label>
-                <Select
-                  value={formData.transmission}
-                  onValueChange={(val) =>
-                    handleSelectChange("transmission", val)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Automatic">Automatic</SelectItem>
-                    <SelectItem value="Manual">Manual</SelectItem>
-                    <SelectItem value="CVT">CVT</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="transmission"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Automatic">Automatic</SelectItem>
+                        <SelectItem value="Manual">Manual</SelectItem>
+                        <SelectItem value="CVT">CVT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.transmission && (
+                  <p className="text-sm text-destructive">{errors.transmission.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Body Type</Label>
-                <Select
-                  value={formData.bodyType}
-                  onValueChange={(val) => handleSelectChange("bodyType", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sedan">Sedan</SelectItem>
-                    <SelectItem value="SUV">SUV</SelectItem>
-                    <SelectItem value="Truck">Truck</SelectItem>
-                    <SelectItem value="Coupe">Coupe</SelectItem>
-                    <SelectItem value="Hatchback">Hatchback</SelectItem>
-                    <SelectItem value="Van">Van</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="bodyType"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sedan">Sedan</SelectItem>
+                        <SelectItem value="SUV">SUV</SelectItem>
+                        <SelectItem value="Truck">Truck</SelectItem>
+                        <SelectItem value="Coupe">Coupe</SelectItem>
+                        <SelectItem value="Hatchback">Hatchback</SelectItem>
+                        <SelectItem value="Van">Van</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.bodyType && (
+                  <p className="text-sm text-destructive">{errors.bodyType.message}</p>
+                )}
               </div>
             </div>
 
@@ -307,12 +284,13 @@ export default function CarFormPage() {
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                name="description"
+                {...register("description")}
                 placeholder="Detailed vehicle description..."
-                value={formData.description}
-                onChange={handleInputChange}
                 rows={4}
               />
+              {errors.description && (
+                <p className="text-sm text-destructive">{errors.description.message}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -330,68 +308,79 @@ export default function CarFormPage() {
               <div className="space-y-2">
                 <Label>Make</Label>
                 <Input
-                  name="make"
+                  {...register("specs.make")}
                   placeholder="Toyota"
-                  value={formData.make}
-                  onChange={handleInputChange}
                 />
+                {errors.specs?.make?.message && (
+                  <p className="text-sm text-destructive">{errors.specs.make.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Model</Label>
                 <Input
-                  name="model"
+                  {...register("specs.model")}
                   placeholder="Camry"
-                  value={formData.model}
-                  onChange={handleInputChange}
                 />
+                {errors.specs?.model?.message && (
+                  <p className="text-sm text-destructive">{errors.specs.model.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Year</Label>
                 <Input
-                  name="year"
                   type="number"
+                  {...register("specs.year")}
                   placeholder="2023"
-                  value={formData.year}
-                  onChange={handleInputChange}
                 />
+                {errors.specs?.year?.message && (
+                  <p className="text-sm text-destructive">{errors.specs.year.message}</p>
+                )}
               </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
               <div className="space-y-2">
                 <Label>Fuel Type</Label>
-                <Select
-                  value={formData.fuelType}
-                  onValueChange={(val) => handleSelectChange("fuelType", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Petrol">Petrol</SelectItem>
-                    <SelectItem value="Diesel">Diesel</SelectItem>
-                    <SelectItem value="Electric">Electric</SelectItem>
-                    <SelectItem value="Hybrid">Hybrid</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="specs.fuelType"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Petrol">Petrol</SelectItem>
+                        <SelectItem value="Diesel">Diesel</SelectItem>
+                        <SelectItem value="Electric">Electric</SelectItem>
+                        <SelectItem value="Hybrid">Hybrid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.specs?.fuelType?.message && (
+                  <p className="text-sm text-destructive">{errors.specs.fuelType.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Mileage</Label>
                 <Input
-                  name="mileage"
+                  {...register("specs.mileage")}
                   placeholder="e.g. 15,000 km"
-                  value={formData.mileage}
-                  onChange={handleInputChange}
                 />
+                {errors.specs?.mileage?.message && (
+                  <p className="text-sm text-destructive">{errors.specs.mileage.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Color</Label>
                 <Input
-                  name="color"
+                  {...register("specs.color")}
                   placeholder="e.g. Midnight Black"
-                  value={formData.color}
-                  onChange={handleInputChange}
                 />
+                {errors.specs?.color?.message && (
+                  <p className="text-sm text-destructive">{errors.specs.color.message}</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -406,19 +395,15 @@ export default function CarFormPage() {
             <div className="space-y-2">
               <Label>Features (Comma separated)</Label>
               <Textarea
-                name="features"
+                {...register("features")}
                 placeholder="Bluetooth, Backup Camera, Heated Seats, Navigation"
-                value={formData.features}
-                onChange={handleInputChange}
               />
             </div>
             <div className="space-y-2">
               <Label>Tags (Comma separated)</Label>
               <Input
-                name="tags"
+                {...register("tags")}
                 placeholder="Best Seller, New Arrival, Low Mileage"
-                value={formData.tags}
-                onChange={handleInputChange}
               />
             </div>
           </CardContent>
@@ -451,19 +436,42 @@ export default function CarFormPage() {
                 </div>
               ))}
 
-              <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                <span className="text-xs text-muted-foreground font-medium">
-                  Upload Image
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </label>
+              {!isUploading && imagePreviews.length < 5 ? (
+                <div className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-muted-foreground/25 rounded-lg hover:bg-muted/50 transition-colors relative">
+                  <FileUpload
+                    inputRef={fileRef}
+                    onSuccess={handleUploadSuccess}
+                    onProgress={handleUploadProgress}
+                  />
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-xs text-muted-foreground font-medium text-center px-2">
+                      Upload Image (to ImageKit)
+                    </span>
+                  </div>
+                </div>
+              ) : isUploading ? (
+                <div className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-primary/30 rounded-lg bg-primary/5 animate-pulse">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+                  <span className="text-xs text-primary font-medium">
+                    Uploading...
+                  </span>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex justify-between items-center">
+              {imagePreviews.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  * Upload at least one image for better visibility
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  {imagePreviews.length}/5 images uploaded
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
