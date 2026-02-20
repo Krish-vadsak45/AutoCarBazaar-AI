@@ -7,24 +7,14 @@ import {
   ArrowLeft,
   Trash2,
   ArrowUpDown,
-  ExternalLink,
-  Calendar,
   Car,
-  Fuel,
-  Gauge,
+  Calendar,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-// --- Types ---
 interface CarData {
   _id: string;
   title: string;
@@ -51,7 +41,7 @@ export default function LikedCarsPage() {
   );
 
   useEffect(() => {
-    // Mock Data Simulation
+    // Simulate fetching liked cars (Mock Data)
     const mockLikedCars: LikedCarData[] = [
       {
         _id: "liked1",
@@ -66,8 +56,8 @@ export default function LikedCarsPage() {
           transmission: "Automatic",
           bodyType: "Sedan",
           description:
-            "Premium sedan for city driving with advanced safety features. Excellent fuel economy and comfort.",
-          features: ["Sunroof", "Cruise Control", "Lane Assist"],
+            "Spacious and efficient city car with premium interiors.",
+          features: ["ABS", "Power Steering", "Air Conditioning"],
         },
       },
       {
@@ -83,8 +73,8 @@ export default function LikedCarsPage() {
           transmission: "Automatic",
           bodyType: "SUV",
           description:
-            "Rugged SUV built for off-road adventures and family comfort. Dominating road presence.",
-          features: ["4x4 Drive", "Leather Seats", "360 Camera"],
+            "Premium SUV with advanced features and off-road capability.",
+          features: ["Cruise Control", "360 Camera", "Sunroof"],
         },
       },
       {
@@ -99,9 +89,8 @@ export default function LikedCarsPage() {
             "https://images.unsplash.com/photo-1555215695-3004980adade?w=800&h=600&fit=crop",
           transmission: "Automatic",
           bodyType: "Sedan",
-          description:
-            "The ultimate driving machine with sporty performance and cutting-edge technology.",
-          features: ["M Sport", "Heated Seats", "Heads-up Display"],
+          description: "Luxury performance sedan with cutting-edge tech.",
+          features: ["M Sport Package", "Premium Audio", "Leather Interior"],
         },
       },
     ];
@@ -109,7 +98,7 @@ export default function LikedCarsPage() {
     setTimeout(() => {
       setLikedCars(mockLikedCars);
       setLoading(false);
-    }, 800);
+    }, 1000); // Simulate network delay
   }, []);
 
   const getSortedCars = () => {
@@ -128,231 +117,233 @@ export default function LikedCarsPage() {
     }
   };
 
-  const handleRemoveLike = (idToRemove: string) => {
-    setLikedCars((prev) => prev.filter((item) => item._id !== idToRemove));
+  const handleRemoveLike = (carId: string) => {
+    setLikedCars((prev) => prev.filter((car) => car.carId !== carId));
   };
 
   const sortedCars = getSortedCars();
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950 pt-24 pb-12 transition-colors duration-300">
-      <div className="container mx-auto px-4 max-w-5xl">
-        {" "}
-        {/* Narrower container for list view */}
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
-          <div>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pt-24 pb-12 transition-colors duration-300">
+      <div className="container mx-auto px-4 max-w-7xl">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+          <div className="space-y-2">
             <Link
               href="/"
-              className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-3 group"
+              className="inline-flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors mb-2"
             >
-              <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-              Back to Showroom
+              <ArrowLeft className="w-4 h-4 mr-1" /> Back to Explore
             </Link>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight flex items-center gap-3">
-              Your Garage
-              <Badge
-                variant="secondary"
-                className="text-lg px-3 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20"
-              >
-                {sortedCars.length}
-              </Badge>
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+              <span className="p-2 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-500 dark:text-red-400">
+                <Heart className="w-8 h-8 fill-current" />
+              </span>
+              Saved Collection
             </h1>
-            <p className="text-muted-foreground mt-2 max-w-md">
-              Review and compare your bookmarked vehicles.
+            <p className="text-gray-600 dark:text-gray-400 ml-1">
+              You have{" "}
+              <span className="font-bold text-primary dark:text-gray-200">
+                {sortedCars.length}
+              </span>{" "}
+              vehicles saved for later
             </p>
           </div>
 
           {/* Sort Controls */}
           {sortedCars.length > 0 && (
-            <div className="flex items-center gap-3 bg-background border rounded-xl p-1 shadow-sm">
-              <span className="text-xs font-semibold text-muted-foreground pl-3 uppercase tracking-wider hidden sm:inline-block">
-                Sort By
-              </span>
-              <Select
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <ArrowUpDown className="h-4 w-4 text-gray-400" />
+              </div>
+              <select
                 value={sortBy}
-                onValueChange={(val: any) => setSortBy(val)}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer shadow-sm hover:border-gray-300 dark:hover:border-slate-700 transition-all"
               >
-                <SelectTrigger className="w-[180px] border-0 bg-transparent focus:ring-0 h-9 font-medium">
-                  <SelectValue placeholder="Sort order" />
-                </SelectTrigger>
-                <SelectContent align="end">
-                  <SelectItem value="recent">Recently Added</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="recent">Recently Added</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
             </div>
           )}
         </div>
-        {/* Content List */}
+
+        {/* Content Area */}
         {loading ? (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-48 w-full rounded-2xl bg-gray-200 dark:bg-slate-800 animate-pulse border border-gray-300 dark:border-slate-700"
+                className="h-[400px] bg-white dark:bg-slate-900 rounded-3xl animate-pulse shadow-sm border border-gray-100 dark:border-slate-800"
               />
             ))}
           </div>
         ) : sortedCars.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-background rounded-3xl border-2 border-dashed border-muted"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800 text-center"
           >
-            <div className="p-6 bg-red-50 dark:bg-red-900/10 rounded-full">
-              <Heart className="w-12 h-12 text-red-500/50" />
+            <div className="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-full mb-6">
+              <Heart className="w-12 h-12 text-gray-300 dark:text-gray-600" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-foreground">
-                No saved cars yet
-              </h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">
-                Tap the heart icon on any vehicle to save it here for quick
-                access later.
-              </p>
-            </div>
-            <Button asChild size="lg" className="rounded-full px-8">
-              <Link href="/">Browse Inventory</Link>
-            </Button>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              No favorites yet
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
+              Start exploring our collection and tap the heart icon to save the
+              cars you love.
+            </p>
+            <Link href="/">
+              <Button
+                size="lg"
+                className="rounded-xl px-8 font-semibold shadow-lg shadow-primary/25"
+              >
+                Browse Vehicles
+              </Button>
+            </Link>
           </motion.div>
         ) : (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="space-y-6"
-          >
-            <AnimatePresence mode="popLayout">
-              {sortedCars.map((item) => (
-                <motion.div
-                  layout
-                  key={item._id}
-                  variants={itemVariants}
-                  exit={{
-                    opacity: 0,
-                    x: -50,
-                    scale: 0.95,
-                    transition: { duration: 0.2 },
-                  }}
-                  className="group relative bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 hover:border-primary/30 dark:hover:border-primary/30 shadow-sm hover:shadow-xl dark:shadow-black/20 transition-all duration-300 overflow-hidden flex flex-col md:flex-row h-auto md:h-52"
-                >
-                  {/* Image Section - Left (or Top on mobile) */}
-                  <div className="relative w-full md:w-72 h-48 md:h-full flex-shrink-0 bg-gray-100 dark:bg-slate-800 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent z-10" />
-                    <img
-                      src={item.car.image}
-                      alt={item.car.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute top-3 left-3 z-20">
-                      <Badge
-                        variant="secondary"
-                        className="backdrop-blur-md bg-white/90 dark:bg-black/60 text-foreground font-semibold px-2.5 py-0.5 text-xs shadow-sm"
-                      >
-                        {item.car.bodyType}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Content Section - Right (or Bottom on mobile) */}
-                  <div className="flex-1 p-5 md:p-6 flex flex-col justify-between relative">
-                    {/* Top Content */}
-                    <div>
-                      <div className="flex justify-between items-start gap-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                            {item.car.title}
-                          </h3>
-                          <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-slate-800 rounded-md">
-                              <Car className="w-3.5 h-3.5" />
-                              {item.car.transmission}
-                            </span>
-                            <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-slate-800 rounded-md">
-                              <Calendar className="w-3.5 h-3.5" />
-                              Saved{" "}
-                              {new Date(item.likedAt).toLocaleDateString(
-                                undefined,
-                                { month: "short", day: "numeric" }
-                              )}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-1">
-                          <p className="text-sm font-medium text-muted-foreground line-through opacity-70">
-                            ${(item.car.price * 1.1).toLocaleString()}
-                          </p>
-                          <p className="text-2xl font-bold text-primary">
-                            ${item.car.price.toLocaleString()}
-                          </p>
-                        </div>
+          <>
+            <motion.div
+              layout
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
+            >
+              <AnimatePresence>
+                {sortedCars.map((item) => (
+                  <motion.div
+                    layout
+                    key={item._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.9,
+                      transition: { duration: 0.2 },
+                    }}
+                    className="group relative bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/20 dark:hover:border-primary/20 transition-all duration-300"
+                  >
+                    {/* Image Section */}
+                    <Link
+                      href={`/cars/${item.carId}`}
+                      className="block relative h-56 overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity" />
+                      <img
+                        src={item.car.image}
+                        alt={item.car.title}
+                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                      />
+                      <div className="absolute top-4 left-4 z-20">
+                        <Badge className="bg-white/90 dark:bg-slate-900/90 text-gray-900 dark:text-white backdrop-blur-sm border-0 shadow-lg hover:bg-white">
+                          {item.car.bodyType}
+                        </Badge>
                       </div>
 
-                      <p className="mt-3 text-sm text-muted-foreground line-clamp-2 md:pr-16 leading-relaxed">
-                        {item.car.description}
-                      </p>
-                    </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleRemoveLike(item.carId);
+                        }}
+                        className="absolute top-4 right-4 z-20 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-full backdrop-blur-md transition-all duration-300 shadow-lg group/btn border border-white/20"
+                        title="Remove from favorites"
+                      >
+                        <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                      </button>
 
-                    {/* Bottom Action Area */}
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-gray-100 dark:border-slate-800">
-                      {/* Features Badges */}
-                      <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto scrollbar-none">
+                      <div className="absolute bottom-4 left-4 z-20 text-white">
+                        <p className="text-xs font-medium text-white/80 mb-1 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Added {new Date(item.likedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </Link>
+
+                    {/* Details Section */}
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <Link
+                          href={`/cars/${item.carId}`}
+                          className="hover:text-primary transition-colors"
+                        >
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1 mb-1">
+                            {item.car.title}
+                          </h3>
+                        </Link>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                          <Car className="w-3.5 h-3.5" />
+                          {item.car.transmission} Transmission
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mb-6">
                         {item.car.features.slice(0, 3).map((feat, idx) => (
-                          <Badge
+                          <span
                             key={idx}
-                            variant="outline"
-                            className="whitespace-nowrap text-xs font-normal text-muted-foreground border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50"
+                            className="text-[10px] px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium"
                           >
                             {feat}
-                          </Badge>
+                          </span>
                         ))}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-3 w-full md:w-auto">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveLike(item._id)}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          title="Remove from Saved"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </Button>
-                        <Button
-                          asChild
-                          className="flex-1 md:flex-none shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all rounded-xl"
-                        >
-                          <Link href={`/cars/${item.carId}`} className="gap-2">
-                            View Details <ExternalLink className="w-4 h-4" />
-                          </Link>
-                        </Button>
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-slate-800">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">
+                            Price
+                          </p>
+                          <p className="text-2xl font-bold text-primary dark:text-blue-400">
+                            ${item.car.price.toLocaleString()}
+                          </p>
+                        </div>
+                        <Link href={`/cars/${item.carId}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-xl border-gray-200 dark:border-slate-700 bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 group/btn"
+                          >
+                            Details{" "}
+                            <ExternalLink className="w-3.5 h-3.5 ml-2 opacity-60 group-hover/btn:opacity-100 transition-opacity" />
+                          </Button>
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Comparison CTA */}
+            {sortedCars.length >= 2 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-900 dark:to-indigo-900 rounded-3xl p-8 md:p-12 text-center text-white relative overflow-hidden shadow-2xl shadow-blue-500/20"
+              >
+                {/* Decorative Background */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-[80px] pointer-events-none translate-y-1/2 -translate-x-1/2" />
+
+                <div className="relative z-10 max-w-2xl mx-auto">
+                  <h3 className="text-3xl font-bold mb-4">
+                    Can&apos;t Decide?
+                  </h3>
+                  <p className="text-blue-100 mb-8 text-lg font-light leading-relaxed">
+                    Compare your saved vehicles side-by-side to find the perfect
+                    match for your lifestyle. Analyze specs, features, and
+                    pricing in one view.
+                  </p>
+                  <Button
+                    size="lg"
+                    className="bg-white text-blue-700 hover:bg-blue-50 border-0 rounded-xl px-8 font-bold shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
+                  >
+                    Start Comparison
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </>
         )}
       </div>
     </div>

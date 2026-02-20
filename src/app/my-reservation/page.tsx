@@ -1,349 +1,407 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
-  Heart,
-  ArrowLeft,
-  Trash2,
-  ArrowUpDown,
-  Car,
   Calendar,
+  Clock,
+  Car,
+  MapPin,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
   ExternalLink,
+  ChevronRight,
+  FilterX,
+  Loader2,
+  FileText,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
 
-interface CarData {
+// --- Types based on API Response ---
+interface IReservation {
   _id: string;
-  title: string;
-  price: number;
-  image: string;
-  transmission: string;
-  bodyType: string;
-  description: string;
-  features: string[];
+  status: string;
+  startDate: string;
+  endDate?: string;
+  startTime: string;
+  endTime?: string;
+  notes?: string;
+  carId: {
+    _id: string;
+    title: string;
+    image?: string;
+    images?: string[];
+    price: number;
+    transmission?: string;
+    bodyType?: string;
+  };
+  vendorId?: {
+    businessName: string;
+    address?: {
+      city: string;
+      state: string;
+    };
+  };
+  userId?: {
+    name: string;
+    email: string;
+  };
 }
 
-interface LikedCarData {
-  _id: string;
-  carId: string;
-  likedAt: string;
-  car: CarData;
-}
-
-export default function LikedCarsPage() {
-  const [likedCars, setLikedCars] = useState<LikedCarData[]>([]);
+export default function MyReservationsPage() {
+  const [reservations, setReservations] = useState<IReservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<"recent" | "price-low" | "price-high">(
-    "recent"
-  );
+  const [filter, setFilter] = useState<string>("all");
 
+  // 1. Fetch reservations on mount
   useEffect(() => {
-    // Simulate fetching liked cars (Mock Data)
-    const mockLikedCars: LikedCarData[] = [
-      {
-        _id: "liked1",
-        carId: "car1",
-        likedAt: new Date(Date.now() - 86400000).toISOString(),
-        car: {
-          _id: "car1",
-          title: "2023 Honda City",
-          price: 24999,
-          image:
-            "https://images.unsplash.com/photo-1552820728-8ac41f1ce891?w=800&h=600&fit=crop",
-          transmission: "Automatic",
-          bodyType: "Sedan",
-          description:
-            "Spacious and efficient city car with premium interiors.",
-          features: ["ABS", "Power Steering", "Air Conditioning"],
-        },
-      },
-      {
-        _id: "liked2",
-        carId: "car2",
-        likedAt: new Date(Date.now() - 172800000).toISOString(),
-        car: {
-          _id: "car2",
-          title: "2024 Toyota Fortuner",
-          price: 54999,
-          image:
-            "https://images.unsplash.com/photo-1542362567-b07e54358753?w=800&h=600&fit=crop",
-          transmission: "Automatic",
-          bodyType: "SUV",
-          description:
-            "Premium SUV with advanced features and off-road capability.",
-          features: ["Cruise Control", "360 Camera", "Sunroof"],
-        },
-      },
-      {
-        _id: "liked3",
-        carId: "car3",
-        likedAt: new Date(Date.now() - 259200000).toISOString(),
-        car: {
-          _id: "car3",
-          title: "2022 BMW 3 Series",
-          price: 49999,
-          image:
-            "https://images.unsplash.com/photo-1555215695-3004980adade?w=800&h=600&fit=crop",
-          transmission: "Automatic",
-          bodyType: "Sedan",
-          description: "Luxury performance sedan with cutting-edge tech.",
-          features: ["M Sport Package", "Premium Audio", "Leather Interior"],
-        },
-      },
-    ];
-
-    setTimeout(() => {
-      setLikedCars(mockLikedCars);
-      setLoading(false);
-    }, 1000); // Simulate network delay
+    const fetchReservations = async () => {
+      try {
+        setLoading(true);
+        const { data } = await axios.get("/api/my-reservation");
+        setReservations(data);
+      } catch (error) {
+        console.error("Failed to load reservations", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReservations();
   }, []);
 
-  const getSortedCars = () => {
-    const cars = [...likedCars];
-    switch (sortBy) {
-      case "price-low":
-        return cars.sort((a, b) => a.car.price - b.car.price);
-      case "price-high":
-        return cars.sort((a, b) => b.car.price - a.car.price);
-      case "recent":
-      default:
-        return cars.sort(
-          (a, b) =>
-            new Date(b.likedAt).getTime() - new Date(a.likedAt).getTime()
-        );
+  // 2. ✅ Calculate filtered list directly (No useEffect needed!)
+  // This ensures the UI is ALWAYS instantly in sync with the filter button clicked.
+  const filteredList = reservations.filter((r) => {
+    if (filter === "all") return true;
+    // Safely handle case-insensitive comparison
+    return r.status?.toLowerCase() === filter.toLowerCase();
+  });
+
+  // Status Badge Logic
+  const getStatusBadge = (status: string) => {
+    const normalizedStatus = status?.toLowerCase() || "";
+    const statusConfig: Record<
+      string,
+      { bg: string; icon: any; label: string }
+    > = {
+      confirmed: {
+        bg: "bg-emerald-500 hover:bg-emerald-600",
+        icon: CheckCircle2,
+        label: "Confirmed",
+      },
+      pending: {
+        bg: "bg-amber-500 hover:bg-amber-600",
+        icon: Clock,
+        label: "Pending",
+      },
+      cancelled: {
+        bg: "bg-rose-500 hover:bg-rose-600",
+        icon: XCircle,
+        label: "Cancelled",
+      },
+      completed: {
+        bg: "bg-blue-500 hover:bg-blue-600",
+        icon: CheckCircle2,
+        label: "Completed",
+      },
+    };
+
+    const config = statusConfig[normalizedStatus] || {
+      bg: "bg-gray-500",
+      icon: AlertCircle,
+      label: status,
+    };
+    const Icon = config.icon;
+
+    return (
+      <Badge className={`${config.bg} border-none text-white`}>
+        <Icon className="w-3 h-3 mr-1" /> {config.label}
+      </Badge>
+    );
+  };
+
+  // Helper: Date Range Display
+  const renderDateRange = (start: string, end?: string) => {
+    try {
+      if (end && end !== start) {
+        return `${format(new Date(start), "MMM dd")} - ${format(
+          new Date(end),
+          "MMM dd, yyyy"
+        )}`;
+      }
+      return format(new Date(start), "eeee, MMM dd, yyyy");
+    } catch {
+      return start;
     }
   };
 
-  const handleRemoveLike = (carId: string) => {
-    setLikedCars((prev) => prev.filter((car) => car.carId !== carId));
+  // Animation Variants
+  const containerVariants = { show: { transition: { staggerChildren: 0.1 } } };
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
   };
 
-  const sortedCars = getSortedCars();
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pt-24 pb-12 transition-colors duration-300">
-      <div className="container mx-auto px-4 max-w-7xl">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-          <div className="space-y-2">
-            <Link
-              href="/"
-              className="inline-flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors mb-2"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back to Explore
-            </Link>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-              <span className="p-2 bg-red-50 dark:bg-red-900/20 rounded-xl text-red-500 dark:text-red-400">
-                <Heart className="w-8 h-8 fill-current" />
-              </span>
-              Saved Collection
+    <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950 pt-24 pb-12 transition-colors duration-300">
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight flex items-center gap-3">
+              My Test Drives
+              <Badge
+                variant="secondary"
+                className="text-lg px-3 py-1 rounded-full bg-primary/10 text-primary"
+              >
+                {reservations.length}
+              </Badge>
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 ml-1">
-              You have{" "}
-              <span className="font-bold text-primary dark:text-gray-200">
-                {sortedCars.length}
-              </span>{" "}
-              vehicles saved for later
+            <p className="text-muted-foreground mt-2 max-w-md">
+              Track the status of your test drives and upcoming appointments.
             </p>
           </div>
 
-          {/* Sort Controls */}
-          {sortedCars.length > 0 && (
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <ArrowUpDown className="h-4 w-4 text-gray-400" />
-              </div>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer shadow-sm hover:border-gray-300 dark:hover:border-slate-700 transition-all"
-              >
-                <option value="recent">Recently Added</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
+          {/* Filters */}
+          {reservations.length > 0 && (
+            <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-x-auto">
+              {["all", "pending", "confirmed", "completed", "cancelled"].map(
+                (f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
+                      filter.toLowerCase() === f.toLowerCase()
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {f === "all" ? "All" : f}
+                  </button>
+                )
+              )}
             </div>
           )}
         </div>
 
-        {/* Content Area */}
+        {/* Content List */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-[400px] bg-white dark:bg-slate-900 rounded-3xl animate-pulse shadow-sm border border-gray-100 dark:border-slate-800"
+                className="h-56 w-full rounded-3xl bg-gray-200 dark:bg-slate-800 animate-pulse border border-gray-300 dark:border-slate-700"
               />
             ))}
           </div>
-        ) : sortedCars.length === 0 ? (
+        ) : filteredList.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800 text-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-background rounded-3xl border-2 border-dashed border-muted"
           >
-            <div className="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-full mb-6">
-              <Heart className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+            <div className="p-6 bg-muted/50 rounded-full">
+              <FilterX className="w-12 h-12 text-muted-foreground/50" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              No favorites yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
-              Start exploring our collection and tap the heart icon to save the
-              cars you love.
-            </p>
-            <Link href="/">
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold text-foreground">
+                {filter === "all"
+                  ? "No reservations found"
+                  : `No ${filter} bookings`}
+              </h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                {filter === "all"
+                  ? "You currently don't have any bookings."
+                  : `You don't have any ${filter} reservations at the moment.`}
+              </p>
+            </div>
+            {filter !== "all" && (
               <Button
-                size="lg"
-                className="rounded-xl px-8 font-semibold shadow-lg shadow-primary/25"
+                onClick={() => setFilter("all")}
+                variant="outline"
+                className="rounded-full px-8"
               >
-                Browse Vehicles
+                View All Bookings
               </Button>
-            </Link>
+            )}
+            <Button asChild size="lg" className="rounded-full px-8">
+              <Link href="/">Book a Test Drive</Link>
+            </Button>
           </motion.div>
         ) : (
-          <>
-            <motion.div
-              layout
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
-            >
-              <AnimatePresence>
-                {sortedCars.map((item) => (
-                  <motion.div
-                    layout
-                    key={item._id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{
-                      opacity: 0,
-                      scale: 0.9,
-                      transition: { duration: 0.2 },
-                    }}
-                    className="group relative bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/20 dark:hover:border-primary/20 transition-all duration-300"
-                  >
-                    {/* Image Section */}
-                    <Link
-                      href={`/cars/${item.carId}`}
-                      className="block relative h-56 overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity" />
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-6"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredList.map((res) => (
+                <motion.div
+                  layout
+                  key={res._id}
+                  variants={itemVariants}
+                  exit={{ opacity: 0, x: -20, scale: 0.95 }}
+                  className="group relative bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 hover:border-primary/30 shadow-sm hover:shadow-xl dark:shadow-black/20 transition-all duration-300 overflow-hidden flex flex-col lg:flex-row"
+                >
+                  {/* Left: Car Image & Status */}
+                  <div className="relative w-full lg:w-80 h-56 lg:h-auto bg-gray-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden">
+                    {res.carId?.image || res.carId?.images?.[0] ? (
                       <img
-                        src={item.car.image}
-                        alt={item.car.title}
-                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                        src={res.carId.image || res.carId.images![0]}
+                        alt={res.carId.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="absolute top-4 left-4 z-20">
-                        <Badge className="bg-white/90 dark:bg-slate-900/90 text-gray-900 dark:text-white backdrop-blur-sm border-0 shadow-lg hover:bg-white">
-                          {item.car.bodyType}
-                        </Badge>
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Car className="w-16 h-16 text-muted-foreground/30" />
                       </div>
+                    )}
 
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleRemoveLike(item.carId);
-                        }}
-                        className="absolute top-4 right-4 z-20 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-full backdrop-blur-md transition-all duration-300 shadow-lg group/btn border border-white/20"
-                        title="Remove from favorites"
-                      >
-                        <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                      </button>
+                    {/* Floating Status Badge */}
+                    <div className="absolute top-4 left-4 z-10 shadow-lg">
+                      {getStatusBadge(res.status)}
+                    </div>
 
-                      <div className="absolute bottom-4 left-4 z-20 text-white">
-                        <p className="text-xs font-medium text-white/80 mb-1 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          Added {new Date(item.likedAt).toLocaleDateString()}
+                    {/* Price & Body Type Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 flex justify-between items-end">
+                      <div>
+                        <p className="text-white text-2xl font-bold">
+                          ${res.carId?.price?.toLocaleString() || "N/A"}
+                        </p>
+                        <p className="text-white/70 text-xs">
+                          {res.carId?.bodyType || "Sedan"}
                         </p>
                       </div>
-                    </Link>
-
-                    {/* Details Section */}
-                    <div className="p-6">
-                      <div className="mb-4">
-                        <Link
-                          href={`/cars/${item.carId}`}
-                          className="hover:text-primary transition-colors"
+                      {res.carId?.transmission && (
+                        <Badge
+                          variant="secondary"
+                          className="bg-white/20 backdrop-blur-sm text-white border-0"
                         >
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1 mb-1">
-                            {item.car.title}
-                          </h3>
-                        </Link>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                          <Car className="w-3.5 h-3.5" />
-                          {item.car.transmission} Transmission
-                        </p>
-                      </div>
+                          {res.carId.transmission}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
 
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {item.car.features.slice(0, 3).map((feat, idx) => (
-                          <span
-                            key={idx}
-                            className="text-[10px] px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-medium"
-                          >
-                            {feat}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-slate-800">
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-0.5">
-                            Price
-                          </p>
-                          <p className="text-2xl font-bold text-primary dark:text-blue-400">
-                            ${item.car.price.toLocaleString()}
-                          </p>
-                        </div>
-                        <Link href={`/cars/${item.carId}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-xl border-gray-200 dark:border-slate-700 bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 group/btn"
-                          >
-                            Details{" "}
-                            <ExternalLink className="w-3.5 h-3.5 ml-2 opacity-60 group-hover/btn:opacity-100 transition-opacity" />
-                          </Button>
-                        </Link>
+                  {/* Right: Details Content */}
+                  <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between">
+                    {/* Top Row: Title & Vendor */}
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4 mb-6">
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                          {res.carId?.title || "Unknown Vehicle"}
+                        </h3>
+                        {res.vendorId && (
+                          <div className="flex items-center gap-2 mt-2 text-sm font-medium text-muted-foreground">
+                            <MapPin className="w-4 h-4 text-primary" />
+                            <span>{res.vendorId.businessName}</span>
+                            {res.vendorId.address?.city && (
+                              <span className="text-xs">
+                                • {res.vendorId.address.city},{" "}
+                                {res.vendorId.address.state}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
 
-            {/* Comparison CTA */}
-            {sortedCars.length >= 2 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-900 dark:to-indigo-900 rounded-3xl p-8 md:p-12 text-center text-white relative overflow-hidden shadow-2xl shadow-blue-500/20"
-              >
-                {/* Decorative Background */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-[80px] pointer-events-none translate-y-1/2 -translate-x-1/2" />
+                    {/* Middle: Grid Info */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-6 border-y border-dashed border-gray-200 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-wider">
+                            Scheduled Date
+                          </p>
+                          <p className="text-sm font-bold">
+                            {renderDateRange(res.startDate, res.endDate)}
+                          </p>
+                        </div>
+                      </div>
 
-                <div className="relative z-10 max-w-2xl mx-auto">
-                  <h3 className="text-3xl font-bold mb-4">
-                    Can&apos;t Decide?
-                  </h3>
-                  <p className="text-blue-100 mb-8 text-lg font-light leading-relaxed">
-                    Compare your saved vehicles side-by-side to find the perfect
-                    match for your lifestyle. Analyze specs, features, and
-                    pricing in one view.
-                  </p>
-                  <Button
-                    size="lg"
-                    className="bg-white text-blue-700 hover:bg-blue-50 border-0 rounded-xl px-8 font-bold shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
-                  >
-                    Start Comparison
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </>
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 text-orange-600">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-wider">
+                            Time Slot
+                          </p>
+                          <p className="text-sm font-bold">
+                            {res.startTime}
+                            {res.endTime && ` - ${res.endTime}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {res.status?.toLowerCase() === "pending" && (
+                        <div className="flex items-center gap-3 sm:col-span-2">
+                          <div className="p-2.5 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 text-yellow-600">
+                            <AlertCircle className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-wider">
+                              Status
+                            </p>
+                            <p className="text-sm font-bold text-yellow-700 dark:text-yellow-500">
+                              Awaiting Vendor Approval
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom: Notes & Actions */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6">
+                      <div className="flex-1 min-w-0">
+                        {res.notes ? (
+                          <div className="flex items-start gap-2 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border-l-2 border-blue-500">
+                            <FileText className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                            <p className="text-xs text-muted-foreground italic line-clamp-2">
+                              "{res.notes}"
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">
+                            No additional notes provided
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex gap-3 w-full sm:w-auto">
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="rounded-xl border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 flex-1 sm:flex-none"
+                        >
+                          <Link href={`/cars/${res.carId?._id}`}>
+                            <Car className="w-4 h-4 mr-2" />
+                            View Car
+                          </Link>
+                        </Button>
+                        <Button
+                          className="rounded-xl shadow-lg shadow-primary/20 flex-1 sm:flex-none"
+                          disabled={res.status?.toLowerCase() === "cancelled"}
+                        >
+                          Details <ChevronRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </div>
