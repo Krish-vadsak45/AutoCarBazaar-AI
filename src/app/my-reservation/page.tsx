@@ -58,14 +58,25 @@ export default function MyReservationsPage() {
   const [reservations, setReservations] = useState<IReservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // 1. Fetch reservations on mount
+  // 1. Fetch reservations on mount and when page/filter changes
   useEffect(() => {
     const fetchReservations = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get("/api/my-reservation");
-        setReservations(data);
+        const { data } = await axios.get("/api/my-reservation", {
+          params: {
+            page,
+            limit: 5,
+            status: filter === "all" ? undefined : filter,
+          },
+        });
+        setReservations(data.data);
+        setTotalPages(data.pagination.totalPages);
+        setTotalCount(data.pagination.total);
       } catch (error) {
         console.error("Failed to load reservations", error);
       } finally {
@@ -73,15 +84,13 @@ export default function MyReservationsPage() {
       }
     };
     fetchReservations();
-  }, []);
+  }, [page, filter]);
 
-  // 2. ✅ Calculate filtered list directly (No useEffect needed!)
-  // This ensures the UI is ALWAYS instantly in sync with the filter button clicked.
-  const filteredList = reservations.filter((r) => {
-    if (filter === "all") return true;
-    // Safely handle case-insensitive comparison
-    return r.status?.toLowerCase() === filter.toLowerCase();
-  });
+  // Handle filter change - reset to page 1
+  const handleFilterChange = (newFilter: string) => {
+    setFilter(newFilter);
+    setPage(1);
+  };
 
   // Status Badge Logic
   const getStatusBadge = (status: string) => {
@@ -160,7 +169,7 @@ export default function MyReservationsPage() {
                 variant="secondary"
                 className="text-lg px-3 py-1 rounded-full bg-primary/10 text-primary"
               >
-                {reservations.length}
+                {totalCount}
               </Badge>
             </h1>
             <p className="text-muted-foreground mt-2 max-w-md">
@@ -169,13 +178,12 @@ export default function MyReservationsPage() {
           </div>
 
           {/* Filters */}
-          {reservations.length > 0 && (
             <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-x-auto">
               {["all", "pending", "confirmed", "completed", "cancelled"].map(
                 (f) => (
                   <button
                     key={f}
-                    onClick={() => setFilter(f)}
+                    onClick={() => handleFilterChange(f)}
                     className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
                       filter.toLowerCase() === f.toLowerCase()
                         ? "bg-primary text-primary-foreground shadow-md"
@@ -187,7 +195,7 @@ export default function MyReservationsPage() {
                 )
               )}
             </div>
-          )}
+          
         </div>
 
         {/* Content List */}
@@ -200,7 +208,7 @@ export default function MyReservationsPage() {
               />
             ))}
           </div>
-        ) : filteredList.length === 0 ? (
+        ) : reservations.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -223,7 +231,7 @@ export default function MyReservationsPage() {
             </div>
             {filter !== "all" && (
               <Button
-                onClick={() => setFilter("all")}
+                onClick={() => handleFilterChange("all")}
                 variant="outline"
                 className="rounded-full px-8"
               >
@@ -242,7 +250,7 @@ export default function MyReservationsPage() {
             className="space-y-6"
           >
             <AnimatePresence mode="popLayout">
-              {filteredList.map((res) => (
+              {reservations.map((res) => (
                 <motion.div
                   layout
                   key={res._id}
@@ -401,6 +409,45 @@ export default function MyReservationsPage() {
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 pt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="rounded-xl"
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-2">
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPage(i + 1)}
+                      className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
+                        page === i + 1
+                          ? "bg-primary text-primary-foreground shadow-lg"
+                          : "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:border-primary/50"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="rounded-xl"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </motion.div>
         )}
       </div>

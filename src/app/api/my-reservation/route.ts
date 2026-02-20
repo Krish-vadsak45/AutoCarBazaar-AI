@@ -18,15 +18,48 @@ export async function GET(request: Request) {
 
     const userId = (session.user as any)._id;
 
-    const testDrives = await TestDrive.find({ userId }).populate([
-      { path: "carId", model: Car },
-      { path: "vendorId", model: Vendor },
-      { path: "userId", model: User },
+    // Get query parameters
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "5");
+    const status = searchParams.get("status");
+
+    const skip = (page - 1) * limit;
+
+    // Build filter
+    const filter: any = { userId };
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // Fetch data with pagination
+    const [testDrives, total] = await Promise.all([
+      TestDrive.find(filter)
+        .populate([
+          { path: "carId", model: Car },
+          { path: "vendorId", model: Vendor },
+          { path: "userId", model: User },
+        ])
+        .sort({ createdAt: -1 }) // Sort by newest first
+        .skip(skip)
+        .limit(limit),
+      TestDrive.countDocuments(filter),
     ]);
 
-    return NextResponse.json(testDrives, {
-      status: 200,
-    });
+    return NextResponse.json(
+      {
+        data: testDrives,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      {
+        status: 200,
+      }
+    );
   } catch (error) {
     console.error("Error fetching reservations:", error);
     return NextResponse.json(

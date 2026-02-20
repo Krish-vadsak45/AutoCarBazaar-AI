@@ -7,6 +7,7 @@ export interface IUser extends Document {
   role?: string;
   isActive?: boolean;
   isVerified?: boolean;
+  savedCars: mongoose.Types.ObjectId[];
 }
 
 const UserSchema = new mongoose.Schema<IUser>(
@@ -17,9 +18,15 @@ const UserSchema = new mongoose.Schema<IUser>(
     role: { type: String, enum: ["admin", "user", "vendor"], default: "user" },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
+    savedCars: [{ type: mongoose.Schema.Types.ObjectId, ref: "Car" }],
   },
-  { timestamps: true },
+  { timestamps: true, strict: false },
 );
+
+// Force reload model in development to pick up schema changes
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).User;
+}
 
 const User: Model<IUser> =
   (mongoose.models.User as Model<IUser>) ||

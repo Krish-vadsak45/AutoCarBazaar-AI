@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Heart as HeartIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useEffect } from "react";
 
 type Car = {
   id?: string;
@@ -38,6 +42,43 @@ export default function CarCard({ cars, onView }: CarCardProps) {
     tags = [],
   } = cars;
   const [fav, setFav] = useState(false);
+  const { data: session } = useSession();
+
+  // Check initial saved status
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!session) return;
+      try {
+        const { data } = await axios.get("/api/saved-cars");
+        const currentCarId = (id || _id)?.toString();
+        const isSaved = Array.isArray(data) && data.some((c: any) => c?._id?.toString() === currentCarId);
+        setFav(isSaved);
+      } catch (err) {
+        console.error("Error checking fav status", err);
+      }
+    };
+    checkStatus();
+  }, [session, id, _id]);
+
+  // Handle toggling save status
+  const handleToggleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!session) {
+      toast.error("Please login to save cars");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const carId = (id || _id)?.toString();
+      const { data } = await axios.post("/api/saved-cars", { carId });
+      setFav(data.action === "saved");
+      toast.success(data.message);
+    } catch (error) {
+      console.error("Error toggling save status:", error);
+      toast.error("Failed to update collection");
+    }
+  };
 
   return (
     <article className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-md dark:shadow-none overflow-hidden border border-gray-100 dark:border-slate-700 transform-gpu transition-transform duration-300 transition-shadow hover:scale-105 hover:shadow-xl dark:hover:shadow-[0_30px_80px_rgba(6,182,212,0.12),0_8px_30px_rgba(6,182,212,0.08),0_0_0_12px_rgba(6,182,212,0.06)] dark:hover:ring-1 dark:hover:ring-cyan-400/25 group will-change-transform">
@@ -56,8 +97,8 @@ export default function CarCard({ cars, onView }: CarCardProps) {
         )}
         <button
           aria-label={fav ? "Remove from saved" : "Save car"}
-          onClick={() => setFav((s) => !s)}
-          className="absolute top-3 right-3 bg-white/90 dark:bg-slate-800/70 rounded-full p-2 shadow-sm hover:scale-110 transform transition-transform"
+          onClick={handleToggleSave}
+          className="absolute top-3 right-3 bg-white/90 dark:bg-slate-800/70 rounded-full p-2 shadow-sm hover:scale-110 transform transition-transform z-10"
         >
           <HeartIcon
             className={`w-5 h-5 cursor-pointer ${
