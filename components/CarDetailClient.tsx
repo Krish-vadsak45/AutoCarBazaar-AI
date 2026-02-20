@@ -1,5 +1,8 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { EmiCalculatorModal } from "./emi-calculator-modal"; // Import the modal
 import { PDFButton } from "./pdf-button";
@@ -61,6 +64,26 @@ export default function CarDetailClient({ car }: { car: any }) {
     "idle" | "shared" | "copied" | "error"
   >("idle");
 
+  const { data: session } = useSession();
+
+  // Check if car is already saved
+  useEffect(() => {
+    const checkSavedStatus = async () => {
+      if (!session) return;
+      try {
+        const { data } = await axios.get("/api/saved-cars");
+        const currentCarId = (car.id || car._id)?.toString();
+        const isCurrentlySaved = Array.isArray(data) && data.some((savedCar: any) => 
+          (savedCar?._id?.toString() === currentCarId)
+        );
+        setIsSaved(isCurrentlySaved);
+      } catch (error) {
+        console.error("Error checking saved status:", error);
+      }
+    };
+    checkSavedStatus();
+  }, [session, car.id, car._id]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setMainImage((prev: string) => {
@@ -70,6 +93,24 @@ export default function CarDetailClient({ car }: { car: any }) {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleToggleSave = async () => {
+    if (!session) {
+      toast.error("Please login to save cars");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const carId = (car.id || car._id)?.toString();
+      const { data } = await axios.post("/api/saved-cars", { carId });
+      setIsSaved(data.action === "saved");
+      toast.success(data.message);
+    } catch (error) {
+      console.error("Error saving car:", error);
+      toast.error("Failed to save car");
+    }
+  };
 
   const handleShare = async () => {
     if (typeof window === "undefined") return;
@@ -359,7 +400,7 @@ export default function CarDetailClient({ car }: { car: any }) {
         {/* FOUR ACTION BUTTONS */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
           <button
-            onClick={() => setIsSaved(!isSaved)}
+            onClick={handleToggleSave}
             className={`py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg flex items-center justify-center gap-2 ${
               isSaved
                 ? "bg-red-50 text-red-600 border border-red-200"
@@ -367,7 +408,7 @@ export default function CarDetailClient({ car }: { car: any }) {
             }`}
           >
             <Heart className={`w-5 h-5 ${isSaved ? "fill-red-600" : ""}`} />
-            Save
+            {isSaved ? "Saved" : "Save"}
           </button>
           <button
             onClick={handleShare}
