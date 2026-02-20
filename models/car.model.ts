@@ -13,6 +13,7 @@ export interface ICar extends Document {
   images?: string[];
   image?: string; // legacy single image field
   title: string;
+  status: "available" | "unavailable";
   price: number;
   transmission?: string;
   bodyType?: string;
@@ -40,6 +41,11 @@ const CarSchema = new mongoose.Schema<ICar>(
     image: { type: String },
     title: { type: String, required: true },
     price: { type: Number, required: true },
+    status: {
+      type: String,
+      enum: ["available", "unavailable"],
+      default: "available",
+    },
     transmission: { type: String },
     bodyType: { type: String },
     description: { type: String },

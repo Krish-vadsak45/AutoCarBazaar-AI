@@ -55,18 +55,18 @@ export default function WorkingHoursPage() {
   const handleToggle = (index: number) => {
     setSchedule((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, isOpen: !item.isOpen } : item
-      )
+        i === index ? { ...item, isOpen: !item.isOpen } : item,
+      ),
     );
   };
 
   const handleTimeChange = (
     index: number,
     field: "openTime" | "closeTime",
-    value: string
+    value: string,
   ) => {
     setSchedule((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     );
   };
 

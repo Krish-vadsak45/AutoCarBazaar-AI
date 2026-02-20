@@ -91,6 +91,25 @@ export default function VendorCarsPage() {
     }
   };
 
+  // Handle Status Change
+  const handleStatusChange = async (carId: string, currentStatus: string) => {
+    // Normalize status to lowercase for comparison
+    const normalizedStatus = (currentStatus || "unavailable").toLowerCase();
+    const newStatus =
+      normalizedStatus === "available" ? "unavailable" : "available";
+
+    try {
+      await axios.patch(`/api/cars/${carId}`, { status: newStatus });
+      setCars((prev) =>
+        prev.map((c) => (c._id === carId ? { ...c, status: newStatus } : c)),
+      );
+      toast.success(`Car marked as ${newStatus}`);
+    } catch (error) {
+      console.error("Failed to update status", error);
+      toast.error("Failed to update car status");
+    }
+  };
+
   // Filter Cars
   const filteredCars = cars.filter(
     (car) =>
@@ -183,13 +202,23 @@ export default function VendorCarsPage() {
                     ${car.price.toLocaleString()}
                   </div>
 
-                  {/* Status Column (Placeholder) */}
+                  {/* Status Column */}
                   <div>
                     <Badge
-                      variant="outline"
-                      className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900"
+                      variant={
+                        (car.status || "").toLowerCase() === "available"
+                          ? "outline"
+                          : "secondary"
+                      }
+                      className={
+                        (car.status || "").toLowerCase() === "available"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900"
+                          : "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400"
+                      }
                     >
-                      Available
+                      {(car.status || "").toLowerCase() === "available"
+                        ? "Available"
+                        : "Unavailable"}
                     </Badge>
                   </div>
 
@@ -244,6 +273,18 @@ export default function VendorCarsPage() {
                             Edit Details
                           </DropdownMenuItem>
                         </Link>
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleStatusChange(car._id, car.status as string)
+                          }
+                        >
+                          <CarFront className="mr-2 h-4 w-4 text-muted-foreground" />
+                          Mark as{" "}
+                          {(car.status || "").toLowerCase() === "available"
+                            ? "Unavailable"
+                            : "Available"}
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50 cursor-pointer"
