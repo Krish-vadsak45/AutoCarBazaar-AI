@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     if (!carId || !startDate || !endDate || !startTime || !endTime) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     console.log("Session:", session);
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     if (!userId) {
       return NextResponse.json(
         { error: "User ID not found in session" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     if (!vendor) {
       return NextResponse.json(
         { error: "Vendor for this car not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       startTime,
       endTime,
       notes,
-      status: "pending",
+      status: "PENDING",
     });
 
     const populatedTestDrive = await newTestDrive.populate([
@@ -88,13 +88,13 @@ export async function POST(request: Request) {
             populatedTestDrive.vendorId.address.city
           }, ${populatedTestDrive.vendorId.address.state}</li>
           <li><strong>Date:</strong> ${new Date(
-            populatedTestDrive.startDate
+            populatedTestDrive.startDate,
           ).toDateString()} - ${new Date(
-        populatedTestDrive.endDate
-      ).toDateString()}</li>
+            populatedTestDrive.endDate,
+          ).toDateString()}</li>
           <li><strong>Time:</strong> ${populatedTestDrive.startTime} - ${
-        populatedTestDrive.endTime
-      }</li>
+            populatedTestDrive.endTime
+          }</li>
           <li><strong>Status:</strong> ${populatedTestDrive.status.toUpperCase()}</li>
         </ul>
     
@@ -117,13 +117,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { message: "Test drive booked successfully", testDrive: newTestDrive },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Error booking test drive:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

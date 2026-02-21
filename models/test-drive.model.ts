@@ -9,7 +9,7 @@ export interface ITestDrive extends Document {
   startTime: string;
   endTime: string;
   notes?: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
 }
 
 const TestDriveSchema = new Schema<ITestDrive>(
@@ -24,8 +24,9 @@ const TestDriveSchema = new Schema<ITestDrive>(
     notes: { type: String },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled", "completed"],
-      default: "pending",
+      enum: ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"],
+      default: "PENDING",
+      uppercase: true, // Ensure it's always stored as uppercase
     },
   },
   { timestamps: true },

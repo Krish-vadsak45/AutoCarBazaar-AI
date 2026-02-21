@@ -23,7 +23,7 @@ export async function validateVendor(req: Request) {
 }
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectToDatabase();
@@ -43,7 +43,7 @@ export async function GET(
 // PATCH: Update Car
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } },
 ) {
   try {
     const { params } = context;
@@ -61,17 +61,17 @@ export async function PATCH(
     if (!carExists && !carOwner) {
       // Fallback logic depending on how strict you want to be
       // ideally: strictly check ownership
-      // return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
 
-    // ✅ Validate Body (Partial validation could be used, but since the form sends the full data, we'll use carSchema)
-    const validation = carSchema.safeParse(body);
+    // ✅ Validate Body (Partial validation to allow updating specific fields)
+    const validation = carSchema.partial().safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
         { error: "Validation failed", details: validation.error.format() },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -80,7 +80,7 @@ export async function PATCH(
     const updatedCar = await Car.findByIdAndUpdate(
       id,
       { $set: validatedData },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedCar) {
@@ -89,7 +89,7 @@ export async function PATCH(
 
     return NextResponse.json(
       { car: updatedCar, message: "Updated successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Update Error:", error);
@@ -100,7 +100,7 @@ export async function PATCH(
 // DELETE: Remove Car & Notify Users
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { id } = await params; // Car ID
@@ -136,7 +136,7 @@ export async function DELETE(
                 <div style="background: #FFF5F5; padding: 15px; border-radius: 8px; margin: 15px 0;">
                   <p><strong>Booking ID:</strong> ${booking._id}</p>
                   <p><strong>Date:</strong> ${new Date(
-                    booking.startDate
+                    booking.startDate,
                   ).toLocaleDateString()}</p>
                   <p><strong>Status:</strong> <span style="color: red;">CANCELLED</span></p>
                 </div>
@@ -153,7 +153,7 @@ export async function DELETE(
           return transporter
             .sendMail(mailOptions)
             .catch((err) =>
-              console.error(`Failed to email ${booking.userId.email}`, err)
+              console.error(`Failed to email ${booking.userId.email}`, err),
             );
         }
       });
@@ -163,11 +163,11 @@ export async function DELETE(
 
       // Update Booking Statuses in DB
       await TestDrive.updateMany(
-        { carId: id, status: { $in: ["pending", "confirmed"] } },
+        { carId: id, status: { $in: ["PENDING", "CONFIRMED"] } },
         {
           status: "CANCELLED",
           notes: "Automatically cancelled: Vendor deleted the vehicle.",
-        }
+        },
       );
     }
 
@@ -186,7 +186,7 @@ export async function DELETE(
         message: "Car deleted successfully. Affected users have been notified.",
         affectedBookings: activeBookings.length,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Delete Error:", error);

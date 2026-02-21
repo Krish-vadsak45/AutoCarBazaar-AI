@@ -4,7 +4,7 @@ import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
+  console.log("jkj",pathname);
   // Get session token from NextAuth
   const token = await getToken({
     req,
@@ -42,10 +42,10 @@ export async function middleware(req: NextRequest) {
             new URL(`/admin/${token._id}/dashboard`, req.url),
           );
         }
-        // If they are a vendor, they should go to their specific admin dashboard
+        // If they are a vendor, they should go to their specific vendor dashboard
         if (userRole === "vendor" && vendorId) {
           return NextResponse.redirect(
-            new URL(`/admin/${vendorId}/dashboard`, req.url),
+            new URL(`/vendor/${vendorId}/dashboard`, req.url),
           );
         }
       } else {
@@ -59,7 +59,7 @@ export async function middleware(req: NextRequest) {
           const pathVendorId = segments[2];
           if (pathVendorId && pathVendorId !== vendorId) {
             return NextResponse.redirect(
-              new URL(`/admin/${vendorId}/dashboard`, req.url),
+              new URL(`/vendor/${vendorId}/dashboard`, req.url),
             );
           }
         }
@@ -97,7 +97,7 @@ export async function middleware(req: NextRequest) {
       );
     } else if (userRole === "vendor" && (token as any).vendorId) {
       return NextResponse.redirect(
-        new URL(`/admin/${(token as any).vendorId}/dashboard`, req.url),
+        new URL(`/vendor/${(token as any).vendorId}/dashboard`, req.url),
       );
     }
     return NextResponse.redirect(new URL("/", req.url));

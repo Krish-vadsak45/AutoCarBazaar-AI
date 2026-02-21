@@ -123,7 +123,7 @@ const Header = () => {
                     (session as any)?.user?.role === "admin"
                       ? `/admin/${session.user?._id}/dashboard`
                       : (session as any)?.user?.role === "vendor"
-                        ? `/admin/${(session as any).user.vendorId}/dashboard`
+                        ? `/vendor/${(session as any).user.vendorId}/dashboard`
                         : "/admin/login"
                   }
                   className="hidden md:block"
@@ -278,7 +278,7 @@ const Header = () => {
                   (session as any)?.user?.role === "admin"
                     ? `/admin/${session.user?._id}/dashboard`
                     : (session as any)?.user?.role === "vendor"
-                      ? `/admin/${(session as any).user.vendorId}/dashboard`
+                      ? `/vendor/${(session as any).user.vendorId}/dashboard`
                       : "/admin/login"
                 }
                 onClick={() => setIsMobileMenuOpen(false)}

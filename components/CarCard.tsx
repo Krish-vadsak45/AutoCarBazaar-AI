@@ -21,6 +21,7 @@ type Car = {
   transmission?: string;
   fuel?: string;
   tags?: string[];
+  status?: "available" | "unavailable";
 };
 
 type CarCardProps = {
@@ -40,6 +41,7 @@ export default function CarCard({ cars, onView }: CarCardProps) {
     transmission,
     fuel,
     tags = [],
+    status = "available",
   } = cars;
   const [fav, setFav] = useState(false);
   const { data: session } = useSession();
@@ -111,9 +113,16 @@ export default function CarCard({ cars, onView }: CarCardProps) {
       </div>
 
       <div className="p-4">
-        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 transition-colors duration-200 group-hover:text-primary">
-          {title}
-        </h3>
+        <div className="flex justify-between items-start mb-1">
+          <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 transition-colors duration-200 group-hover:text-primary leading-tight">
+            {title}
+          </h3>
+          {status === "unavailable" && (
+            <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0 h-4">
+              Sold Out
+            </Badge>
+          )}
+        </div>
         <div className="mt-1 flex items-baseline justify-between">
           <div>
             <div className="text-primary font-bold text-lg">${price}</div>

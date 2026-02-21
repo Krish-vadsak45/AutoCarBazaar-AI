@@ -21,6 +21,7 @@ export interface ICar extends Document {
   features?: string[];
   specs?: ISpecs;
   tags?: string[];
+  status: "available" | "unavailable";
 }
 
 const SpecsSchema = new mongoose.Schema<ISpecs>(
@@ -52,6 +53,11 @@ const CarSchema = new mongoose.Schema<ICar>(
     features: { type: [String], default: [] },
     specs: { type: SpecsSchema },
     tags: { type: [String], default: [] },
+    status: {
+      type: String,
+      enum: ["available", "unavailable"],
+      default: "available",
+    },
   },
   { timestamps: true },
 );
