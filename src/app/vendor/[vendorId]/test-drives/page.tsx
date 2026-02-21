@@ -37,7 +37,7 @@ import {
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-type Status = "Pending" | "Confirmed" | "Completed" | "Cancelled";
+type Status = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
 interface TestDriveData {
   id: string;
@@ -52,12 +52,12 @@ interface TestDriveData {
 }
 
 const statusColors: Record<Status, string> = {
-  Pending:
+  PENDING:
     "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300",
-  Confirmed:
+  CONFIRMED:
     "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300",
-  Completed: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
-  Cancelled: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
+  COMPLETED: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
+  CANCELLED: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
 };
 
 export default function TestDrivesPage() {
@@ -89,8 +89,7 @@ export default function TestDrivesPage() {
         }),
         time: `${item.startTime} - ${item.endTime}`,
         customer: item.userId?.name || "Anonymous",
-        status: (item.status.charAt(0).toUpperCase() +
-          item.status.slice(1)) as Status,
+        status: item.status as Status,
         notes: item.notes || "No notes provided",
         image:
           item.carId?.image || item.carId?.images?.[0] || "/placeholder.svg",
@@ -164,10 +163,10 @@ export default function TestDrivesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Confirmed">Confirmed</SelectItem>
-            <SelectItem value="Completed">Completed</SelectItem>
-            <SelectItem value="Cancelled">Cancelled</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -227,25 +226,25 @@ export default function TestDrivesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Pending")}
+                          onClick={() => updateStatus(drive.id, "PENDING")}
                         >
                           <div className="h-2 w-2 rounded-full bg-orange-500 mr-2" />
                           Pending
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Confirmed")}
+                          onClick={() => updateStatus(drive.id, "CONFIRMED")}
                         >
                           <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
                           Confirmed
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Completed")}
+                          onClick={() => updateStatus(drive.id, "COMPLETED")}
                         >
                           <div className="h-2 w-2 rounded-full bg-blue-500 mr-2" />
                           Completed
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "Cancelled")}
+                          onClick={() => updateStatus(drive.id, "CANCELLED")}
                         >
                           <div className="h-2 w-2 rounded-full bg-red-500 mr-2" />
                           Cancelled
@@ -294,12 +293,12 @@ export default function TestDrivesPage() {
                         View Car
                       </a>
                     </Button>
-                    {drive.status === "Pending" && (
+                    {drive.status === "PENDING" && (
                       <Button
                         variant="destructive"
                         size="sm"
                         className="gap-2"
-                        onClick={() => updateStatus(drive.id, "Cancelled")}
+                        onClick={() => updateStatus(drive.id, "CANCELLED")}
                       >
                         <X className="h-4 w-4" />
                         Cancel

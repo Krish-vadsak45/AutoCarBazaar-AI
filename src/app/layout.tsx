@@ -16,20 +16,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [currentURl, setCurrentURl] = useState("");
-  const [adminContainer, setAdminContainer] = useState(false);
-  useEffect(() => {
-    setCurrentURl(window.location.href);
-    if (currentURl.includes("/admin")) {
-      setAdminContainer(true);
-    } else {
-      setAdminContainer(false);
-    }
-  }, [currentURl]);
-
   const pathname = usePathname();
 
-  const isAdminTab = pathname.includes("/admin");
+  const isAdminTab = pathname.includes("/admin") || pathname.includes("/vendor");
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`}>

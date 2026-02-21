@@ -29,6 +29,7 @@ import {
   CarFront,
   Clock,
 } from "lucide-react";
+import { Badge } from "./ui/badge";
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -269,9 +270,16 @@ export default function CarDetailClient({ car }: { car: any }) {
                   {car.bodyType}
                 </span>
               </div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                {car.title}
-              </h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+                  {car.title}
+                </h1>
+                {car.status === "unavailable" && (
+                  <Badge variant="destructive" className="h-fit">
+                    Unavailable
+                  </Badge>
+                )}
+              </div>
               <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                 {formatCurrency(car.price)}
               </p>

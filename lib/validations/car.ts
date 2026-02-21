@@ -43,6 +43,7 @@ export const carSchema = z.object({
   }),
   features: stringToArray.optional().default([]),
   tags: stringToArray.optional().default([]),
+  status: z.enum(["available", "unavailable"]).optional().default("available"),
 });
 
 export type CarFormValues = z.input<typeof carSchema>;

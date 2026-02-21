@@ -9,7 +9,8 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   const segments = pathname.split("/");
-  const isVendorPath = segments[1] === "admin";
+  console.log(segments);
+  const isVendorPath = segments[1] === "vendor";
   const isAdminPath = segments[1] === "admin" && segments[2] !== "login";
   const vendorId = isVendorPath || isAdminPath ? segments[2] : null;
 

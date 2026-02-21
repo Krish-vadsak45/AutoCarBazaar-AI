@@ -94,27 +94,27 @@ export default function MyReservationsPage() {
 
   // Status Badge Logic
   const getStatusBadge = (status: string) => {
-    const normalizedStatus = status?.toLowerCase() || "";
+    const normalizedStatus = status?.toUpperCase() || "";
     const statusConfig: Record<
       string,
       { bg: string; icon: any; label: string }
     > = {
-      confirmed: {
+      CONFIRMED: {
         bg: "bg-emerald-500 hover:bg-emerald-600",
         icon: CheckCircle2,
         label: "Confirmed",
       },
-      pending: {
+      PENDING: {
         bg: "bg-amber-500 hover:bg-amber-600",
         icon: Clock,
         label: "Pending",
       },
-      cancelled: {
+      CANCELLED: {
         bg: "bg-rose-500 hover:bg-rose-600",
         icon: XCircle,
         label: "Cancelled",
       },
-      completed: {
+      COMPLETED: {
         bg: "bg-blue-500 hover:bg-blue-600",
         icon: CheckCircle2,
         label: "Completed",
@@ -141,7 +141,7 @@ export default function MyReservationsPage() {
       if (end && end !== start) {
         return `${format(new Date(start), "MMM dd")} - ${format(
           new Date(end),
-          "MMM dd, yyyy"
+          "MMM dd, yyyy",
         )}`;
       }
       return format(new Date(start), "eeee, MMM dd, yyyy");
@@ -178,24 +178,23 @@ export default function MyReservationsPage() {
           </div>
 
           {/* Filters */}
-            <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-x-auto">
-              {["all", "pending", "confirmed", "completed", "cancelled"].map(
-                (f) => (
-                  <button
-                    key={f}
-                    onClick={() => handleFilterChange(f)}
-                    className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
-                      filter.toLowerCase() === f.toLowerCase()
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    {f === "all" ? "All" : f}
-                  </button>
-                )
-              )}
-            </div>
-          
+          <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-x-auto">
+            {["all", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map(
+              (f) => (
+                <button
+                  key={f}
+                  onClick={() => handleFilterChange(f)}
+                  className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
+                    filter === f
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {f === "all" ? "All" : f}
+                </button>
+              ),
+            )}
+          </div>
         </div>
 
         {/* Content List */}
@@ -352,7 +351,7 @@ export default function MyReservationsPage() {
                         </div>
                       </div>
 
-                      {res.status?.toLowerCase() === "pending" && (
+                      {res.status === "PENDING" && (
                         <div className="flex items-center gap-3 sm:col-span-2">
                           <div className="p-2.5 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 text-yellow-600">
                             <AlertCircle className="w-5 h-5" />
@@ -399,7 +398,7 @@ export default function MyReservationsPage() {
                         </Button>
                         <Button
                           className="rounded-xl shadow-lg shadow-primary/20 flex-1 sm:flex-none"
-                          disabled={res.status?.toLowerCase() === "cancelled"}
+                          disabled={res.status === "CANCELLED"}
                         >
                           Details <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>

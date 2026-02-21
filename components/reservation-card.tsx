@@ -19,7 +19,7 @@ interface ReservationData {
   selectedDate: string;
   selectedTime: string;
   notes: string;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
 }
 
 interface ReservationCardProps {
@@ -43,12 +43,14 @@ export function ReservationCard({
   };
 
   const statusStyles = {
-    pending:
+    PENDING:
       "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-    confirmed:
+    CONFIRMED:
       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
-    cancelled:
+    CANCELLED:
       "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800",
+    COMPLETED:
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800",
   };
 
   return (
@@ -65,8 +67,9 @@ export function ReservationCard({
             <div className="absolute top-4 left-4">
               <Badge
                 className={cn(
-                  "px-3 py-1 font-semibold capitalize shadow-lg backdrop-blur-md",
-                  statusStyles[reservation.status]
+                  "px-3 py-1 font-semibold uppercase shadow-lg backdrop-blur-md",
+                  statusStyles[reservation.status] ||
+                    "bg-gray-100 text-gray-700",
                 )}
               >
                 {reservation.status}

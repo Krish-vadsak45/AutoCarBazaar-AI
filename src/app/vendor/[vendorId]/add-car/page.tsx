@@ -32,6 +32,9 @@ import {
   Edit2,
   CarFront,
   Loader2,
+  ToggleLeft,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -89,6 +92,23 @@ export default function VendorCarsPage() {
       toast.success("Car deleted successfully");
     } catch (error) {
       toast.error("Failed to delete car");
+    }
+  };
+
+  // Handle Toggle Status
+  const handleToggleStatus = async (carId: string, currentStatus: string) => {
+    const newStatus = currentStatus === "available" ? "unavailable" : "available";
+    try {
+      const { data } = await axios.patch(`/api/vend-cars/${carId}`, {
+        status: newStatus,
+      });
+      setCars((prev) =>
+        prev.map((c) => (c._id === carId ? { ...c, status: newStatus } : c)),
+      );
+      toast.success(`Car marked as ${newStatus}`);
+    } catch (error) {
+      console.error("Failed to update status", error);
+      toast.error("Failed to update status");
     }
   };
 
@@ -194,14 +214,25 @@ export default function VendorCarsPage() {
                     ${car.price.toLocaleString()}
                   </div>
 
-                  {/* Status Column (Placeholder) */}
+                  {/* Status Column */}
                   <div>
-                    <Badge
-                      variant="outline"
-                      className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900"
-                    >
-                      Available
-                    </Badge>
+                    {car.status === "available" ? (
+                      <Badge
+                        variant="outline"
+                        className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900 flex w-fit items-center gap-1"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        Available
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900 flex w-fit items-center gap-1"
+                      >
+                        <XCircle className="h-3 w-3" />
+                        Unavailable
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Featured Column (Icon) */}
@@ -255,6 +286,17 @@ export default function VendorCarsPage() {
                             Edit Details
                           </DropdownMenuItem>
                         </Link>
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() =>
+                            handleToggleStatus(car._id, car.status || "available")
+                          }
+                        >
+                          <ToggleLeft
+                            className={`mr-2 h-4 w-4 ${car.status === "available" ? "text-emerald-500" : "text-muted-foreground"}`}
+                          />{" "}
+                          Mark as {car.status === "available" ? "Unavailable" : "Available"}
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50 cursor-pointer"
