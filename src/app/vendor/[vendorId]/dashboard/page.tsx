@@ -18,20 +18,22 @@ import {
   isSameMonth,
 } from "date-fns";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
   Legend,
+  Bar,
+  BarChart,
+  Rectangle,
 } from "recharts";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -57,16 +59,15 @@ import {
 } from "lucide-react";
 import Loading from "@/components/Loading";
 
+// 1. IMPROVED TOOLTIP WITH TAILWIND (Handles Dark Mode Automatically)
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover border border-border p-3 rounded-xl shadow-2xl backdrop-blur-md min-w-[140px] animate-in fade-in zoom-in duration-200">
-        {label && (
-          <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 tracking-wider">
-            {label}
-          </p>
-        )}
-        <div className="space-y-1.5">
+      <div className="bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl shadow-xl backdrop-blur-sm min-w-[160px] animate-in fade-in zoom-in duration-200">
+        <p className="text-[11px] uppercase font-bold text-zinc-500 dark:text-zinc-400 mb-3 tracking-wider">
+          {label}
+        </p>
+        <div className="space-y-2">
           {payload.map((entry: any, index: number) => (
             <div
               key={index}
@@ -74,17 +75,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             >
               <div className="flex items-center gap-2">
                 <div
-                  className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)]"
-                  style={{
-                    backgroundColor:
-                      entry.color || entry.fill || "hsl(var(--primary))",
-                  }}
+                  className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)]"
+                  style={{ backgroundColor: entry.color }}
                 />
-                <span className="text-[12px] font-medium text-foreground">
+                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
                   {entry.name}
                 </span>
               </div>
-              <span className="text-[12px] font-bold text-primary dark:text-primary text-right">
+              <span className="text-sm font-bold font-mono text-zinc-900 dark:text-white">
                 {entry.value}
               </span>
             </div>
@@ -143,6 +141,20 @@ const CustomLegend = ({ payload }: any) => {
       ))}
     </div>
   );
+};
+
+// Define colors that work well on dark backgrounds (lighter/pastel/white variants)
+const COLORS = [
+  "#3b82f6", // Blue
+  "#10b981", // Green
+  "#f59e0b", // Amber
+  "#ef4444", // Red
+  "#8b5cf6", // Purple
+];
+
+// Function to get color based on index, ensuring visibility
+const getBarColor = (index: number) => {
+  return COLORS[index % COLORS.length];
 };
 
 export default function DashboardPage() {
@@ -434,7 +446,7 @@ export default function DashboardPage() {
   if (loading) return <Loading />;
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-background text-foreground pb-20 p-6 space-y-8 animate-in fade-in duration-500">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Dashboard
@@ -503,13 +515,15 @@ export default function DashboardPage() {
                         >
                           <stop
                             offset="5%"
-                            stopColor="hsl(var(--primary))"
+                            stopColor="currentColor"
                             stopOpacity={0.4}
+                            className="text-black dark:text-primary"
                           />
                           <stop
                             offset="95%"
-                            stopColor="hsl(var(--primary))"
+                            stopColor="currentColor"
                             stopOpacity={0.05}
+                            className="text-black dark:text-primary"
                           />
                         </linearGradient>
                       </defs>
@@ -525,26 +539,29 @@ export default function DashboardPage() {
                         axisLine={false}
                         tickLine={false}
                         tick={{
-                          fill: "hsl(var(--foreground))",
+                          fill: "currentColor",
                           fontSize: 12,
                           opacity: 0.7,
                         }}
+                        className="text-foreground fill-foreground"
                         dy={10}
                       />
                       <YAxis
                         axisLine={false}
                         tickLine={false}
                         tick={{
-                          fill: "hsl(var(--foreground))",
+                          fill: "currentColor",
                           fontSize: 12,
                           opacity: 0.7,
                         }}
+                        className="text-foreground fill-foreground"
                       />
                       <Tooltip content={<CustomTooltip />} />
                       <Area
                         type="monotone"
                         dataKey="bookings"
-                        stroke="hsl(var(--primary))"
+                        stroke="currentColor"
+                        className="text-black dark:text-primary stroke-black dark:stroke-primary"
                         strokeWidth={3}
                         fillOpacity={1}
                         fill="url(#colorCount)"
@@ -919,47 +936,51 @@ export default function DashboardPage() {
                         <CartesianGrid
                           strokeDasharray="3 3"
                           vertical={false}
-                          className="stroke-muted"
-                          opacity={0.4}
+                          className="stroke-muted/20"
                         />
                         <XAxis
                           dataKey="name"
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fill: "hsl(var(--foreground))",
+                            fill: "currentColor",
                             fontSize: 12,
-                            opacity: 0.7,
                           }}
+                          className="text-muted-foreground fill-muted-foreground"
                           dy={8}
                         />
                         <YAxis
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fill: "hsl(var(--foreground))",
+                            fill: "currentColor",
                             fontSize: 12,
-                            opacity: 0.7,
                           }}
+                          className="text-muted-foreground fill-muted-foreground"
                         />
                         <Tooltip
                           content={<CustomTooltip />}
                           cursor={{
-                            fill: "hsl(var(--primary) / 0.05)",
+                            fill: "currentColor",
+                            opacity: 0.1,
+                            className: "text-muted-foreground",
                             radius: 4,
                           }}
                         />
                         <Bar
                           dataKey="bookings"
-                          fill="hsl(var(--primary))"
-                          radius={[6, 6, 0, 0]}
-                          barSize={32}
-                          activeBar={{
-                            fill: "hsl(var(--primary))",
-                            opacity: 0.8,
-                          }}
-                          animationDuration={1500}
-                        />
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={50}
+                          activeBar={false}
+                        >
+                          {dayWiseDistribution.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              className="fill-black dark:fill-white hover:opacity-80 transition-opacity duration-300 cursor-pointer"
+                              strokeWidth={0}
+                            />
+                          ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -996,8 +1017,7 @@ export default function DashboardPage() {
                         <CartesianGrid
                           strokeDasharray="3 3"
                           horizontal={false}
-                          className="stroke-muted"
-                          opacity={0.4}
+                          className="stroke-muted/20"
                         />
                         <XAxis type="number" hide />
                         <YAxis
@@ -1007,27 +1027,34 @@ export default function DashboardPage() {
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fill: "hsl(var(--foreground))",
+                            fill: "currentColor",
                             fontSize: 11,
-                            opacity: 0.8,
                           }}
+                          className="text-foreground fill-foreground font-medium"
                         />
                         <Tooltip
                           content={<CustomTooltip />}
                           cursor={{
-                            fill: "hsl(var(--primary) / 0.05)",
+                            fill: "currentColor",
+                            opacity: 0.05,
+                            className: "text-muted-foreground",
                             radius: 4,
                           }}
                         />
                         <Bar
                           dataKey="bookings"
-                          fill="hsl(var(--primary))"
-                          fillOpacity={0.8}
-                          radius={[0, 6, 6, 0]}
+                          radius={[0, 4, 4, 0]}
                           barSize={24}
-                          activeBar={{ fillOpacity: 1 }}
-                          animationDuration={1500}
-                        />
+                          activeBar={false}
+                        >
+                          {vehicleInterest.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              className="fill-black dark:fill-white hover:opacity-80 transition-opacity duration-300 cursor-pointer"
+                              strokeWidth={0}
+                            />
+                          ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (

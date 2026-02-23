@@ -88,30 +88,59 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        // user object is only available on initial sign in
-        token._id = (user as any)._id;
-        token.role = (user as any).role;
-        token.vendorId = (user as any).vendorId;
-        token.name = user.name;
-        token.email = user.email;
-      } else if (!token.role) {
-        // Fetch role if missing
-        await connectToDatabase();
-        const dbUser = await User.findOne({ email: token.email });
-        if (dbUser) {
-          token._id = dbUser._id.toString();
-          token.role = dbUser.role;
-          if (dbUser.role === "vendor") {
-            const vendor = await Vendor.findOne({
-              userId: dbUser._id.toString(),
+    async signIn({ user, account }) {
+      if (account?.provider === "google" || account?.provider === "github") {
+        try {
+          await connectToDatabase();
+          const existingUser = await User.findOne({ email: user.email });
+
+          if (!existingUser) {
+            await User.create({
+              name: user.name,
+              email: user.email,
+              role: "user", // Default role
+              isVerified: true, // OAuth users are verified by provide
+              isActive: true,
             });
-            if (vendor) {
-              token.vendorId = vendor._id.toString();
+          }
+          return true;
+        } catch (error) {
+          console.error("Error checking if user exists: ", error);
+          return false;
+        }
+      }
+      return true;
+    },
+
+    async jwt({ token, user }: any) {
+      if (user) {
+        // 🔹 For Credentials Provider: user has `_id` & `role` from authorize()
+        if (user._id) {
+          token._id = user._id;
+          token.role = user.role;
+          token.vendorId = user.vendorId; // Ensure vendorId is passed
+        }
+        // 🔹 For OAuth (Google/GitHub): Fetch user from DB
+        else {
+          await connectToDatabase();
+          const dbUser = await User.findOne({ email: user.email });
+
+          if (dbUser) {
+            token._id = dbUser._id.toString();
+            token.role = dbUser.role;
+
+            if (dbUser.role === "vendor") {
+              const vendor = await Vendor.findOne({
+                userId: dbUser._id.toString(),
+              });
+              if (vendor) {
+                token.vendorId = vendor._id.toString();
+              }
             }
           }
         }
+        token.name = user.name;
+        token.email = user.email;
       }
       return token;
     },
