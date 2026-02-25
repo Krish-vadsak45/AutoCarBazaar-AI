@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import axios from "axios";
 
 type Status = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
@@ -73,9 +74,8 @@ export default function TestDrivesPage() {
   const fetchTestDrives = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/vendor/test-drives");
-      if (!response.ok) throw new Error("Failed to fetch test drives");
-      const data = await response.json();
+      const response = await axios.get("/api/vendor/test-drives");
+      const data = response.data;
 
       const formattedData: TestDriveData[] = data.map((item: any) => ({
         id: item._id,
@@ -115,13 +115,10 @@ export default function TestDrivesPage() {
 
   const updateStatus = async (driveId: string, newStatus: string) => {
     try {
-      const response = await fetch("/api/vendor/test-drives", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: driveId, status: newStatus }),
+      await axios.patch("/api/vendor/test-drives", {
+        id: driveId,
+        status: newStatus,
       });
-
-      if (!response.ok) throw new Error("Failed to update status");
 
       setDrives(
         drives.map((d) =>

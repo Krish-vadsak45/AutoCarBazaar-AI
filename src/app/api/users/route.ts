@@ -16,20 +16,24 @@ export async function GET() {
 
     await connectToDatabase();
 
-    const user = await User.findOne({ email: session.user.email })
-      .select("-password") // hide password
-      .lean();
+    const user = await User.findOne({ email: session.user.email }).lean();
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ user }, { status: 200 });
+    const { password, ...userWithoutPassword } = user as any;
+    const hasPassword = !!password;
+
+    return NextResponse.json(
+      { user: { ...userWithoutPassword, hasPassword } },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -44,35 +48,56 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, password } = body;
+    const { name, currentPassword, newPassword, image, phone } = body;
 
     await connectToDatabase();
 
-    const userEmail = session.user.email;
+    const user = await User.findOne({ email: session.user.email });
 
-    let hashedPassword: string | undefined;
-
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, 10);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const updatedUser = await User.findOneAndUpdate(
-      { email: userEmail },
-      {
-        $set: {
-          name: name || session.user.name,
-          ...(hashedPassword && { password: hashedPassword }),
-        },
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    ).select("-password");
+    // Update basic fields
+    if (name) user.name = name;
+    if (image) (user as any).image = image || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+    if (phone) (user as any).phone = phone || 1234567890;
 
-    return NextResponse.json({ user: updatedUser }, { status: 201 });
+    // Handle password update
+    if (newPassword) {
+      if (user.password) {
+        // User has a password, verify current password
+        if (!currentPassword) {
+          return NextResponse.json(
+            { error: "Current password is required to change password" },
+            { status: 400 },
+          );
+        }
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+          return NextResponse.json(
+            { error: "Incorrect current password" },
+            { status: 400 },
+          );
+        }
+      }
+      // Set new password (either no existing password or verified current)
+      user.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    await user.save();
+
+    const { password: _, ...userWithoutPassword } = user.toObject();
+
+    return NextResponse.json(
+      { user: { ...userWithoutPassword, hasPassword: !!user.password } },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error upserting user:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

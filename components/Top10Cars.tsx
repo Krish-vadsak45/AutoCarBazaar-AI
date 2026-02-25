@@ -30,7 +30,7 @@ const cars = [
     fuel: "Gasoline",
   },
   {
-    image: "/4.jpg",
+    image: "/1.png",
     title: "BMW 3 Series",
     year: "2017",
     price: "22,000",
@@ -38,7 +38,7 @@ const cars = [
     fuel: "Diesel",
   },
   {
-    image: "/5.jpg",
+    image: "/1.png",
     title: "Audi A4",
     year: "2018",
     price: "24,000",
@@ -46,7 +46,7 @@ const cars = [
     fuel: "Gasoline",
   },
   {
-    image: "/6.jpg",
+    image: "/1.png",
     title: "Hyundai Elantra",
     year: "2021",
     price: "14,000",
@@ -54,7 +54,7 @@ const cars = [
     fuel: "Gasoline",
   },
   {
-    image: "/7.jpg",
+    image: "/1.png",
     title: "Kia Seltos",
     year: "2022",
     price: "16,000",
@@ -62,7 +62,7 @@ const cars = [
     fuel: "Gasoline",
   },
   {
-    image: "/8.jpg",
+    image: "/1.png",
     title: "Mercedes C-Class",
     year: "2019",
     price: "28,000",
@@ -70,7 +70,7 @@ const cars = [
     fuel: "Diesel",
   },
   {
-    image: "/9.jpg",
+    image: "/1.png",
     title: "Volkswagen Polo",
     year: "2016",
     price: "8,000",
@@ -78,7 +78,7 @@ const cars = [
     fuel: "Gasoline",
   },
   {
-    image: "/10.jpg",
+    image: "/1.png",
     title: "Nissan Altima",
     year: "2020",
     price: "15,000",

@@ -5,8 +5,12 @@ export interface IUser extends Document {
   name?: string;
   password?: string;
   role?: string;
+  image?: string;
+  phone?: number;
   isActive?: boolean;
   isVerified?: boolean;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
   savedCars: mongoose.Types.ObjectId[];
 }
 
@@ -16,8 +20,14 @@ const UserSchema = new mongoose.Schema<IUser>(
     name: { type: String },
     password: { type: String },
     role: { type: String, enum: ["admin", "user", "vendor"], default: "user" },
+    image: {
+      type: String,
+    },
+    phone: { type: Number },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
     savedCars: [{ type: mongoose.Schema.Types.ObjectId, ref: "Car" }],
   },
   { timestamps: true, strict: false },

@@ -213,28 +213,91 @@ const Header = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-gray-600 dark:text-gray-300"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
+          <div className="flex items-center gap-4 md:hidden">
+            <ThemeToggle />
+
+            {/* Mobile User Profile (if authenticated) */}
+            {status === "authenticated" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-8 w-8 rounded-full"
+                  >
+                    <Image
+                      src={session.user?.image || "/placeholder.svg"}
+                      alt={session.user?.name || "User"}
+                      fill
+                      className="rounded-full object-cover border border-primary/20"
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {session.user?.name}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {session.user?.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link href="/profile">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/my-reservation">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Layout className="mr-2 h-4 w-4" />
+                      <span>My Reservation</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator />
+                  <Link href="/saved-cars">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Heart className="mr-2 h-4 w-4" />
+                      Saved Cars
+                    </DropdownMenuItem>
+                  </Link>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/10"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-          </button>
+
+            <button
+              className="p-2 text-gray-600 dark:text-gray-300"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-950 border-t border-gray-200 dark:border-slate-800 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-950 border-t border-gray-200 dark:border-slate-800 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200 h-[calc(100vh-80px)] overflow-y-auto">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
               className={cn(
-                "text-base font-medium py-2 px-4 rounded-lg transition-colors",
+                "text-lg font-medium py-3 px-4 rounded-xl transition-colors",
                 pathname === link.href
                   ? "bg-primary/10 text-primary"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-900",
@@ -244,34 +307,17 @@ const Header = () => {
               {link.name}
             </Link>
           ))}
-          <div className="h-px bg-gray-200 dark:bg-slate-800 my-2" />
-          <div className="flex items-center justify-between px-4">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              Theme
-            </span>
-            <ThemeToggle />
-          </div>
 
           {status === "authenticated" ? (
-            <div className="flex flex-col gap-3 px-4">
-              <div className="flex items-center gap-3 py-2">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                  <Image
-                    src={session.user?.image || "/placeholder.svg"}
-                    alt={session.user?.name || "User"}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {session.user?.name}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {session.user?.email}
-                  </span>
-                </div>
-              </div>
+            <div className="flex flex-col gap-3 mt-4 border-t pt-4 border-gray-100 dark:border-slate-800">
+              <Link
+                href="/saved-cars"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-900 rounded-xl"
+              >
+                <Heart size={20} />
+                <span className="font-medium">Saved Cars</span>
+              </Link>
 
               <Link
                 href={
@@ -282,41 +328,42 @@ const Header = () => {
                       : "/admin/login"
                 }
                 onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-900 rounded-xl"
               >
-                <Button variant="ghost" className="w-full justify-start px-0">
-                  <Layout className="mr-2 h-4 w-4" />
-                  Admin Portal
-                </Button>
+                <Layout size={20} />
+                <span className="font-medium">Admin Portal</span>
               </Link>
-
-              <Button
-                variant="destructive"
-                className="w-full justify-start"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log Out
-              </Button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 mt-2">
+            <div className="flex flex-col gap-3 mt-auto">
               <Link
                 href="/admin/login"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Button variant="ghost" className="w-full justify-start px-4">
-                  <Layout className="mr-2 h-4 w-4" />
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start px-4 h-12 text-base"
+                >
+                  <Layout className="mr-2 h-5 w-5" />
                   Admin Portal
                 </Button>
               </Link>
-              <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full justify-center">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full justify-center">Get Started</Button>
-              </Link>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <Link
+                  href="/sign-in"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button variant="outline" className="w-full h-12 text-base">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link
+                  href="/sign-up"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button className="w-full h-12 text-base">Get Started</Button>
+                </Link>
+              </div>
             </div>
           )}
         </div>

@@ -254,153 +254,132 @@ export default function MyReservationsPage() {
                   layout
                   key={res._id}
                   variants={itemVariants}
-                  exit={{ opacity: 0, x: -20, scale: 0.95 }}
-                  className="group relative bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 hover:border-primary/30 shadow-sm hover:shadow-xl dark:shadow-black/20 transition-all duration-300 overflow-hidden flex flex-col lg:flex-row"
+                  exit={{ opacity: 0, y: 20 }}
+                  className="group bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
                 >
-                  {/* Left: Car Image & Status */}
-                  <div className="relative w-full lg:w-80 h-56 lg:h-auto bg-gray-100 dark:bg-slate-800 flex-shrink-0 overflow-hidden">
-                    {res.carId?.image || res.carId?.images?.[0] ? (
-                      <img
-                        src={res.carId.image || res.carId.images![0]}
-                        alt={res.carId.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <Car className="w-16 h-16 text-muted-foreground/30" />
+                  <div className="flex flex-col md:flex-row">
+                    {/* Image Section */}
+                    <div className="relative w-full md:w-72 h-56 md:h-auto shrink-0">
+                      {res.carId?.image || res.carId?.images?.[0] ? (
+                        <div className="w-full h-full relative overflow-hidden">
+                          <img
+                            src={res.carId.image || res.carId.images![0]}
+                            alt={res.carId.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent md:hidden" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                          <Car className="w-12 h-12 text-gray-300" />
+                        </div>
+                      )}
+
+                      {/* Mobile Status Badge */}
+                      <div className="absolute top-3 left-3 md:hidden">
+                        {getStatusBadge(res.status)}
                       </div>
-                    )}
 
-                    {/* Floating Status Badge */}
-                    <div className="absolute top-4 left-4 z-10 shadow-lg">
-                      {getStatusBadge(res.status)}
-                    </div>
-
-                    {/* Price & Body Type Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 flex justify-between items-end">
-                      <div>
-                        <p className="text-white text-2xl font-bold">
+                      {/* Mobile Price Overlay */}
+                      <div className="absolute bottom-3 left-3 md:hidden text-white">
+                        <p className="font-bold text-lg">
                           ${res.carId?.price?.toLocaleString() || "N/A"}
                         </p>
-                        <p className="text-white/70 text-xs">
-                          {res.carId?.bodyType || "Sedan"}
-                        </p>
-                      </div>
-                      {res.carId?.transmission && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-white/20 backdrop-blur-sm text-white border-0"
-                        >
-                          {res.carId.transmission}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Details Content */}
-                  <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between">
-                    {/* Top Row: Title & Vendor */}
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4 mb-6">
-                      <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                          {res.carId?.title || "Unknown Vehicle"}
-                        </h3>
-                        {res.vendorId && (
-                          <div className="flex items-center gap-2 mt-2 text-sm font-medium text-muted-foreground">
-                            <MapPin className="w-4 h-4 text-primary" />
-                            <span>{res.vendorId.businessName}</span>
-                            {res.vendorId.address?.city && (
-                              <span className="text-xs">
-                                • {res.vendorId.address.city},{" "}
-                                {res.vendorId.address.state}
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    {/* Middle: Grid Info */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-6 border-y border-dashed border-gray-200 dark:border-slate-800">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600">
-                          <Calendar className="w-5 h-5" />
-                        </div>
+                    {/* Content Section */}
+                    <div className="flex-1 p-5 md:p-6 flex flex-col">
+                      <div className="flex justify-between items-start mb-4">
                         <div>
-                          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-wider">
-                            Scheduled Date
-                          </p>
-                          <p className="text-sm font-bold">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white line-clamp-1">
+                              {res.carId?.title || "Unknown Vehicle"}
+                            </h3>
+                            <Badge
+                              variant="outline"
+                              className="hidden md:inline-flex text-xs font-normal"
+                            >
+                              {res.carId?.bodyType || "Sedan"}
+                            </Badge>
+                          </div>
+
+                          {res.vendorId && (
+                            <div className="flex items-center text-sm text-muted-foreground gap-1.5">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span className="font-medium">
+                                {res.vendorId.businessName}
+                              </span>
+                              {res.vendorId.address?.city && (
+                                <span className="text-gray-400">
+                                  • {res.vendorId.address.city}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="hidden md:flex flex-col items-end gap-2">
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-primary">
+                              ${res.carId?.price?.toLocaleString() || "0"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Est. price
+                            </p>
+                          </div>
+                          {getStatusBadge(res.status)}
+                        </div>
+                      </div>
+
+                      {/* Info Grid */}
+                      <div className="grid grid-cols-2 gap-y-4 gap-x-8 py-4 border-t border-gray-100 dark:border-slate-800 mb-4">
+                        <div className="space-y-1">
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" />
+                            Date
+                          </span>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {renderDateRange(res.startDate, res.endDate)}
                           </p>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 text-orange-600">
-                          <Clock className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-black text-muted-foreground tracking-wider">
-                            Time Slot
-                          </p>
-                          <p className="text-sm font-bold">
-                            {res.startTime}
-                            {res.endTime && ` - ${res.endTime}`}
+                        <div className="space-y-1">
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            Time
+                          </span>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {res.startTime} {res.endTime && `- ${res.endTime}`}
                           </p>
                         </div>
                       </div>
 
-                      {res.status === "PENDING" && (
-                        <div className="flex items-center gap-3 sm:col-span-2">
-                          <div className="p-2.5 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 text-yellow-600">
-                            <AlertCircle className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-wider">
-                              Status
-                            </p>
-                            <p className="text-sm font-bold text-yellow-700 dark:text-yellow-500">
-                              Awaiting Vendor Approval
-                            </p>
-                          </div>
+                      {/* Notes Section - if exists */}
+                      {res.notes && (
+                        <div className="mb-5 bg-gray-50 dark:bg-slate-800/50 p-3 rounded-lg text-sm text-gray-600 dark:text-gray-300">
+                          <span className="font-medium text-xs text-gray-500 uppercase block mb-1">
+                            Notes
+                          </span>
+                          "{res.notes}"
                         </div>
                       )}
-                    </div>
 
-                    {/* Bottom: Notes & Actions */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-6">
-                      <div className="flex-1 min-w-0">
-                        {res.notes ? (
-                          <div className="flex items-start gap-2 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border-l-2 border-blue-500">
-                            <FileText className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                            <p className="text-xs text-muted-foreground italic line-clamp-2">
-                              "{res.notes}"
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">
-                            No additional notes provided
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex gap-3 w-full sm:w-auto">
+                      {/* Actions */}
+                      <div className="mt-auto flex flex-col sm:flex-row gap-3 justify-end pt-2">
                         <Button
                           asChild
-                          variant="outline"
-                          className="rounded-xl border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 flex-1 sm:flex-none"
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-primary"
                         >
                           <Link href={`/cars/${res.carId?._id}`}>
-                            <Car className="w-4 h-4 mr-2" />
-                            View Car
+                            View Vehicle Details
                           </Link>
                         </Button>
-                        <Button
-                          className="rounded-xl shadow-lg shadow-primary/20 flex-1 sm:flex-none"
-                          disabled={res.status === "CANCELLED"}
-                        >
-                          Details <ChevronRight className="w-4 h-4 ml-1" />
+                        <Button size="sm" className="rounded-lg shadow-sm">
+                          Manage Booking
+                          <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                       </div>
                     </div>

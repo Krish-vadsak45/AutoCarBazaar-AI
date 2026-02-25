@@ -88,62 +88,72 @@ export function SearchAndFilter({
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Initial centering
+    // Initial centering if top is null
     if (top === null) {
-      setTop(window.innerHeight / 2 - 64);
+      if (typeof window !== "undefined") {
+        setTop(window.innerHeight / 2 - 64);
+      }
     }
+  }, [top]);
 
-    const handleMouseMove = (e: MouseEvent) => {
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
 
-      const newX = e.clientX - dragOffset.current.x;
-      const newY = e.clientY - dragOffset.current.y;
+      const clientX =
+        "touches" in e
+          ? (e as TouchEvent).touches[0].clientX
+          : (e as MouseEvent).clientX;
+      const clientY =
+        "touches" in e
+          ? (e as TouchEvent).touches[0].clientY
+          : (e as MouseEvent).clientY;
+
+      const newX = clientX - (dragOffset.current?.x || 0);
+      const newY = clientY - (dragOffset.current?.y || 0);
 
       // Clamp Y to stay within screen
       const clampedY = Math.max(20, Math.min(window.innerHeight - 148, newY));
-
-      // We don't clamp X tightly during drag to allow moving to other side freely
-      // But we can keep it somewhat on screen
       const clampedX = Math.max(-100, Math.min(window.innerWidth - 50, newX));
 
       setDragPos({ x: clampedX, y: clampedY });
     };
 
-    const handleMouseUp = () => {
+    const handleEnd = () => {
       if (isDragging && dragPos) {
         // Snap logic
         const windowWidth = window.innerWidth;
         const centerX = windowWidth / 2;
 
-        // Determine closest side
-        // If center of component (approx dragPos.x + width/2) is > centerX -> Right
-        // But simplified: where is the handle?
         if (dragPos.x + 24 < centerX) {
-          // +24 is half button width
           setPosition("left");
         } else {
           setPosition("right");
         }
 
-        // Persist the Y position
         setTop(dragPos.y);
       }
       setIsDragging(false);
+      // Don't nullify dragPos immediately if we need it for animation, but here we likely do want to reset
       setDragPos(null);
     };
 
     if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mousemove", handleMove);
+      document.addEventListener("mouseup", handleEnd);
+      document.addEventListener("touchmove", handleMove);
+      document.addEventListener("touchend", handleEnd);
       document.body.style.userSelect = "none";
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleEnd);
+      document.removeEventListener("touchmove", handleMove);
+      document.removeEventListener("touchend", handleEnd);
       document.body.style.userSelect = "";
     };
-  }, [isDragging, dragPos, top]);
+  }, [isDragging, dragPos]);
 
   const MIN_YEAR = 1990;
   const MAX_YEAR = new Date().getFullYear();
@@ -200,18 +210,21 @@ export function SearchAndFilter({
     onYearToChange(String(n));
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent default selectively to allow scrolling inside content if needed
+    // e.preventDefault();
+
+    // Check if it's a touch event or mouse event
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
     // Get the visual button element (parent of the handle) to calculate precise offset
-    // This ensures that when we hide the content panel and the container shrinks,
-    // we anchor the drag to the visible button, preventing visual jumps.
     const tabRect = e.currentTarget.parentElement?.getBoundingClientRect();
 
     if (tabRect) {
       dragOffset.current = {
-        x: e.clientX - tabRect.left,
-        y: e.clientY - tabRect.top,
+        x: clientX - tabRect.left,
+        y: clientY - tabRect.top,
       };
       setDragPos({ x: tabRect.left, y: tabRect.top });
     } else {
@@ -221,8 +234,8 @@ export function SearchAndFilter({
         ?.getBoundingClientRect();
       if (containerRect) {
         dragOffset.current = {
-          x: e.clientX - containerRect.left,
-          y: e.clientY - containerRect.top,
+          x: clientX - containerRect.left,
+          y: clientY - containerRect.top,
         };
         setDragPos({ x: containerRect.left, y: containerRect.top });
       }
@@ -230,6 +243,47 @@ export function SearchAndFilter({
 
     setIsDragging(true);
   };
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return;
+
+      const clientX =
+        "touches" in e
+          ? (e as TouchEvent).touches[0].clientX
+          : (e as MouseEvent).clientX;
+      const clientY =
+        "touches" in e
+          ? (e as TouchEvent).touches[0].clientY
+          : (e as MouseEvent).clientY;
+
+      const newX = clientX - dragOffset.current.x;
+      const newY = clientY - dragOffset.current.y;
+
+      setDragPos({ x: newX, y: newY });
+    };
+
+    const handleEnd = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        // Clean up or snap to edge logic here if needed
+      }
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMove);
+      window.addEventListener("mouseup", handleEnd);
+      window.addEventListener("touchmove", handleMove);
+      window.addEventListener("touchend", handleEnd);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleEnd);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleEnd);
+    };
+  }, [isDragging]);
 
   // Determine dynamic styles
   const style: React.CSSProperties =

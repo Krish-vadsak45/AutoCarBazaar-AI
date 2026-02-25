@@ -53,7 +53,9 @@ export default function CarCard({ cars, onView }: CarCardProps) {
       try {
         const { data } = await axios.get("/api/saved-cars");
         const currentCarId = (id || _id)?.toString();
-        const isSaved = Array.isArray(data) && data.some((c: any) => c?._id?.toString() === currentCarId);
+        const isSaved =
+          Array.isArray(data) &&
+          data.some((c: any) => c?._id?.toString() === currentCarId);
         setFav(isSaved);
       } catch (err) {
         console.error("Error checking fav status", err);
@@ -118,7 +120,10 @@ export default function CarCard({ cars, onView }: CarCardProps) {
             {title}
           </h3>
           {status === "unavailable" && (
-            <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0 h-4">
+            <Badge
+              variant="destructive"
+              className="ml-2 text-[10px] px-1.5 py-0 h-4"
+            >
               Sold Out
             </Badge>
           )}

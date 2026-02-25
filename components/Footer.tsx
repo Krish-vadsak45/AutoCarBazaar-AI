@@ -38,11 +38,11 @@ const Footer = () => {
   const socialIcons = [Instagram, Twitter, Facebook, Globe, Dribbble];
 
   return (
-    <footer className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white p-3 md:p-8 lg:p-15">
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-10">
+    <footer className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white p-6 md:p-12 lg:p-16">
+      <div className="flex flex-col lg:flex-row gap-10">
         {/* Logo block */}
-        <div>
-          <Link href="/" className="flex items-center gap-2">
+        <div className="lg:w-1/3 flex flex-col items-center lg:items-start text-center lg:text-left">
+          <Link href="/" className="flex items-center gap-2 mb-4">
             <Image
               src="/logo-black.png"
               alt="Logo"
@@ -66,12 +66,9 @@ const Footer = () => {
         </div>
 
         {/* Group columns 2 to 5 */}
-        <div className="md:col-span-2 lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="w-full lg:w-2/3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8 lg:gap-10">
           {linkGroups.map((group, idx) => (
-            <div
-              key={idx}
-              className="text-center sm:text-left items-center sm:items-start"
-            >
+            <div key={idx} className="text-left">
               <h3 className="text-lg font-medium mb-3 text-slate-900 dark:text-white">
                 {group.title}
               </h3>
