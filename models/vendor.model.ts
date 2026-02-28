@@ -14,21 +14,35 @@ export interface IVendor extends mongoose.Document {
   businessName: string;
   businessType: "INDIVIDUAL" | "COMPANY" | "AGENCY";
   vendorType: "SINGLE_OWNER" | "FLEET_OWNER";
+
+  // New Interface Fields
+  ownerName: string;
+  contactDetails: {
+    email: string;
+    phone: string;
+    alternatePhone?: string;
+  };
   address: {
+    street: string;
     city: string;
     state: string;
     pincode: string;
   };
+  gstNumber?: string;
+  website?: string;
+  description?: string;
+
   identityProof: {
     type: "AADHAAR" | "PAN" | "PASSPORT" | "DRIVING_LICENSE";
     number: string;
     documentUrl: string;
   };
-  // bankDetails: {
-  //     accountHolderName: string;
-  //     accountNumber: string;
-  //     ifscCode: string;
-  // };
+  bankDetails: {
+    bankName: string;
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+  };
   verificationStatus: "PENDING" | "APPROVED" | "REJECTED";
   workingHours?: workingHours[];
 }
@@ -55,10 +69,23 @@ const VendorProfileSchema = new mongoose.Schema({
   },
 
   address: {
+    street: { type: String, required: true }, // Added Street Address
     city: { type: String, required: true },
     state: { type: String, required: true },
     pincode: { type: String, required: true },
   },
+
+  // New Fields
+  contactDetails: {
+    email: { type: String, required: true },
+    phone: { type: String, required: true },
+    alternatePhone: { type: String }, // Optional
+  },
+
+  ownerName: { type: String, required: true },
+  gstNumber: { type: String }, // Optional for individuals
+  website: { type: String },
+  description: { type: String },
 
   identityProof: {
     type: {
@@ -70,12 +97,13 @@ const VendorProfileSchema = new mongoose.Schema({
     documentUrl: { type: String, required: true },
   },
 
-  // // 💳 Bank Details
-  // bankDetails: {
-  //   accountHolderName: { type: String, required: true },
-  //   accountNumber: { type: String, required: true },
-  //   ifscCode: { type: String, required: true },
-  // },
+  // 💳 Bank Details (Uncommented and fixed)
+  bankDetails: {
+    bankName: { type: String, required: true }, // Added Bank Name
+    accountHolderName: { type: String, required: true },
+    accountNumber: { type: String, required: true },
+    ifscCode: { type: String, required: true }, // Should add validation regex later
+  },
 
   // ✅ Verification Status
   verificationStatus: {
