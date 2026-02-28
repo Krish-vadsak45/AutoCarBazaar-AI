@@ -55,7 +55,9 @@ const vendorSchema = z.object({
   businessName: z.string().min(2),
   ownerName: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: z
+    .string()
+    .min(3, { message: "Password must be at least 3 characters" }),
   phone: z.string().min(10),
   website: z.union([z.string().url(), z.literal("")]).optional(),
   description: z.string().optional(),
@@ -220,7 +222,7 @@ export default function AdminAuthPage() {
         const message = res.data.message || "Vendor registration successful.";
         toast.success(message);
         const { vendorId } = res.data;
-        
+
         // Auto-login after successful registration
         const loginResult = await signIn("credentials", {
           redirect: false,
@@ -230,14 +232,14 @@ export default function AdminAuthPage() {
         });
 
         if (loginResult?.ok) {
-           // Use window.location.href to ensure a full reload and avoid middleware issues
-           globalThis.window.location.href = `/vendor/${vendorId || "dashboard"}/dashboard`;
+          // Use window.location.href to ensure a full reload and avoid middleware issues
+          globalThis.window.location.href = `/vendor/${vendorId || "dashboard"}/dashboard`;
         } else {
-           // Fallback if auto-login fails
-           setIsLoginMode(true);
-           setStep(1);
-           vendorForm.reset();
-           toast.info("Please log in with your new credentials.");
+          // Fallback if auto-login fails
+          setIsLoginMode(true);
+          setStep(1);
+          vendorForm.reset();
+          toast.info("Please log in with your new credentials.");
         }
       }
     } catch (e: any) {
@@ -439,7 +441,7 @@ export default function AdminAuthPage() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={loginForm.control}
                       name="password"
@@ -497,90 +499,55 @@ export default function AdminAuthPage() {
                   onSubmit={vendorForm.handleSubmit(handleVendorReg)}
                   className="flex flex-col h-[340px]" // Fixed height container
                 >
-                {/* Step Indicator */}
-                <div className="flex justify-between mb-6 px-2 relative">
-                  {[1, 2, 3].map((s) => (
-                    <div
-                      key={s}
-                      className="flex flex-col items-center gap-1 z-10"
-                    >
+                  {/* Step Indicator */}
+                  <div className="flex justify-between mb-6 px-2 relative">
+                    {[1, 2, 3].map((s) => (
                       <div
-                        className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
-                          step >= s
-                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                            : "bg-zinc-100 dark:bg-slate-800 text-gray-400",
-                        )}
+                        key={s}
+                        className="flex flex-col items-center gap-1 z-10"
                       >
-                        {s}
+                        <div
+                          className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                            step >= s
+                              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
+                              : "bg-zinc-100 dark:bg-slate-800 text-gray-400",
+                          )}
+                        >
+                          {s}
+                        </div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400">
+                          {s === 1 ? "Info" : s === 2 ? "Legal" : "Bank"}
+                        </span>
                       </div>
-                      <span className="text-[10px] uppercase font-bold text-gray-400">
-                        {s === 1 ? "Info" : s === 2 ? "Legal" : "Bank"}
-                      </span>
+                    ))}
+                    {/* Progress Line */}
+                    <div className="absolute top-4 left-6 right-6 h-[2px] bg-zinc-100 dark:bg-slate-800 -z-0">
+                      <motion.div
+                        className="h-full bg-emerald-500"
+                        animate={{
+                          width: `${((step - 1) / 2) * 100}%`,
+                        }}
+                      />
                     </div>
-                  ))}
-                  {/* Progress Line */}
-                  <div className="absolute top-4 left-6 right-6 h-[2px] bg-zinc-100 dark:bg-slate-800 -z-0">
-                    <motion.div
-                      className="h-full bg-emerald-500"
-                      animate={{
-                        width: `${((step - 1) / 2) * 100}%`,
-                      }}
-                    />
                   </div>
-                </div>
 
-                <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-slate-700 space-y-4">
-                  {step === 1 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-3 p-1"
-                    >
-                      <FormField
-                        control={vendorForm.control}
-                        name="businessName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Business/Shop Name"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={vendorForm.control}
-                        name="ownerName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Owner Full Name"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-2">
+                  <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-slate-700 space-y-4">
+                    {step === 1 && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-3 p-1"
+                      >
                         <FormField
                           control={vendorForm.control}
-                          name="email"
+                          name="businessName"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
                                 <Input
                                   {...field}
-                                  placeholder="Business Email"
+                                  placeholder="Business/Shop Name"
                                   className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
                                 />
                               </FormControl>
@@ -591,167 +558,80 @@ export default function AdminAuthPage() {
 
                         <FormField
                           control={vendorForm.control}
-                          name="password"
+                          name="ownerName"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <div className="relative">
+                                <Input
+                                  {...field}
+                                  placeholder="Owner Full Name"
+                                  className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs px-1" />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField
+                            control={vendorForm.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
                                   <Input
                                     {...field}
-                                    type={showPass ? "text" : "password"}
-                                    placeholder="Password"
+                                    placeholder="Business Email"
                                     className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
                                   />
-                                  <button
-                                    type="button"
-                                    onClick={() => setShowPass(!showPass)}
-                                    className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                                  >
-                                    {showPass ? (
-                                      <EyeOff className="w-4 h-4" />
-                                    ) : (
-                                      <Eye className="w-4 h-4" />
-                                    )}
-                                  </button>
-                                </div>
-                              </FormControl>
-                              <FormMessage className="text-xs px-1" />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={vendorForm.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Contact Phone"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={vendorForm.control}
-                        name="website"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Website (Optional)"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-                    </motion.div>
-                  )}
-
-                  {step === 2 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-3 p-1"
-                    >
-                      <div className="grid grid-cols-2 gap-2">
-                        <FormField
-                          control={vendorForm.control}
-                          name="businessType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
-                                    <SelectValue placeholder="Business Type" />
-                                  </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="INDIVIDUAL">Individual</SelectItem>
-                                  <SelectItem value="COMPANY">Company</SelectItem>
-                                  <SelectItem value="AGENCY">Agency</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage className="text-xs px-1" />
-                            </FormItem>
-                          )}
-                        />
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
 
-                        <FormField
-                          control={vendorForm.control}
-                          name="vendorType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormField
+                            control={vendorForm.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
                                 <FormControl>
-                                  <SelectTrigger className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
-                                    <SelectValue placeholder="Vendor Type" />
-                                  </SelectTrigger>
+                                  <div className="relative">
+                                    <Input
+                                      {...field}
+                                      type={showPass ? "text" : "password"}
+                                      placeholder="Password"
+                                      className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowPass(!showPass)}
+                                      className="absolute right-3 top-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                                    >
+                                      {showPass ? (
+                                        <EyeOff className="w-4 h-4" />
+                                      ) : (
+                                        <Eye className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  </div>
                                 </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="SINGLE_OWNER">Single Owner</SelectItem>
-                                  <SelectItem value="FLEET_OWNER">Fleet Owner</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage className="text-xs px-1" />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
-                      <FormField
-                        control={vendorForm.control}
-                        name="gstNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="GST Number (Optional)"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={vendorForm.control}
-                        name="street"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Street Address, Area"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-2">
                         <FormField
                           control={vendorForm.control}
-                          name="city"
+                          name="phone"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
                                 <Input
                                   {...field}
-                                  placeholder="City"
+                                  placeholder="Contact Phone"
                                   className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
                                 />
                               </FormControl>
@@ -759,15 +639,16 @@ export default function AdminAuthPage() {
                             </FormItem>
                           )}
                         />
+
                         <FormField
                           control={vendorForm.control}
-                          name="state"
+                          name="website"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
                                 <Input
                                   {...field}
-                                  placeholder="State"
+                                  placeholder="Website (Optional)"
                                   className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
                                 />
                               </FormControl>
@@ -775,127 +656,218 @@ export default function AdminAuthPage() {
                             </FormItem>
                           )}
                         />
-                      </div>
+                      </motion.div>
+                    )}
 
-                      <FormField
-                        control={vendorForm.control}
-                        name="pincode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Pincode (6 digits)"
-                                maxLength={6}
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-                    </motion.div>
-                  )}
+                    {step === 2 && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-3 p-1"
+                      >
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField
+                            control={vendorForm.control}
+                            name="businessType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                                      <SelectValue placeholder="Business Type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="INDIVIDUAL">
+                                      Individual
+                                    </SelectItem>
+                                    <SelectItem value="COMPANY">
+                                      Company
+                                    </SelectItem>
+                                    <SelectItem value="AGENCY">
+                                      Agency
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
 
-                  {step === 3 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-3 p-1"
-                    >
-                      {/* Identity */}
-                      <FormField
-                        control={vendorForm.control}
-                        name="idType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="relative">
-                              <FileBadge className="absolute left-3 top-5 w-5 h-5 text-gray-400 z-10" />
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormField
+                            control={vendorForm.control}
+                            name="vendorType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                                      <SelectValue placeholder="Vendor Type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="SINGLE_OWNER">
+                                      Single Owner
+                                    </SelectItem>
+                                    <SelectItem value="FLEET_OWNER">
+                                      Fleet Owner
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={vendorForm.control}
+                          name="gstNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="GST Number (Optional)"
+                                  className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs px-1" />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={vendorForm.control}
+                          name="street"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Street Address, Area"
+                                  className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs px-1" />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField
+                            control={vendorForm.control}
+                            name="city"
+                            render={({ field }) => (
+                              <FormItem>
                                 <FormControl>
-                                  <SelectTrigger className="w-full pl-10 pr-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
-                                    <SelectValue placeholder="ID Type" />
-                                  </SelectTrigger>
+                                  <Input
+                                    {...field}
+                                    placeholder="City"
+                                    className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                  />
                                 </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="AADHAAR">Aadhaar Card</SelectItem>
-                                  <SelectItem value="PAN">PAN Card</SelectItem>
-                                  <SelectItem value="PASSPORT">Passport</SelectItem>
-                                  <SelectItem value="DRIVING_LICENSE">Driving License</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={vendorForm.control}
+                            name="state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="State"
+                                    className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
-                      <FormField
-                        control={vendorForm.control}
-                        name="idNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Enter ID Number"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={vendorForm.control}
-                        name="documentUrl"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="ID Document URL"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Bank */}
-                      <p className="text-xs font-bold text-gray-400 uppercase mt-4">
-                        Bank Details
-                      </p>
-
-                      <FormField
-                        control={vendorForm.control}
-                        name="bankName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Bank Name"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-2">
                         <FormField
                           control={vendorForm.control}
-                          name="accountHolderName"
+                          name="pincode"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
                                 <Input
                                   {...field}
-                                  placeholder="Account Holder"
+                                  placeholder="Pincode (6 digits)"
+                                  maxLength={6}
+                                  className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs px-1" />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
+                    )}
+
+                    {step === 3 && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-3 p-1"
+                      >
+                        {/* Identity */}
+                        <FormField
+                          control={vendorForm.control}
+                          name="idType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="relative">
+                                <FileBadge className="absolute left-3 top-5 w-5 h-5 text-gray-400 z-10" />
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="w-full pl-10 pr-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                                      <SelectValue placeholder="ID Type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="AADHAAR">
+                                      Aadhaar Card
+                                    </SelectItem>
+                                    <SelectItem value="PAN">
+                                      PAN Card
+                                    </SelectItem>
+                                    <SelectItem value="PASSPORT">
+                                      Passport
+                                    </SelectItem>
+                                    <SelectItem value="DRIVING_LICENSE">
+                                      Driving License
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <FormMessage className="text-xs px-1" />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={vendorForm.control}
+                          name="idNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Enter ID Number"
                                   className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
                                 />
                               </FormControl>
@@ -906,13 +878,13 @@ export default function AdminAuthPage() {
 
                         <FormField
                           control={vendorForm.control}
-                          name="accountNumber"
+                          name="documentUrl"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
                                 <Input
                                   {...field}
-                                  placeholder="Account #"
+                                  placeholder="ID Document URL"
                                   className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
                                 />
                               </FormControl>
@@ -920,68 +892,125 @@ export default function AdminAuthPage() {
                             </FormItem>
                           )}
                         />
-                      </div>
 
-                      <FormField
-                        control={vendorForm.control}
-                        name="ifscCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="IFSC Code"
-                                className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs px-1" />
-                          </FormItem>
+                        {/* Bank */}
+                        <p className="text-xs font-bold text-gray-400 uppercase mt-4">
+                          Bank Details
+                        </p>
+
+                        <FormField
+                          control={vendorForm.control}
+                          name="bankName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="Bank Name"
+                                  className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs px-1" />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField
+                            control={vendorForm.control}
+                            name="accountHolderName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Account Holder"
+                                    className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={vendorForm.control}
+                            name="accountNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Account #"
+                                    className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-xs px-1" />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={vendorForm.control}
+                          name="ifscCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="IFSC Code"
+                                  className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
+                                />
+                              </FormControl>
+                              <FormMessage className="text-xs px-1" />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Wizard Controls */}
+                  <div className="pt-4 mt-auto grid grid-cols-2 gap-3 border-t border-gray-100 dark:border-slate-800">
+                    {step > 1 ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={prevStep}
+                        className="py-5 px-4 rounded-xl border-zinc-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2"
+                      >
+                        <ArrowLeft className="w-4 h-4" /> Back
+                      </Button>
+                    ) : (
+                      <div /> // Spacer
+                    )}
+
+                    {step < totalSteps ? (
+                      <Button
+                        type="button"
+                        onClick={nextStep}
+                        className="py-5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 ml-auto w-full"
+                      >
+                        Next <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={isLoading}
+                        className="py-5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 ml-auto w-full"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Complete Registration"
                         )}
-                      />
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Wizard Controls */}
-                <div className="pt-4 mt-auto grid grid-cols-2 gap-3 border-t border-gray-100 dark:border-slate-800">
-                  {step > 1 ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={prevStep}
-                      className="py-5 px-4 rounded-xl border-zinc-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2"
-                    >
-                      <ArrowLeft className="w-4 h-4" /> Back
-                    </Button>
-                  ) : (
-                    <div /> // Spacer
-                  )}
-
-                  {step < totalSteps ? (
-                    <Button
-                      type="button"
-                      onClick={nextStep}
-                      className="py-5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 ml-auto w-full"
-                    >
-                      Next <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="submit"
-                      disabled={isLoading}
-                      className="py-5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 ml-auto w-full"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "Complete Registration"
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </motion.form>
-            </Form>
-          )}
+                      </Button>
+                    )}
+                  </div>
+                </motion.form>
+              </Form>
+            )}
           </div>
         </div>
       </motion.div>

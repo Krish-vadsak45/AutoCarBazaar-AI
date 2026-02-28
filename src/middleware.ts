@@ -4,7 +4,7 @@ import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  console.log("jkj",pathname);
+  console.log("jkj", pathname);
   // Get session token from NextAuth
   const token = await getToken({
     req,
@@ -51,6 +51,10 @@ export async function middleware(req: NextRequest) {
       } else {
         // Protected Admin routes: /admin/[vendorId]/...
         if (userRole !== "admin" && userRole !== "vendor") {
+          // If a regular user tries to access admin routes, send them to profile
+          if (userRole === "user") {
+            return NextResponse.redirect(new URL("/profile", req.url));
+          }
           return NextResponse.redirect(new URL("/", req.url));
         }
 
@@ -68,16 +72,25 @@ export async function middleware(req: NextRequest) {
 
     // Handle Vendor routes (if they still exist)
     if (pathname.startsWith("/vendor")) {
-      if (userRole !== "vendor" && !pathname.startsWith("/vendor/login")) {
+      // 1. Allow access to login page without checks
+      if (pathname === "/vendor/login") {
+        return NextResponse.next();
+      }
+
+      // 2. Check Role: Must be 'vendor'
+      if (userRole !== "vendor") {
+        // If a regular user tries to access vendor routes, send them to profile
+        if (userRole === "user") {
+          return NextResponse.redirect(new URL("/profile", req.url));
+        }
         return NextResponse.redirect(new URL("/", req.url));
       }
+
+      // 3. Check Vendor ID match
       const segments = pathname.split("/");
-      const pathVendorId = segments[2];
-      if (
-        pathVendorId &&
-        pathVendorId !== "login" &&
-        pathVendorId !== vendorId
-      ) {
+      const pathVendorId = segments[2]; // /vendor/[vendorId]/...
+
+      if (vendorId && pathVendorId && pathVendorId !== vendorId) {
         return NextResponse.redirect(
           new URL(`/vendor/${vendorId}/dashboard`, req.url),
         );
@@ -99,6 +112,9 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(
         new URL(`/vendor/${(token as any).vendorId}/dashboard`, req.url),
       );
+    } else if (userRole === "user") {
+      // Redirect regular users to profile or home
+      return NextResponse.redirect(new URL("/profile", req.url));
     }
     return NextResponse.redirect(new URL("/", req.url));
   }
@@ -109,5 +125,11 @@ export async function middleware(req: NextRequest) {
 
 // Apply middleware only to specific routes
 export const config = {
-  matcher: ["/profile/:path*", "/admin/:path*", "/sign-in", "/sign-up"],
+  matcher: [
+    "/profile/:path*",
+    "/admin/:path*",
+    "/vendor/:path*",
+    "/sign-in",
+    "/sign-up",
+  ],
 };
