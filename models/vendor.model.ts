@@ -10,6 +10,8 @@ interface workingHours extends mongoose.Document {
 
 export interface IVendor extends mongoose.Document {
   userId: string;
+  isActive: boolean;
+  isVerified: boolean;
   cars: string[];
   businessName: string;
   businessType: "INDIVIDUAL" | "COMPANY" | "AGENCY";
@@ -54,6 +56,8 @@ const VendorProfileSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  isActive: { type: Boolean, default: false },
+  isVerified: { type: Boolean, default: false },
   cars: [{ type: Schema.Types.ObjectId, ref: "Car" }],
 
   businessName: { type: String, required: true },
@@ -136,6 +140,11 @@ const VendorProfileSchema = new mongoose.Schema({
     },
   ],
 });
+
+// Force reload model in development to pick up schema changes
+if (process.env.NODE_ENV === "development") {
+  delete (mongoose.models as any).Vendor;
+}
 
 const Vendor: Model<IVendor> =
   (mongoose.models.Vendor as Model<IVendor>) ||

@@ -157,7 +157,7 @@ const getBarColor = (index: number) => {
   return COLORS[index % COLORS.length];
 };
 
-export default function DashboardPage() {
+export default function DashboardPage({ overrideVendorId }: { overrideVendorId?: string }) {
   const [cars, setCars] = useState<any[]>([]);
   const [testDrives, setTestDrives] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,9 +191,17 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        const endpointCars = overrideVendorId
+          ? `/api/vend-cars?vendorId=${overrideVendorId}`
+          : "/api/vend-cars";
+        const endpointTests = overrideVendorId
+          ? `/api/vendor/test-drives?vendorId=${overrideVendorId}`
+          : "/api/vendor/test-drives";
+
         const [carsRes, testDrivesRes] = await Promise.all([
-          axios.get("/api/vend-cars"),
-          axios.get("/api/vendor/test-drives"),
+          axios.get(endpointCars),
+          axios.get(endpointTests),
         ]);
         setCars(carsRes.data.cars || []);
         setTestDrives(testDrivesRes.data || []);
@@ -204,7 +212,7 @@ export default function DashboardPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [overrideVendorId]);
 
   // Overview stats use all-time data
   const overviewStats = useMemo(() => {

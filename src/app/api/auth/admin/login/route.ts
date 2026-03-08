@@ -51,19 +51,58 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
+    //i want different message for the different verificationStatus
+    // if (user.role === "vendor") {
+    //   const vendor = await Vendor.findOne({ userId: user._id.toString() });
+    //   if (!vendor) {
+    //     return NextResponse.json(
+    //       { error: "Vendor profile not found. Please contact support." },
+    //       { status: 404 },
+    //     );
+    //   }
+    //   if (vendor.verificationStatus === "PENDING") {
+    //     return NextResponse.json(
+    //       { error: "Your vendor application is still pending approval." },
+    //       { status: 403 },
+    //     );
+    //   }
+    //   if (vendor.verificationStatus === "REJECTED") {
+    //     return NextResponse.json(
+    //       { error: "Your vendor application has been rejected." },
+    //       { status: 403 },
+    //     );
+    //   }
+    // }
 
     // 6. Success Response
     let vendorId = null;
+    let responseMessage = "";
+    let verificationStatus = "";
     if (user.role === "vendor") {
-      const vendor = await Vendor.findOne({ userId: user._id });
+      const vendor = await Vendor.findOne({
+        userId: user._id.toString(),
+      });
       if (vendor) {
         vendorId = vendor._id.toString();
+        if (vendor.verificationStatus === "PENDING") {
+          responseMessage =
+            "Login successful, but your vendor application is still pending approval.";
+          verificationStatus = "PENDING";
+        } else if (vendor.verificationStatus === "REJECTED") {
+          responseMessage =
+            "Login successful, but your vendor application has been rejected.";
+          verificationStatus = "REJECTED";
+        } else {
+          responseMessage = "Login successful";
+          verificationStatus = "APPROVED";
+        }
       }
     }
 
     return NextResponse.json(
       {
-        message: "Login successful",
+        message: responseMessage,
+        verificationStatus: verificationStatus,
         user: {
           id: user._id.toString(),
           name: user.name,

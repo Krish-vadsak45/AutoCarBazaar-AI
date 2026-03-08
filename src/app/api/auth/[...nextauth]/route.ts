@@ -56,6 +56,26 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid password");
         }
 
+        // ✅ Check verification status BEFORE role validation
+        let vendor = null;
+        if (user.role === "vendor" || credentials.role === "vendor") {
+          vendor = await Vendor.findOne({ userId: user._id.toString() });
+
+          if (credentials.role === "vendor" && !vendor) {
+            throw new Error("Vendor profile not found.");
+          }
+
+          if (vendor) {
+            if (vendor.verificationStatus === "PENDING") {
+              throw new Error(
+                "Your vendor application is still pending approval.",
+              );
+            } else if (vendor.verificationStatus === "REJECTED") {
+              throw new Error("Your vendor application has been rejected.");
+            }
+          }
+        }
+
         // ✅ If a specific role was requested (e.g. from admin/login), verify it
         if (credentials.role && user.role !== credentials.role) {
           throw new Error(
@@ -71,11 +91,8 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
         };
 
-        if (user.role === "vendor") {
-          const vendor = await Vendor.findOne({ userId: user._id.toString() });
-          if (vendor) {
-            userData.vendorId = vendor._id.toString();
-          }
+        if (vendor) {
+          userData.vendorId = vendor._id.toString();
         }
 
         return userData;

@@ -7,7 +7,7 @@ import User from "@/models/user.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
@@ -18,32 +18,48 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = (session.user as any)._id;
-    console.log("DEBUG: User ID from session:", userId);
+    const { searchParams } = new URL(req.url);
+    const vendorIdParam = searchParams.get("vendorId");
+    const userRole = session.user.role;
 
-    if (!userId) {
-      console.log("DEBUG: User ID missing in session object");
-      return NextResponse.json(
-        { error: "User ID not found in session" },
-        { status: 400 }
-      );
+    let vendorIdToUse;
+
+    if (userRole === "admin" && vendorIdParam) {
+      vendorIdToUse = vendorIdParam;
+      // Optionally verify vendor exists
+      const vendor = await Vendor.findById(vendorIdParam);
+      if (!vendor) {
+         return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+      }
+    } else {
+        const userId = (session.user as any)._id;
+        console.log("DEBUG: User ID from session:", userId);
+
+        if (!userId) {
+          console.log("DEBUG: User ID missing in session object");
+          return NextResponse.json(
+            { error: "User ID not found in session" },
+            { status: 400 }
+          );
+        }
+
+        // Find the vendor profile associated with this user
+        const vendor = await Vendor.findOne({ userId });
+        console.log("DEBUG: Vendor profile found:", !!vendor);
+
+        if (!vendor) {
+          console.log("DEBUG: No vendor profile matches userId:", userId);
+          return NextResponse.json(
+            { error: "Vendor profile not found" },
+            { status: 404 }
+          );
+        }
+        vendorIdToUse = vendor._id;
     }
 
-    // Find the vendor profile associated with this user
-    const vendor = await Vendor.findOne({ userId });
-    console.log("DEBUG: Vendor profile found:", !!vendor);
-
-    if (!vendor) {
-      console.log("DEBUG: No vendor profile matches userId:", userId);
-      return NextResponse.json(
-        { error: "Vendor profile not found" },
-        { status: 404 }
-      );
-    }
-
-    console.log("DEBUG: Fetching test drives for vendorId:", vendor._id);
+    console.log("DEBUG: Fetching test drives for vendorId:", vendorIdToUse);
     // Fetch test drives for this vendor specifically
-    const testDrives = await TestDrive.find({ vendorId: vendor._id })
+    const testDrives = await TestDrive.find({ vendorId: vendorIdToUse })
       .populate({
         path: "carId",
         select: "title image images price",

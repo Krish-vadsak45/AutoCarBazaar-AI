@@ -2,8 +2,15 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Car, TestTube2, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Car,
+  TestTube2,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "next-auth/react";
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -63,7 +70,7 @@ export function AdminSidebar() {
                   "group flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all duration-200",
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -72,6 +79,21 @@ export function AdminSidebar() {
             );
           })}
         </nav>
+
+        {/* Logout Button */}
+        <div className="px-4 pb-2">
+          <button
+            onClick={() =>
+              signOut({
+                callbackUrl: isVendorPath ? "/vendor/login" : "/admin/login",
+              })
+            }
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium text-red-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/10"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
 
         {/* Footer */}
         <div className="border-t border-sidebar-border px-6 py-4 text-sm text-sidebar-foreground/70">

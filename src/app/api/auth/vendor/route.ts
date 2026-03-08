@@ -85,15 +85,40 @@ export async function POST(request: Request) {
     // 3. Check if Vendor Profile already exists
     const existingVendor = await Vendor.findOne({
       userId: currentUser._id.toString(),
+      $or: [
+        { verificationStatus: "PENDING" },
+        // verificationStatus: "APPROVED" and isActive and isVerified true then prevent to create new vendor profile
+        {
+          $and: [
+            { verificationStatus: "APPROVED" },
+            { isActive: true },
+            { isVerified: true },
+          ],
+        },
+      ],
     });
     if (existingVendor) {
-      return NextResponse.json(
-        {
-          error:
-            "You are already registered as a vendor (or pending approval).",
-        },
-        { status: 409 },
-      );
+      if (existingVendor.verificationStatus === "PENDING") {
+        return NextResponse.json(
+          {
+            error:
+              "You already have a pending vendor application. Please wait for admin approval.",
+          },
+          { status: 409 },
+        );
+      }
+      if (
+        existingVendor.verificationStatus === "APPROVED" &&
+        existingVendor.isActive &&
+        existingVendor.isVerified
+      ) {
+        return NextResponse.json(
+          {
+            error: "You are already registered as an approved vendor.",
+          },
+          { status: 409 },
+        );
+      }
     }
 
     // 4. Create the Vendor Profile (Linked to User ID)
@@ -115,14 +140,14 @@ export async function POST(request: Request) {
 
     await newVendor.save();
 
-    // 5. Update User Role to 'vendor'
-    // Now the user has both a User document AND a Vendor document, and their role is updated.
-    currentUser.role = "vendor";
-    await currentUser.save();
+    // 5. DO NOT update User Role yet. Waiting for Admin Approval.
+    // currentUser.role = "vendor";
+    // await currentUser.save();
 
     return NextResponse.json(
       {
-        message: "Vendor profile created successfully. Role updated.",
+        message:
+          "Vendor application submitted successfully. Please wait for admin approval.",
         vendorId: newVendor._id,
       },
       { status: 201 },

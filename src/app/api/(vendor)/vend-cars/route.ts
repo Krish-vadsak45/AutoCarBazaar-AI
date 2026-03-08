@@ -12,31 +12,53 @@ export async function GET(request: Request) {
 
     const session = await getServerSession(authOptions);
     const userEmail = session?.user?.email;
+    const userRole = session?.user?.role;
 
     if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 1. Find User by email to get user ID
-    const user = await User.findOne({ email: userEmail });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    // Check query params for vendorId (for Admin access)
+    const { searchParams } = new URL(request.url);
+    const vendorIdParam = searchParams.get("vendorId");
 
-    // 2. Find Vendor profile linked to this User
-    const vendor = await Vendor.findOne({ userId: user._id.toString() });
-    if (!vendor) {
-      return NextResponse.json(
-        { error: "Vendor profile not found" },
-        { status: 404 }
-      );
-    }
+    let cars;
 
-    // 3. Fetch all cars listed in the vendor's profile
-    // Assuming vendor.cars is an array of ObjectIds
-    const cars = await Car.find({ _id: { $in: vendor.cars } })
-      .sort({ createdAt: -1 }) // Sort by newest first
-      .lean();
+    if (userRole === "admin" && vendorIdParam) {
+      // If Admin and specific vendor requested
+      const vendor = await Vendor.findById(vendorIdParam);
+      if (!vendor) {
+        return NextResponse.json(
+          { error: "Vendor profile not found" },
+          { status: 404 }
+        );
+      }
+      // Assuming vendor.cars is an array of ObjectIds
+      cars = await Car.find({ _id: { $in: vendor.cars || [] } })
+        .sort({ createdAt: -1 })
+        .lean();
+    } else {
+      // Default: Fetch for logged-in vendor user
+      // 1. Find User by email to get user ID
+      const user = await User.findOne({ email: userEmail });
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      // 2. Find Vendor profile linked to this User
+      const vendor = await Vendor.findOne({ userId: user._id.toString() });
+      if (!vendor) {
+        return NextResponse.json(
+          { error: "Vendor profile not found" },
+          { status: 404 }
+        );
+      }
+
+      // 3. Fetch all cars listed in the vendor's profile
+      cars = await Car.find({ _id: { $in: vendor.cars || [] } })
+        .sort({ createdAt: -1 }) // Sort by newest first
+        .lean();
+    }
 
     return NextResponse.json({ cars }, { status: 200 });
   } catch (error) {

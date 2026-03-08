@@ -32,7 +32,7 @@ import { useSession, signIn } from "next-auth/react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Min 6 chars"),
+  password: z.string(),
   role: z.enum(["admin", "vendor"]),
 });
 
@@ -93,6 +93,9 @@ export default function AdminAuthPage() {
 
   // Login Handler
   const handleLogin = async (data: LoginData) => {
+    window.alert(
+      `Login attempt:\nEmail: ${data.email}\nRole: ${data.role}\n\n(Note: This is a demo. No actual login will occur.)`,
+    );
     setIsLoading(true);
     setErrorMsg("");
     try {
@@ -119,7 +122,7 @@ export default function AdminAuthPage() {
             window.location.href = "/";
             return;
           }
-          window.location.href = `/admin/${targetId}/dashboard`;
+          window.location.href = `/vendor/${targetId}/dashboard`;
         }
       }
     } catch (e: any) {

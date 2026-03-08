@@ -46,7 +46,7 @@ import { useSession, signIn } from "next-auth/react";
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6, { message: "Min 6 chars" }),
+  password: z.string().min(3, { message: "Min 3 chars" }),
   role: z.enum(["admin", "vendor"]),
 });
 
@@ -151,6 +151,8 @@ export default function AdminAuthPage() {
         const res = await axios.post("/api/auth/admin/login", data);
         if (res.status === 200) {
           const { role, vendorId, id } = res.data.user;
+          const { message, verificationStatus } = res.data;
+
           const targetId = role === "admin" ? id : vendorId;
 
           if (!targetId) {
@@ -159,9 +161,25 @@ export default function AdminAuthPage() {
             return;
           }
 
-          // Use window.location.href to ensure a full reload and avoid middleware issues
-          // with stale client-side session state
-          globalThis.window.location.href = `/admin/${targetId}/dashboard`;
+          if (verificationStatus === "PENDING") {
+            toast.info(
+              message ||
+                "Login successful, but your vendor application is still pending approval.",
+            );
+            router.push("/profile");
+          } else if (verificationStatus === "REJECTED") {
+            toast.warning(
+              message ||
+                "Login successful, but your vendor application has been rejected.",
+            );
+            router.push("/profile");
+          } else {
+            // console.log("Redirecting to:", `/${role}/${targetId}/dashboard`);
+            globalThis.window.location.href =
+              role === "admin"
+                ? `/admin/${targetId}/dashboard`
+                : `/vendor/${targetId}/dashboard`;
+          }
         }
       }
     } catch (e: any) {
@@ -219,28 +237,16 @@ export default function AdminAuthPage() {
     try {
       const res = await axios.post("/api/auth/vendor", payload);
       if (res.status === 201 || res.status === 200) {
-        const message = res.data.message || "Vendor registration successful.";
+        const message =
+          res.data.message ||
+          "Vendor registration successful. Please wait for admin approval.";
         toast.success(message);
-        const { vendorId } = res.data;
 
-        // Auto-login after successful registration
-        const loginResult = await signIn("credentials", {
-          redirect: false,
-          email: data.email,
-          password: data.password,
-          role: "vendor",
-        });
-
-        if (loginResult?.ok) {
-          // Use window.location.href to ensure a full reload and avoid middleware issues
-          globalThis.window.location.href = `/vendor/${vendorId || "dashboard"}/dashboard`;
-        } else {
-          // Fallback if auto-login fails
-          setIsLoginMode(true);
-          setStep(1);
-          vendorForm.reset();
-          toast.info("Please log in with your new credentials.");
-        }
+        // Redirect to home or profile since approval is pending
+        // Do not auto-login as vendor because role is not yet updated
+        setTimeout(() => {
+          router.push("/");
+        }, 2000);
       }
     } catch (e: any) {
       setErrorMsg(e.response?.data?.error || "Registration failed");
