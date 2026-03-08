@@ -1,19 +1,20 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { ChevronLeft, Check, CalendarIcon, Clock } from "lucide-react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { ChevronLeft, Check, CalendarIcon } from "lucide-react";
 import Image from "next/image";
-import { SuccessModal } from "@/components/success-modal";
-import { Calendar } from "@/components/ui/calendar";
+import { loadStripe } from "@stripe/stripe-js";
+import { toast } from "sonner";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  format,
+  parse,
+  addHours,
+  isAfter,
+  isEqual,
+  addMinutes,
+} from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -21,160 +22,133 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { format } from "date-fns";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { toast } from "react-toastify";
+import { SuccessModal } from "@/components/success-modal";
 
-const TimePicker = ({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-}) => {
-  const [hour, setHour] = useState(value.split(":")[0]);
-  const [minute, setMinute] = useState(value.split(":")[1]);
-  const [period, setPeriod] = useState("AM");
-
-  // Convert 24h to 12h for initialization
-  useEffect(() => {
-    const [h, m] = value.split(":");
-    let hNum = parseInt(h);
-    const p = hNum >= 12 ? "PM" : "AM";
-    if (hNum > 12) hNum -= 12;
-    if (hNum === 0) hNum = 12;
-    setHour(hNum.toString().padStart(2, "0"));
-    setMinute(m);
-    setPeriod(p);
-  }, []);
-
-  const updateTime = (h: string, m: string, p: string) => {
-    let hNum = parseInt(h);
-    if (p === "PM" && hNum < 12) hNum += 12;
-    if (p === "AM" && hNum === 12) hNum = 0;
-    onChange(`${hNum.toString().padStart(2, "0")}:${m}`);
-  };
-
-  return (
-    <div className="flex gap-2">
-      <Select
-        value={hour}
-        onValueChange={(v) => {
-          setHour(v);
-          updateTime(v, minute, period);
-        }}
-      >
-        <SelectTrigger className="w-[70px] border-gray-300 dark:border-slate-700">
-          <SelectValue placeholder="HH" />
-        </SelectTrigger>
-        <SelectContent>
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-            <SelectItem key={h} value={h.toString().padStart(2, "0")}>
-              {h.toString().padStart(2, "0")}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span className="flex items-center">:</span>
-      <Select
-        value={minute}
-        onValueChange={(v) => {
-          setMinute(v);
-          updateTime(hour, v, period);
-        }}
-      >
-        <SelectTrigger className="w-[70px] border-gray-300 dark:border-slate-700">
-          <SelectValue placeholder="MM" />
-        </SelectTrigger>
-        <SelectContent>
-          {["00", "15", "30", "45"].map((m) => (
-            <SelectItem key={m} value={m}>
-              {m}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        value={period}
-        onValueChange={(v) => {
-          setPeriod(v);
-          updateTime(hour, minute, v);
-        }}
-      >
-        <SelectTrigger className="w-[75px] border-gray-300 dark:border-slate-700">
-          <SelectValue placeholder="AM/PM" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="AM">AM</SelectItem>
-          <SelectItem value="PM">PM</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-};
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+);
 
 export default function TestDrivePage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const carId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("10:00");
+  const success = searchParams.get("success") === "true";
+  const canceled = searchParams.get("canceled") === "true";
+  const sessionId = searchParams.get("session_id");
+
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [totalPrice, setTotalPrice] = useState(0);
 
-  const [carDetails, setCarDetails] = useState<any>({
-    name: "Loading...",
-    price: "$0",
-    mileage: "N/A",
-    fuelType: "N/A",
-    transmission: "N/A",
-    bodyType: "N/A",
-    color: "N/A",
-    image: "/placeholder.svg",
-  });
+  const [carDetails, setCarDetails] = useState<any>(null);
+
+  useEffect(() => {
+    if (
+      startDate &&
+      endDate &&
+      startTime &&
+      endTime &&
+      carDetails?.pricePerHour
+    ) {
+      const startDateTime = new Date(startDate);
+      startDateTime.setHours(parseInt(startTime), 0, 0, 0);
+
+      const endDateTime = new Date(endDate);
+      endDateTime.setHours(parseInt(endTime), 0, 0, 0);
+
+      const diffInMs = endDateTime.getTime() - startDateTime.getTime();
+      const diffInHours = diffInMs / (1000 * 60 * 60);
+
+      setTotalPrice(Math.round(diffInHours * carDetails.pricePerHour));
+    } else {
+      setTotalPrice(0);
+    }
+  }, [startDate, endDate, startTime, endTime, carDetails]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!startDate || !startTime || !endDate || !endTime) {
-      toast.error("Please select both start and end date and time");
+    if (!startDate || !endDate || !startTime || !endTime) {
+      toast.error("Please select date and time range");
+      return;
+    }
+
+    const startDateTime = new Date(startDate);
+    startDateTime.setHours(parseInt(startTime), 0, 0, 0);
+
+    const endDateTime = new Date(endDate);
+    endDateTime.setHours(parseInt(endTime), 0, 0, 0);
+
+    if (endDateTime <= startDateTime) {
+      toast.error("End date/time must be after start date/time");
       return;
     }
 
     setIsSubmitting(true);
     try {
       const axios = (await import("axios")).default;
-      await axios.post("/api/test-drive", {
+      const response = await axios.post("/api/test-drive/checkout", {
         carId,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        startTime,
-        endTime,
-        notes,
+        bookingDetails: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          startTime: `${startTime.padStart(2, "0")}:00`,
+          endTime: `${endTime.padStart(2, "0")}:00`,
+          notes,
+        },
       });
 
-      setBookingDetails({
-        car: carDetails.name,
-        start: `${format(startDate, "PPP")} at ${startTime}`,
-        end: `${format(endDate, "PPP")} at ${endTime}`,
-        dealership: "Vehicl Motors",
-      });
-      setShowSuccess(true);
+      if (response.data.url) {
+        globalThis.location.href = response.data.url;
+      }
     } catch (error: any) {
       console.error("Booking error:", error);
-      toast.error(error.response?.data?.error || "Failed to book test drive");
+      toast.error(error.response?.data?.error || "Failed to initiate payment");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
+    if (success && sessionId && carDetails && !showSuccess) {
+      const startDisplay = startDate ? format(startDate, "PPP") : "N/A";
+      const endDisplay = endDate ? format(endDate, "PPP") : "N/A";
+
+      setBookingDetails({
+        car: carDetails.name,
+        start: `${startDisplay} at ${startTime}:00`,
+        end: `${endDisplay} at ${endTime}:00`,
+        dealership: "Vehicl Motors",
+      });
+      setShowSuccess(true);
+    }
+    if (canceled) {
+      toast.error("Booking payment was canceled.");
+      router.replace(`/test-drive/${carId}`);
+    }
+  }, [success, canceled, sessionId, carDetails]);
+
+  useEffect(() => {
     if (!carId) return;
     let mounted = true;
     (async () => {
+      setIsLoading(true);
       try {
         const axios = (await import("axios")).default;
         const res = await axios.get(`/api/cars/${carId}`);
@@ -184,6 +158,7 @@ export default function TestDrivePage() {
           setCarDetails({
             name: fetched.title || fetched.name || `Car ${carId}`,
             price: fetched.price ? String(fetched.price) : "$0",
+            pricePerHour: fetched.pricePerHour || 10, // default if not set
             mileage: fetched.specs?.mileage || fetched.mileage || "N/A",
             fuelType: fetched.specs?.fuelType || fetched.fuelType || "N/A",
             transmission: fetched.transmission || "N/A",
@@ -194,6 +169,8 @@ export default function TestDrivePage() {
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
     })();
     return () => {
@@ -229,45 +206,68 @@ export default function TestDrivePage() {
             </h2>
 
             {/* Car Image */}
-            <div className="rounded-lg overflow-hidden mb-6 bg-gray-100">
-              <Image
-                src={carDetails.image || "/placeholder.svg"}
-                alt={carDetails.name || "Car image"}
-                width={400}
-                height={300}
-                className="w-full h-64 object-cover"
-              />
+            <div className="rounded-lg overflow-hidden mb-6 bg-gray-100 h-64 relative">
+              {isLoading ? (
+                <Skeleton className="w-full h-full" />
+              ) : (
+                <Image
+                  src={carDetails?.image || "/placeholder.svg"}
+                  alt={carDetails?.name || "Car image"}
+                  fill
+                  className="object-cover"
+                />
+              )}
             </div>
 
             {/* Car Info */}
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                {carDetails.name}
-              </h3>
-              <p className="text-3xl font-bold text-blue-600 mb-8">
-                {carDetails.price}
-              </p>
-
-              {/* Specifications */}
-              <div className="space-y-4">
-                {[
-                  { label: "Mileage", value: carDetails.mileage },
-                  { label: "Fuel Type", value: carDetails.fuelType },
-                  { label: "Transmission", value: carDetails.transmission },
-                  { label: "Body Type", value: carDetails.bodyType },
-                  { label: "Color", value: carDetails.color },
-                ].map((spec, idx) => (
-                  <div
-                    key={idx}
-                    className="flex justify-between py-2 border-b border-gray-50 dark:border-slate-800 last:border-0 text-gray-700 dark:text-gray-300"
-                  >
-                    <span className="text-sm">{spec.label}</span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      {spec.value}
-                    </span>
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-7 w-3/4 mb-2" />
+                  <Skeleton className="h-9 w-1/3 mb-8" />
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex justify-between py-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    {carDetails?.name}
+                  </h3>
+                  <p className="text-3xl font-bold text-blue-600 mb-8">
+                    {carDetails?.price}
+                  </p>
+
+                  {/* Specifications */}
+                  <div className="space-y-4">
+                    {[
+                      { label: "Mileage", value: carDetails?.mileage },
+                      { label: "Fuel Type", value: carDetails?.fuelType },
+                      {
+                        label: "Transmission",
+                        value: carDetails?.transmission,
+                      },
+                      { label: "Body Type", value: carDetails?.bodyType },
+                      { label: "Color", value: carDetails?.color },
+                    ].map((spec, idx) => (
+                      <div
+                        key={spec.label}
+                        className="flex justify-between py-2 border-b border-gray-50 dark:border-slate-800 last:border-0 text-gray-700 dark:text-gray-300"
+                      >
+                        <span className="text-sm">{spec.label}</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          {spec.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -281,84 +281,158 @@ export default function TestDrivePage() {
               onSubmit={handleSubmit}
               className="flex-1 flex flex-col space-y-6"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Start Date & Time */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Start Date & Time
-                  </Label>
-                  <div className="space-y-3">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
-                            !startDate && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {startDate ? (
-                            format(startDate, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={startDate}
-                          onSelect={setStartDate}
-                          disabled={(date) =>
-                            date < new Date(new Date().setHours(0, 0, 0, 0))
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <TimePicker value={startTime} onChange={setStartTime} />
-                  </div>
-                </div>
+              <div className="space-y-6">
+                {/* Selection Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Start Date & Time */}
+                  <div className="space-y-4">
+                    <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Select Start Date
+                    </Label>
+                    <div className="space-y-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
+                              !startDate && "text-muted-foreground",
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {startDate ? (
+                              format(startDate, "PPP")
+                            ) : (
+                              <span>Pick start date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={startDate}
+                            onSelect={setStartDate}
+                            disabled={(date) =>
+                              date < new Date(new Date().setHours(0, 0, 0, 0))
+                            }
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Select value={startTime} onValueChange={setStartTime}>
+                        <SelectTrigger className="w-full border-gray-300 dark:border-slate-700 h-11">
+                          <SelectValue placeholder="Pick start time" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const hourLabel =
+                              i === 0
+                                ? "12 AM"
+                                : i < 12
+                                  ? `${i} AM`
+                                  : i === 12
+                                    ? "12 PM"
+                                    : `${i - 12} PM`;
 
-                {/* End Date & Time */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    End Date & Time
-                  </Label>
-                  <div className="space-y-3">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
-                            !endDate && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endDate ? (
-                            format(endDate, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={endDate}
-                          onSelect={setEndDate}
-                          disabled={(date) =>
-                            date <
-                            (startDate ||
-                              new Date(new Date().setHours(0, 0, 0, 0)))
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <TimePicker value={endTime} onChange={setEndTime} />
+                            // Validation: If Start Date is TODAY, disable hours before current hour
+                            const isToday =
+                              startDate &&
+                              format(startDate, "yyyy-MM-dd") ===
+                                format(new Date(), "yyyy-MM-dd");
+                            const currentHour = new Date().getHours();
+                            const disabled = isToday && i < currentHour;
+
+                            return (
+                              <SelectItem
+                                key={i}
+                                value={i.toString()}
+                                disabled={disabled}
+                              >
+                                {hourLabel}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* End Date & Time */}
+                  <div className="space-y-4">
+                    <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      Select End Date
+                    </Label>
+                    <div className="space-y-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
+                              !endDate && "text-muted-foreground",
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {endDate ? (
+                              format(endDate, "PPP")
+                            ) : (
+                              <span>Pick end date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={endDate}
+                            onSelect={setEndDate}
+                            disabled={(date) =>
+                              startDate
+                                ? date < startDate
+                                : date <
+                                  new Date(new Date().setHours(0, 0, 0, 0))
+                            }
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <Select value={endTime} onValueChange={setEndTime}>
+                        <SelectTrigger className="w-full border-gray-300 dark:border-slate-700 h-11">
+                          <SelectValue placeholder="Pick end time" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const hourLabel =
+                              i === 0
+                                ? "12 AM"
+                                : i < 12
+                                  ? `${i} AM`
+                                  : i === 12
+                                    ? "12 PM"
+                                    : `${i - 12} PM`;
+
+                            // Validation: If same day as start, must be at least 1 hour after start time
+                            const isSameDay =
+                              startDate &&
+                              endDate &&
+                              format(startDate, "yyyy-MM-dd") ===
+                                format(endDate, "yyyy-MM-dd");
+
+                            const disabled =
+                              isSameDay &&
+                              startTime !== "" &&
+                              i < parseInt(startTime) + 1;
+
+                            return (
+                              <SelectItem
+                                key={i}
+                                value={i.toString()}
+                                disabled={disabled}
+                              >
+                                {hourLabel}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -372,17 +446,19 @@ export default function TestDrivePage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any specific questions or requests for your test drive?"
-                  className="flex-1 w-full px-4 py-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent resize-none min-h-[120px]"
+                  className="flex-1 w-full px-4 py-3 border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent resize-none min-h-30"
                 />
               </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoading || totalPrice <= 0}
                 className="w-full py-7 text-lg font-bold bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all shadow-lg hover:shadow-blue-500/25 mt-auto"
               >
-                {isSubmitting ? "Booking..." : "Confirm Test Drive Booking"}
+                {isSubmitting
+                  ? "Processing..."
+                  : `Pay $${totalPrice.toLocaleString()} & Confirm Booking`}
               </Button>
             </form>
           </div>
@@ -397,9 +473,9 @@ export default function TestDrivePage() {
             {[
               "Bring your driver's license for verification",
               "Test drives typically last 30-60 minutes",
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-green-600 shrink-0" />
                 <p className="text-gray-700 dark:text-gray-300">{item}</p>
               </div>
             ))}

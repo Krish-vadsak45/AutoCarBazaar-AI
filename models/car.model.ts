@@ -15,6 +15,7 @@ export interface ICar extends Document {
   title: string;
   status: "available" | "unavailable";
   price: number;
+  pricePerHour?: number;
   transmission?: string;
   bodyType?: string;
   description?: string;
@@ -41,6 +42,7 @@ const CarSchema = new mongoose.Schema<ICar>(
     image: { type: String },
     title: { type: String, required: true },
     price: { type: Number, required: true },
+    pricePerHour: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ["available", "unavailable"],

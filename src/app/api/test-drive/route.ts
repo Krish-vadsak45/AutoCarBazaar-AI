@@ -106,14 +106,14 @@ export async function POST(request: Request) {
       `,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Error sending confirmation email:", error);
-      } else {
-        toast.success("Confirmation email sent successfully!");
-        console.log("Confirmation email sent:", info.response);
-      }
-    });
+    // transporter.sendMail(mailOptions, (error, info) => {
+    //   if (error) {
+    //     console.error("Error sending confirmation email:", error);
+    //   } else {
+    //     toast.success("Confirmation email sent successfully!");
+    //     console.log("Confirmation email sent:", info.response);
+    //   }
+    // });
 
     return NextResponse.json(
       { message: "Test drive booked successfully", testDrive: newTestDrive },

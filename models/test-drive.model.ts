@@ -10,6 +10,8 @@ export interface ITestDrive extends Document {
   endTime: string;
   notes?: string;
   status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  stripeSessionId?: string;
+  paymentStatus: "PENDING" | "PAID" | "UNPAID";
 }
 
 const TestDriveSchema = new Schema<ITestDrive>(
@@ -27,6 +29,13 @@ const TestDriveSchema = new Schema<ITestDrive>(
       enum: ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"],
       default: "PENDING",
       uppercase: true, // Ensure it's always stored as uppercase
+    },
+    stripeSessionId: { type: String },
+    paymentStatus: {
+      type: String,
+      enum: ["PENDING", "PAID", "UNPAID"],
+      default: "PENDING",
+      uppercase: true,
     },
   },
   { timestamps: true },
