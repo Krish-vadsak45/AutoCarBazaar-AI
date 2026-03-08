@@ -134,7 +134,7 @@ export function ReservationCard({
                 </Button>
               </Link>
 
-              {reservation.status !== "cancelled" && (
+              {reservation.status !== "CANCELLED" && (
                 <Button
                   onClick={() => setShowCancelModal(true)}
                   variant="destructive"
