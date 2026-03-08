@@ -43,11 +43,10 @@ export async function GET(
 // PATCH: Update Car
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string }> | { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { params } = context;
-    const { id } = (await params) || {};
+    const { id } = await params;
     const vendor = await validateVendor(request);
     if (!vendor) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -100,7 +99,7 @@ export async function PATCH(
 // DELETE: Remove Car & Notify Users
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params; // Car ID
