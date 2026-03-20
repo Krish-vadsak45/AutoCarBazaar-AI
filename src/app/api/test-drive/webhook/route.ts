@@ -42,6 +42,18 @@ export async function POST(req: Request) {
         throw new Error("Vendor not found for carId " + metadata.carId);
       }
 
+      const isDelivery = metadata.isDelivery === "true";
+      const userLocation =
+        isDelivery && metadata.userLocationCity
+          ? {
+              address: metadata.userLocationAddress || undefined,
+              city: metadata.userLocationCity,
+              state: metadata.userLocationState,
+              lat: metadata.userLocationLat ? parseFloat(metadata.userLocationLat) : 0,
+              lng: metadata.userLocationLng ? parseFloat(metadata.userLocationLng) : 0,
+            }
+          : undefined;
+
       const newTestDrive = await TestDrive.create({
         carId: metadata.carId,
         userId: metadata.userId,
@@ -52,8 +64,10 @@ export async function POST(req: Request) {
         endTime: metadata.endTime,
         notes: metadata.notes,
         status: "PENDING",
-        stripeSessionId: session.id, // Ensure your model has this field or metadata
+        stripeSessionId: session.id,
         paymentStatus: "PAID",
+        isDelivery,
+        userLocation,
       });
 
       const populatedTestDrive = await TestDrive.findById(

@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { ChevronLeft, Check, CalendarIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { ChevronLeft, Check, CalendarIcon, MapPin, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { loadStripe } from "@stripe/stripe-js";
 import { toast } from "sonner";
@@ -32,12 +33,14 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { SuccessModal } from "@/components/success-modal";
+import { Switch } from "@/components/ui/switch";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
 );
 
 export default function TestDrivePage() {
+  const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -59,13 +62,28 @@ export default function TestDrivePage() {
 
   const [carDetails, setCarDetails] = useState<any>(null);
 
+  // Delivery state
+  const [isDelivery, setIsDelivery] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    address?: string;
+    city: string;
+    state: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [manualCity, setManualCity] = useState("");
+  const [manualState, setManualState] = useState("");
+  const [manualAddress, setManualAddress] = useState("");
+  const [useManual, setUseManual] = useState(false);
+
   useEffect(() => {
     if (
       startDate &&
       endDate &&
-      startTime &&
-      endTime &&
-      carDetails?.pricePerHour
+      startTime !== "" &&
+      endTime !== "" &&
+      carDetails != null
     ) {
       const startDateTime = new Date(startDate);
       startDateTime.setHours(parseInt(startTime), 0, 0, 0);
@@ -76,16 +94,87 @@ export default function TestDrivePage() {
       const diffInMs = endDateTime.getTime() - startDateTime.getTime();
       const diffInHours = diffInMs / (1000 * 60 * 60);
 
-      setTotalPrice(Math.round(diffInHours * carDetails.pricePerHour));
+      setTotalPrice(Math.round(diffInHours * (carDetails.pricePerHour || 10)));
     } else {
       setTotalPrice(0);
     }
   }, [startDate, endDate, startTime, endTime, carDetails]);
 
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      setUseManual(true);
+      return;
+    }
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          // Use free reverse geocoding from nominatim (no API key needed)
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+          );
+          const data = await res.json();
+          const city =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.county ||
+            "";
+          const state = data.address?.state || "";
+          const address = data.display_name || `${city}, ${state}`;
+          setUserLocation({ address, city, state, lat: latitude, lng: longitude });
+          toast.success(`Location detected: ${city}, ${state}`);
+        } catch {
+          // Fallback: just store coordinates without address
+          setUserLocation({ city: "", state: "", lat: latitude, lng: longitude });
+          toast.success("GPS coordinates captured");
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (error) => {
+        setLocationLoading(false);
+        toast.error("Could not detect location. Please enter manually.");
+        setUseManual(true);
+      },
+    );
+  };
+
+  const handleManualLocationSubmit = () => {
+    if (!manualAddress.trim() && (!manualCity.trim() || !manualState.trim())) {
+      toast.error("Please enter your location");
+      return;
+    }
+    const city = manualCity.trim();
+    const state = manualState.trim();
+    const address = manualAddress.trim() || `${city}, ${state}`;
+    setUserLocation({ address, city, state, lat: 0, lng: 0 });
+    toast.success(`Location set: ${address}`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!session?.user) {
+      toast.error("Please sign in to book a test drive", {
+        description: "You need to be logged in to complete this booking.",
+        action: {
+          label: "Sign In",
+          onClick: () => router.push("/sign-in"),
+        },
+      });
+      return;
+    }
+
     if (!startDate || !endDate || !startTime || !endTime) {
       toast.error("Please select date and time range");
+      return;
+    }
+
+    if (isDelivery && !userLocation) {
+      toast.error("Please set your delivery location");
       return;
     }
 
@@ -112,6 +201,8 @@ export default function TestDrivePage() {
           endTime: `${endTime.padStart(2, "0")}:00`,
           notes,
         },
+        isDelivery,
+        userLocation: isDelivery ? userLocation : undefined,
       });
 
       if (response.data.url) {
@@ -450,10 +541,134 @@ export default function TestDrivePage() {
                 />
               </div>
 
+              {/* Car at My Location Toggle */}
+              <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer">
+                      Car at My Location
+                    </Label>
+                  </div>
+                  <Switch
+                    checked={isDelivery}
+                    onCheckedChange={(checked) => {
+                      setIsDelivery(checked);
+                      if (!checked) {
+                        setUserLocation(null);
+                        setUseManual(false);
+                        setManualCity("");
+                        setManualState("");
+                        setManualAddress("");
+                      }
+                    }}
+                  />
+                </div>
+
+                {isDelivery && (
+                  <div className="space-y-3 pt-1">
+                    {!userLocation ? (
+                      <>
+                        {!useManual ? (
+                          <button
+                            type="button"
+                            onClick={handleDetectLocation}
+                            disabled={locationLoading}
+                            className="flex items-center gap-2 w-full justify-center py-2.5 px-4 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors disabled:opacity-60"
+                          >
+                            {locationLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <MapPin className="w-4 h-4" />
+                            )}
+                            {locationLoading ? "Detecting..." : "Detect My Location"}
+                          </button>
+                        ) : null}
+
+                        {useManual && (
+                          <div className="space-y-2">
+                            <input
+                              type="text"
+                              placeholder="Current Location (e.g. 123 MG Road, Mumbai, Maharashtra)"
+                              value={manualAddress}
+                              onChange={(e) => setManualAddress(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                placeholder="City"
+                                value={manualCity}
+                                onChange={(e) => setManualCity(e.target.value)}
+                                className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <input
+                                type="text"
+                                placeholder="State"
+                                value={manualState}
+                                onChange={(e) => setManualState(e.target.value)}
+                                className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleManualLocationSubmit}
+                              className="w-full py-2 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                            >
+                              Set Location
+                            </button>
+                          </div>
+                        )}
+
+                        {!useManual && (
+                          <button
+                            type="button"
+                            onClick={() => setUseManual(true)}
+                            className="text-xs text-gray-500 dark:text-gray-400 underline underline-offset-2 w-full text-center"
+                          >
+                            Enter manually instead
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-green-600 shrink-0" />
+                          <span className="text-sm text-green-800 dark:text-green-300 font-medium">
+                            {userLocation.address ||
+                              (userLocation.city && userLocation.state
+                                ? `${userLocation.city}, ${userLocation.state}`
+                                : "Location set")}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserLocation(null);
+                            setUseManual(false);
+                            setManualCity("");
+                            setManualState("");
+                            setManualAddress("");
+                          }}
+                          className="text-xs text-gray-500 dark:text-gray-400 underline underline-offset-2 ml-2 shrink-0"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isSubmitting || isLoading || totalPrice <= 0}
+                disabled={
+                  isSubmitting ||
+                  isLoading ||
+                  totalPrice <= 0 ||
+                  (isDelivery && !userLocation)
+                }
                 className="w-full py-7 text-lg font-bold bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all shadow-lg hover:shadow-blue-500/25 mt-auto"
               >
                 {isSubmitting

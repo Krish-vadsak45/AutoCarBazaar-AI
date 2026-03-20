@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { carId, bookingDetails } = await request.json();
+    const { carId, bookingDetails, isDelivery, userLocation } = await request.json();
 
     if (!carId || !bookingDetails) {
       return NextResponse.json(
@@ -81,6 +81,12 @@ export async function POST(request: Request) {
         startTime: bookingDetails.startTime,
         endTime: bookingDetails.endTime,
         notes: bookingDetails.notes || "",
+        isDelivery: isDelivery ? "true" : "false",
+        userLocationLat: userLocation?.lat?.toString() ?? "",
+        userLocationLng: userLocation?.lng?.toString() ?? "",
+        userLocationCity: userLocation?.city ?? "",
+        userLocationState: userLocation?.state ?? "",
+        userLocationAddress: userLocation?.address ?? "",
       },
     });
 

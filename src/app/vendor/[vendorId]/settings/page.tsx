@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, Save, Loader2, CalendarDays, Moon, Sun } from "lucide-react";
+import { Clock, Save, Loader2, CalendarDays, Moon, Sun, MapPin, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type DaySchedule = {
@@ -36,12 +36,21 @@ export default function WorkingHoursPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Delivery location state
+  const [vendorLocation, setVendorLocation] = useState<{ lat: number | null; lng: number | null; city: string; state: string }>({
+    lat: null,
+    lng: null,
+    city: "",
+    state: "",
+  });
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationSaving, setLocationSaving] = useState(false);
+
   // Fetch initial data
   useEffect(() => {
     const fetchHours = async () => {
       try {
         const { data } = await axios.get("/api/working-hours");
-        console.log("Fetched schedule:", data);
         setSchedule(data.workingHours);
       } catch (error) {
         toast.error("Failed to load schedule");
@@ -49,7 +58,16 @@ export default function WorkingHoursPage() {
         setLoading(false);
       }
     };
+    const fetchLocation = async () => {
+      try {
+        const { data } = await axios.get("/api/vendor-location");
+        setVendorLocation({ lat: data.lat, lng: data.lng, city: data.city, state: data.state });
+      } catch {
+        // Silently fail — location not required
+      }
+    };
     fetchHours();
+    fetchLocation();
   }, []);
 
   const handleToggle = (index: number) => {
@@ -68,6 +86,62 @@ export default function WorkingHoursPage() {
     setSchedule((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
+  };
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+          );
+          const data = await res.json();
+          const city =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.county ||
+            "";
+          const state = data.address?.state || "";
+          setVendorLocation({ lat: latitude, lng: longitude, city, state });
+          toast.success(`Location detected: ${city}, ${state}`);
+        } catch {
+          setVendorLocation((prev) => ({ ...prev, lat: latitude, lng: longitude }));
+          toast.success("GPS coordinates captured");
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      () => {
+        setLocationLoading(false);
+        toast.error("Could not detect location. Please try again.");
+      },
+    );
+  };
+
+  const handleSaveLocation = async () => {
+    if (vendorLocation.lat === null || vendorLocation.lng === null) {
+      toast.error("Please detect your location first");
+      return;
+    }
+    setLocationSaving(true);
+    try {
+      await axios.patch("/api/vendor-location", {
+        lat: vendorLocation.lat,
+        lng: vendorLocation.lng,
+      });
+      toast.success("Delivery location saved");
+    } catch {
+      toast.error("Failed to save location");
+    } finally {
+      setLocationSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -116,6 +190,61 @@ export default function WorkingHoursPage() {
           )}
           Save Changes
         </Button>
+      </div>
+
+      {/* Delivery Location Section */}
+      <div className="border border-border rounded-xl p-6 bg-card space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              Delivery Location
+            </h2>
+            <p className="text-muted-foreground text-sm mt-1">
+              Set your location so customers can see the distance for delivery requests.
+            </p>
+          </div>
+          <Button
+            onClick={handleSaveLocation}
+            disabled={locationSaving || vendorLocation.lat === null}
+            size="lg"
+            className="shadow-lg shadow-primary/20 shrink-0"
+          >
+            {locationSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Location
+          </Button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <button
+            type="button"
+            onClick={handleDetectLocation}
+            disabled={locationLoading}
+            className="flex items-center gap-2 py-2.5 px-5 rounded-lg border border-primary/40 bg-primary/5 text-primary text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-60"
+          >
+            {locationLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <MapPin className="w-4 h-4" />
+            )}
+            {locationLoading ? "Detecting..." : "Use My Current Location"}
+          </button>
+
+          {vendorLocation.lat !== null && (
+            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg px-4 py-2.5">
+              <Check className="w-4 h-4 text-green-600 shrink-0" />
+              <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                {vendorLocation.city && vendorLocation.state
+                  ? `Location set: ${vendorLocation.city}, ${vendorLocation.state}`
+                  : `Coordinates: ${vendorLocation.lat?.toFixed(4)}, ${vendorLocation.lng?.toFixed(4)}`}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Grid Layout for Columns */}

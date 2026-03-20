@@ -32,6 +32,11 @@ interface IReservation {
   startTime: string;
   endTime?: string;
   notes?: string;
+  isDelivery?: boolean;
+  userLocation?: {
+    city?: string;
+    state?: string;
+  };
   carId: {
     _id: string;
     title: string;
@@ -292,7 +297,7 @@ export default function MyReservationsPage() {
                     <div className="flex-1 p-5 md:p-6 flex flex-col">
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white line-clamp-1">
                               {res.carId?.title || "Unknown Vehicle"}
                             </h3>
@@ -302,9 +307,23 @@ export default function MyReservationsPage() {
                             >
                               {res.carId?.bodyType || "Sedan"}
                             </Badge>
+                            {res.isDelivery && (
+                              <Badge className="bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-none text-xs gap-1">
+                                <MapPin className="w-3 h-3" />
+                                Delivery
+                              </Badge>
+                            )}
                           </div>
 
-                          {res.vendorId && (
+                          {res.isDelivery && res.userLocation?.city ? (
+                            <div className="flex items-center text-sm text-purple-600 dark:text-purple-400 gap-1.5">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span className="font-medium">
+                                Your location: {res.userLocation.city}
+                                {res.userLocation.state && `, ${res.userLocation.state}`}
+                              </span>
+                            </div>
+                          ) : res.vendorId ? (
                             <div className="flex items-center text-sm text-muted-foreground gap-1.5">
                               <MapPin className="w-3.5 h-3.5" />
                               <span className="font-medium">
@@ -316,7 +335,7 @@ export default function MyReservationsPage() {
                                 </span>
                               )}
                             </div>
-                          )}
+                          ) : null}
                         </div>
 
                         <div className="hidden md:flex flex-col items-end gap-2">

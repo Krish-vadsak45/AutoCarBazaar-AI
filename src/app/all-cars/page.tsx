@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import AllCars from "@/components/AllCars";
 import { SearchAndFilter } from "@/components/SearchAndFilter";
 
-const page = () => {
+const Page = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [toolFilter, setToolFilter] = useState("");
   const [company, setCompany] = useState<string[]>([]);
@@ -50,4 +50,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

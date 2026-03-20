@@ -1,5 +1,13 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+export interface IUserLocation {
+  address?: string;
+  city: string;
+  state: string;
+  lat: number;
+  lng: number;
+}
+
 export interface ITestDrive extends Document {
   carId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
@@ -12,6 +20,8 @@ export interface ITestDrive extends Document {
   status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
   stripeSessionId?: string;
   paymentStatus: "PENDING" | "PAID" | "UNPAID";
+  isDelivery: boolean;
+  userLocation?: IUserLocation;
 }
 
 const TestDriveSchema = new Schema<ITestDrive>(
@@ -36,6 +46,14 @@ const TestDriveSchema = new Schema<ITestDrive>(
       enum: ["PENDING", "PAID", "UNPAID"],
       default: "PENDING",
       uppercase: true,
+    },
+    isDelivery: { type: Boolean, default: false },
+    userLocation: {
+      address: { type: String },
+      city: { type: String },
+      state: { type: String },
+      lat: { type: Number },
+      lng: { type: Number },
     },
   },
   { timestamps: true },
