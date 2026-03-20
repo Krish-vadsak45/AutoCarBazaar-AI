@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       notes,
       status: "PENDING",
     });
-
+    console.log("New Test Drive created: ", newTestDrive);
     const populatedTestDrive = await newTestDrive.populate([
       { path: "userId" },
       { path: "carId" },

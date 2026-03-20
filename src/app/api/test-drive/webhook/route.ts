@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         isDelivery,
         userLocation,
       });
-
+      console.log("New Test Drive created from webhook: ", newTestDrive);
       const populatedTestDrive = await TestDrive.findById(
         newTestDrive._id,
       ).populate([

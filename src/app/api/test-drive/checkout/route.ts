@@ -14,7 +14,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { carId, bookingDetails, isDelivery, userLocation } = await request.json();
+    const { carId, bookingDetails, isDelivery, userLocation } =
+      await request.json();
 
     if (!carId || !bookingDetails) {
       return NextResponse.json(
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
         userLocationAddress: userLocation?.address ?? "",
       },
     });
-
+    console.log("Stripe Checkout Session created: ", checkoutSession);
     return NextResponse.json({
       sessionId: checkoutSession.id,
       url: checkoutSession.url,
