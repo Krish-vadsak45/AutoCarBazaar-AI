@@ -11,6 +11,7 @@ export interface IUser extends Document {
   isVerified?: boolean;
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
+  address?: string;
   savedCars: mongoose.Types.ObjectId[];
 }
 
@@ -24,6 +25,7 @@ const UserSchema = new mongoose.Schema<IUser>(
       type: String,
     },
     phone: { type: Number },
+    address: { type: String },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     resetPasswordToken: { type: String },

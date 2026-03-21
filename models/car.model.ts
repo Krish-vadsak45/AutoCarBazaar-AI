@@ -22,6 +22,7 @@ export interface ICar extends Document {
   features?: string[];
   specs?: ISpecs;
   tags?: string[];
+  carAddress?: string;
 }
 
 const SpecsSchema = new mongoose.Schema<ISpecs>(
@@ -54,6 +55,7 @@ const CarSchema = new mongoose.Schema<ICar>(
     features: { type: [String], default: [] },
     specs: { type: SpecsSchema },
     tags: { type: [String], default: [] },
+    carAddress: { type: String },
   },
   { timestamps: true },
 );

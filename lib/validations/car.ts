@@ -29,7 +29,11 @@ export const carSchema = z.object({
   transmission: z.enum(transmissionEnum),
   bodyType: z.enum(bodyTypeEnum),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  images: z.array(z.string()).max(5, "You can upload at most 5 images").optional().default([]),
+  images: z
+    .array(z.string())
+    .max(5, "You can upload at most 5 images")
+    .optional()
+    .default([]),
   specs: z.object({
     make: z.string().min(1, "Make is required"),
     model: z.string().min(1, "Model is required"),
@@ -44,6 +48,7 @@ export const carSchema = z.object({
   features: stringToArray.optional().default([]),
   tags: stringToArray.optional().default([]),
   status: z.enum(["available", "unavailable"]).optional().default("available"),
+  carAddress: z.string().optional(),
 });
 
 export type CarFormValues = z.input<typeof carSchema>;

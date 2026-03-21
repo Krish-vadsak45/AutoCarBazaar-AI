@@ -3,19 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronLeft, Check, CalendarIcon, MapPin, Loader2 } from "lucide-react";
+import { ChevronLeft, Check, CalendarIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { loadStripe } from "@stripe/stripe-js";
 import { toast } from "sonner";
-import {
-  format,
-  parse,
-  addHours,
-  isAfter,
-  isEqual,
-  addMinutes,
-} from "date-fns";
+import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import axios from "axios";
 import {
   Select,
   SelectContent,
@@ -66,16 +60,11 @@ export default function TestDrivePage() {
   const [isDelivery, setIsDelivery] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     address?: string;
-    city: string;
-    state: string;
-    lat: number;
-    lng: number;
   } | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [manualCity, setManualCity] = useState("");
-  const [manualState, setManualState] = useState("");
   const [manualAddress, setManualAddress] = useState("");
-  const [useManual, setUseManual] = useState(false);
+  const [userSavedAddress, setUserSavedAddress] = useState("");
+  const [basePrice, setBasePrice] = useState(0);
+  const [deliveryFee, setDeliveryFee] = useState(0);
 
   useEffect(() => {
     if (
@@ -86,72 +75,82 @@ export default function TestDrivePage() {
       carDetails != null
     ) {
       const startDateTime = new Date(startDate);
-      startDateTime.setHours(parseInt(startTime), 0, 0, 0);
+      startDateTime.setHours(Number.parseInt(startTime), 0, 0, 0);
 
       const endDateTime = new Date(endDate);
-      endDateTime.setHours(parseInt(endTime), 0, 0, 0);
+      endDateTime.setHours(Number.parseInt(endTime), 0, 0, 0);
 
       const diffInMs = endDateTime.getTime() - startDateTime.getTime();
       const diffInHours = diffInMs / (1000 * 60 * 60);
 
-      setTotalPrice(Math.round(diffInHours * (carDetails.pricePerHour || 10)));
+      setBasePrice(Math.round(diffInHours * (carDetails.pricePerHour || 10)));
     } else {
-      setTotalPrice(0);
+      setBasePrice(0);
     }
   }, [startDate, endDate, startTime, endTime, carDetails]);
 
-  const handleDetectLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      setUseManual(true);
-      return;
-    }
-    setLocationLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          // Use free reverse geocoding from nominatim (no API key needed)
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-          );
-          const data = await res.json();
-          const city =
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            data.address?.county ||
-            "";
-          const state = data.address?.state || "";
-          const address = data.display_name || `${city}, ${state}`;
-          setUserLocation({ address, city, state, lat: latitude, lng: longitude });
-          toast.success(`Location detected: ${city}, ${state}`);
-        } catch {
-          // Fallback: just store coordinates without address
-          setUserLocation({ city: "", state: "", lat: latitude, lng: longitude });
-          toast.success("GPS coordinates captured");
-        } finally {
-          setLocationLoading(false);
-        }
-      },
-      (error) => {
-        setLocationLoading(false);
-        toast.error("Could not detect location. Please enter manually.");
-        setUseManual(true);
-      },
-    );
-  };
+  useEffect(() => {
+    setTotalPrice(basePrice + (isDelivery ? deliveryFee : 0));
+  }, [basePrice, deliveryFee, isDelivery]);
 
-  const handleManualLocationSubmit = () => {
-    if (!manualAddress.trim() && (!manualCity.trim() || !manualState.trim())) {
-      toast.error("Please enter your location");
+  useEffect(() => {
+    if (session?.user) {
+      const fetchUser = async () => {
+        try {
+          const axios = (await import("axios")).default;
+          const res = await axios.get("/api/users");
+          if (res.data?.user?.address) {
+            setUserSavedAddress(res.data.user.address);
+          }
+        } catch (err) {
+          console.error("Failed to fetch user address", err);
+        }
+      };
+      fetchUser();
+    }
+  }, [session]);
+
+  const handleManualLocationSubmit = async () => {
+    if (!manualAddress.trim()) {
+      toast.error("Please enter a valid address");
       return;
     }
-    const city = manualCity.trim();
-    const state = manualState.trim();
-    const address = manualAddress.trim() || `${city}, ${state}`;
-    setUserLocation({ address, city, state, lat: 0, lng: 0 });
-    toast.success(`Location set: ${address}`);
+
+    const startAddress = carDetails?.carAddress || carDetails?.vendorAddress;
+
+    if (!startAddress) {
+      toast.error(
+        "Could not find start location for this car. Vendor/Car address missing.",
+      );
+      return;
+    }
+
+    toast.info("Calculating distance...");
+    try {
+      const res = await fetch(
+        `/api/calculate-distance?origins=${encodeURIComponent(startAddress)}&destinations=${encodeURIComponent(manualAddress)}`,
+      );
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        toast.error(data.error || "Failed to calculate distance");
+        return;
+      }
+      console.log("📍 Calculated Distance Data:", data);
+      console.log(
+        `🛣️ Distance: ${data.distance}, Value: ${data.distanceValue} meters`,
+      );
+      const distanceKm = (data.distanceValue || 0) / 1000;
+      const ratePerKm = 10;
+      setDeliveryFee(Math.ceil(distanceKm) * ratePerKm);
+
+      setUserLocation({ address: manualAddress });
+      toast.success(
+        `Distance: ${data.distance}, Delivery Fee: Rs. ${Math.ceil(distanceKm) * ratePerKm}`,
+      );
+    } catch (error) {
+      toast.error("Failed to fetch distance api.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,10 +178,10 @@ export default function TestDrivePage() {
     }
 
     const startDateTime = new Date(startDate);
-    startDateTime.setHours(parseInt(startTime), 0, 0, 0);
+    startDateTime.setHours(Number.parseInt(startTime), 0, 0, 0);
 
     const endDateTime = new Date(endDate);
-    endDateTime.setHours(parseInt(endTime), 0, 0, 0);
+    endDateTime.setHours(Number.parseInt(endTime), 0, 0, 0);
 
     if (endDateTime <= startDateTime) {
       toast.error("End date/time must be after start date/time");
@@ -256,6 +255,8 @@ export default function TestDrivePage() {
             bodyType: fetched.bodyType || fetched.specs?.bodyType || "N/A",
             color: fetched.specs?.color || fetched.color || "N/A",
             image: fetched.images?.[0] || fetched.image,
+            carAddress: fetched.carAddress,
+            vendorAddress: fetched.vendorAddress,
           });
         }
       } catch (err) {
@@ -509,7 +510,7 @@ export default function TestDrivePage() {
                             const disabled =
                               isSameDay &&
                               startTime !== "" &&
-                              i < parseInt(startTime) + 1;
+                              i < Number.parseInt(startTime) + 1;
 
                             return (
                               <SelectItem
@@ -556,9 +557,7 @@ export default function TestDrivePage() {
                       setIsDelivery(checked);
                       if (!checked) {
                         setUserLocation(null);
-                        setUseManual(false);
-                        setManualCity("");
-                        setManualState("");
+
                         setManualAddress("");
                       }
                     }}
@@ -568,86 +567,44 @@ export default function TestDrivePage() {
                 {isDelivery && (
                   <div className="space-y-3 pt-1">
                     {!userLocation ? (
-                      <>
-                        {!useManual ? (
+                      <div className="space-y-2">
+                        {" "}
+                        {userSavedAddress && (
                           <button
                             type="button"
-                            onClick={handleDetectLocation}
-                            disabled={locationLoading}
-                            className="flex items-center gap-2 w-full justify-center py-2.5 px-4 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-sm font-medium hover:bg-blue-100 dark:hover:bg-blue-950/60 transition-colors disabled:opacity-60"
+                            onClick={() => setManualAddress(userSavedAddress)}
+                            className="w-full py-2 px-4 rounded-lg bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-800 dark:text-gray-200 text-sm font-medium hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2"
                           >
-                            {locationLoading ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <MapPin className="w-4 h-4" />
-                            )}
-                            {locationLoading ? "Detecting..." : "Detect My Location"}
+                            <MapPin className="w-4 h-4" /> Use my saved address
                           </button>
-                        ) : null}
-
-                        {useManual && (
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              placeholder="Current Location (e.g. 123 MG Road, Mumbai, Maharashtra)"
-                              value={manualAddress}
-                              onChange={(e) => setManualAddress(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <div className="grid grid-cols-2 gap-2">
-                              <input
-                                type="text"
-                                placeholder="City"
-                                value={manualCity}
-                                onChange={(e) => setManualCity(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              />
-                              <input
-                                type="text"
-                                placeholder="State"
-                                value={manualState}
-                                onChange={(e) => setManualState(e.target.value)}
-                                className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={handleManualLocationSubmit}
-                              className="w-full py-2 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-                            >
-                              Set Location
-                            </button>
-                          </div>
-                        )}
-
-                        {!useManual && (
-                          <button
-                            type="button"
-                            onClick={() => setUseManual(true)}
-                            className="text-xs text-gray-500 dark:text-gray-400 underline underline-offset-2 w-full text-center"
-                          >
-                            Enter manually instead
-                          </button>
-                        )}
-                      </>
+                        )}{" "}
+                        <input
+                          type="text"
+                          placeholder="Current Location (e.g. 123 MG Road, Mumbai, Maharashtra)"
+                          value={manualAddress}
+                          onChange={(e) => setManualAddress(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleManualLocationSubmit}
+                          className="w-full py-2 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                        >
+                          Detect distance & set location
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center justify-between bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg px-3 py-2.5">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-green-600 shrink-0" />
                           <span className="text-sm text-green-800 dark:text-green-300 font-medium">
-                            {userLocation.address ||
-                              (userLocation.city && userLocation.state
-                                ? `${userLocation.city}, ${userLocation.state}`
-                                : "Location set")}
+                            {userLocation.address || "Location set"}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
                             setUserLocation(null);
-                            setUseManual(false);
-                            setManualCity("");
-                            setManualState("");
                             setManualAddress("");
                           }}
                           className="text-xs text-gray-500 dark:text-gray-400 underline underline-offset-2 ml-2 shrink-0"
@@ -673,7 +630,7 @@ export default function TestDrivePage() {
               >
                 {isSubmitting
                   ? "Processing..."
-                  : `Pay $${totalPrice.toLocaleString()} & Confirm Booking`}
+                  : `Pay Rs. ${totalPrice.toLocaleString()} & Confirm Booking`}
               </Button>
             </form>
           </div>

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, currentPassword, newPassword, image, phone } = body;
+    const { name, currentPassword, newPassword, image, phone, address } = body;
 
     await connectToDatabase();
 
@@ -60,8 +60,12 @@ export async function POST(request: Request) {
 
     // Update basic fields
     if (name) user.name = name;
-    if (image) (user as any).image = image || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+    if (image)
+      (user as any).image =
+        image ||
+        "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
     if (phone) (user as any).phone = phone || 1234567890;
+    if (address !== undefined) (user as any).address = address;
 
     // Handle password update
     if (newPassword) {

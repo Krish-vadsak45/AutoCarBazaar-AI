@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: "Missing car id" }, { status: 400 });
     }
     console.log("Fetching car with id:", id);
-    let car;
+    let car: any;
     try {
       car = await Car.findById(id).lean();
     } catch (err: any) {
@@ -28,6 +28,17 @@ export async function GET(
 
     if (!car) {
       return NextResponse.json({ error: "Car not found" }, { status: 404 });
+    }
+
+    // Try to find the associated vendor for default address
+    try {
+      const Vendor = (await import("@/models/vendor.model")).default;
+      const vendor = await Vendor.findOne({ cars: id }).lean();
+      if (vendor && vendor.address && !car.carAddress) {
+        car.vendorAddress = vendor.address;
+      }
+    } catch (err) {
+      console.error("Failed to append vendor details to car info", err);
     }
 
     return NextResponse.json({ car });

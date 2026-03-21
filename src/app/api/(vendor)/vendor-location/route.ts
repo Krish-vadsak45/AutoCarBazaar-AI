@@ -9,21 +9,20 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { lat, lng } = await req.json();
+    const { address } = await req.json();
 
-    if (typeof lat !== "number" || typeof lng !== "number") {
+    if (!address || typeof address !== "string") {
       return NextResponse.json(
-        { error: "Valid lat and lng numbers are required" },
+        { error: "Valid address string is required" },
         { status: 400 },
       );
     }
 
-    vendor.address.lat = lat;
-    vendor.address.lng = lng;
+    vendor.address = address;
     await vendor.save();
 
     return NextResponse.json(
-      { message: "Location updated", lat, lng },
+      { message: "Location updated", address },
       { status: 200 },
     );
   } catch (error) {
@@ -41,10 +40,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(
       {
-        lat: vendor.address.lat ?? null,
-        lng: vendor.address.lng ?? null,
-        city: vendor.address.city,
-        state: vendor.address.state,
+        address: vendor.address ?? "",
       },
       { status: 200 },
     );

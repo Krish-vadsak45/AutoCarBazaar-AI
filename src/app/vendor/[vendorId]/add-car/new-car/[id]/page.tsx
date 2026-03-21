@@ -213,7 +213,9 @@ export default function CarFormPage() {
                   placeholder="e.g. 2023 Toyota Camry LE"
                 />
                 {errors.title && (
-                  <p className="text-sm text-destructive">{errors.title.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.title.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
@@ -225,7 +227,9 @@ export default function CarFormPage() {
                   placeholder="25000"
                 />
                 {errors.price && (
-                  <p className="text-sm text-destructive">{errors.price.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.price.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -250,7 +254,9 @@ export default function CarFormPage() {
                   )}
                 />
                 {errors.transmission && (
-                  <p className="text-sm text-destructive">{errors.transmission.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.transmission.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
@@ -275,7 +281,9 @@ export default function CarFormPage() {
                   )}
                 />
                 {errors.bodyType && (
-                  <p className="text-sm text-destructive">{errors.bodyType.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.bodyType.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -289,8 +297,22 @@ export default function CarFormPage() {
                 rows={4}
               />
               {errors.description && (
-                <p className="text-sm text-destructive">{errors.description.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.description.message}
+                </p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="carAddress">Car Location (Address)</Label>
+              <Input
+                id="carAddress"
+                {...register("carAddress")}
+                placeholder="Enter single line address (e.g. 123 Main St, Mumbai, Maharashtra 400001)"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to use your default vendor location.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -307,22 +329,20 @@ export default function CarFormPage() {
             <div className="grid gap-6 md:grid-cols-3">
               <div className="space-y-2">
                 <Label>Make</Label>
-                <Input
-                  {...register("specs.make")}
-                  placeholder="Toyota"
-                />
+                <Input {...register("specs.make")} placeholder="Toyota" />
                 {errors.specs?.make?.message && (
-                  <p className="text-sm text-destructive">{errors.specs.make.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.specs.make.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label>Model</Label>
-                <Input
-                  {...register("specs.model")}
-                  placeholder="Camry"
-                />
+                <Input {...register("specs.model")} placeholder="Camry" />
                 {errors.specs?.model?.message && (
-                  <p className="text-sm text-destructive">{errors.specs.model.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.specs.model.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
@@ -333,7 +353,9 @@ export default function CarFormPage() {
                   placeholder="2023"
                 />
                 {errors.specs?.year?.message && (
-                  <p className="text-sm text-destructive">{errors.specs.year.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.specs.year.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -359,7 +381,9 @@ export default function CarFormPage() {
                   )}
                 />
                 {errors.specs?.fuelType?.message && (
-                  <p className="text-sm text-destructive">{errors.specs.fuelType.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.specs.fuelType.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
@@ -369,7 +393,9 @@ export default function CarFormPage() {
                   placeholder="e.g. 15,000 km"
                 />
                 {errors.specs?.mileage?.message && (
-                  <p className="text-sm text-destructive">{errors.specs.mileage.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.specs.mileage.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
@@ -379,7 +405,9 @@ export default function CarFormPage() {
                   placeholder="e.g. Midnight Black"
                 />
                 {errors.specs?.color?.message && (
-                  <p className="text-sm text-destructive">{errors.specs.color.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.specs.color.message}
+                  </p>
                 )}
               </div>
             </div>

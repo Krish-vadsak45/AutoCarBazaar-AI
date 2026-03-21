@@ -194,9 +194,12 @@ export async function POST(request: Request) {
     // ✅ Create Car (NO vendorId inside car)
     const newCar = await Car.create(validatedData);
 
-    // ✅ Push carId into vendor
-    vendor.cars.push(newCar._id.toString());
-    await vendor.save();
+    // Push carId into vendor using update to bypass potential strict schema validation errors on outdated documents
+    await Vendor.findByIdAndUpdate(
+      vendor._id,
+      { $push: { cars: newCar._id.toString() } },
+      { runValidators: false }
+    );
 
     return NextResponse.json(
       { message: "Car created successfully", car: newCar },

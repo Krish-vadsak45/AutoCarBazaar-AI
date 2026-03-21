@@ -37,7 +37,6 @@ import {
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import axios from "axios";
-import { calculateDistanceKm } from "@/lib/haversine";
 
 type Status = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
@@ -87,9 +86,13 @@ export default function TestDrivesPage() {
   const [vendorStateStr, setVendorStateStr] = useState("");
 
   // Accept delivery flow
-  const [acceptingDrive, setAcceptingDrive] = useState<TestDriveData | null>(null);
+  const [acceptingDrive, setAcceptingDrive] = useState<TestDriveData | null>(
+    null,
+  );
   const [vendorAddressInput, setVendorAddressInput] = useState("");
-  const [distanceResult, setDistanceResult] = useState<DistanceResult | null>(null);
+  const [distanceResult, setDistanceResult] = useState<DistanceResult | null>(
+    null,
+  );
   const [distanceLoading, setDistanceLoading] = useState(false);
 
   useEffect(() => {
@@ -296,7 +299,9 @@ export default function TestDrivesPage() {
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge
-                          className={statusColors[drive.status] || "bg-gray-100"}
+                          className={
+                            statusColors[drive.status] || "bg-gray-100"
+                          }
                         >
                           {drive.status}
                         </Badge>
@@ -369,20 +374,14 @@ export default function TestDrivesPage() {
                       <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                         <MapPin className="h-4 w-4 flex-shrink-0" />
                         <span>
-                          {drive.userLocationCity}, {drive.userLocationState}
+                          {drive.userLocationAddress}, {drive.userLocationCity},{" "}
+                          {drive.userLocationState}
                           {vendorLat &&
                             vendorLng &&
                             drive.userLocationLat &&
                             drive.userLocationLng && (
                               <span className="ml-1 text-muted-foreground">
-                                (
-                                {calculateDistanceKm(
-                                  vendorLat,
-                                  vendorLng,
-                                  drive.userLocationLat,
-                                  drive.userLocationLng,
-                                )}{" "}
-                                km away)
+                                ( km away)
                               </span>
                             )}
                         </span>
@@ -450,11 +449,11 @@ export default function TestDrivesPage() {
                           Customer Location
                         </label>
                         <p className="text-sm text-foreground bg-white dark:bg-slate-800 border border-border rounded-lg px-3 py-2">
-                          {drive.userLocationAddress ||
-                            [drive.userLocationCity, drive.userLocationState]
-                              .filter(Boolean)
-                              .join(", ") ||
-                            "Not provided"}
+                          {drive.userLocationAddress +
+                            ", " +
+                            drive.userLocationCity +
+                            ", " +
+                            drive.userLocationState || "Not provided"}
                         </p>
                       </div>
 

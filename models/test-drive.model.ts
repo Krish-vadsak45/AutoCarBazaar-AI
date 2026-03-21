@@ -1,13 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-export interface IUserLocation {
-  address?: string;
-  city: string;
-  state: string;
-  lat: number;
-  lng: number;
-}
-
 export interface ITestDrive extends Document {
   carId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
@@ -17,11 +9,12 @@ export interface ITestDrive extends Document {
   startTime: string;
   endTime: string;
   notes?: string;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "REJECTED";
   stripeSessionId?: string;
-  paymentStatus: "PENDING" | "PAID" | "UNPAID";
+  paymentIntentId?: string;
+  paymentStatus: "PENDING" | "PAID" | "UNPAID" | "REFUNDED";
   isDelivery: boolean;
-  userLocation?: IUserLocation;
+  address?: string;
 }
 
 const TestDriveSchema = new Schema<ITestDrive>(
@@ -36,25 +29,20 @@ const TestDriveSchema = new Schema<ITestDrive>(
     notes: { type: String },
     status: {
       type: String,
-      enum: ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"],
+      enum: ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED", "REJECTED"],
       default: "PENDING",
       uppercase: true, // Ensure it's always stored as uppercase
     },
     stripeSessionId: { type: String },
+    paymentIntentId: { type: String },
     paymentStatus: {
       type: String,
-      enum: ["PENDING", "PAID", "UNPAID"],
+      enum: ["PENDING", "PAID", "UNPAID", "REFUNDED"],
       default: "PENDING",
       uppercase: true,
     },
     isDelivery: { type: Boolean, default: false },
-    userLocation: {
-      address: { type: String },
-      city: { type: String },
-      state: { type: String },
-      lat: { type: Number },
-      lng: { type: Number },
-    },
+    address: { type: String },
   },
   { timestamps: true },
 );

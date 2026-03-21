@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FileUpload from "@/components/FileUpload";
 import { toast } from "react-toastify";
-import { Loader2, Lock, User, Mail, Phone, Camera } from "lucide-react";
+import { Loader2, Lock, User, Mail, Phone, Camera, MapPin } from "lucide-react";
 import axios from "axios";
 
 export default function ProfilePage() {
@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [image, setImage] = useState("");
 
   // Password states
@@ -49,6 +50,7 @@ export default function ProfilePage() {
       setName(data.user.name || "");
       setEmail(data.user.email || "");
       setPhone(data.user.phone || "");
+      setAddress(data.user.address || "");
       setImage(data.user.image || "");
     } catch (error) {
       toast.error("Failed to load profile");
@@ -65,6 +67,7 @@ export default function ProfilePage() {
       const res = await axios.post("/api/users", {
         name,
         phone,
+        address,
         image,
       });
 
@@ -256,6 +259,20 @@ export default function ProfilePage() {
                     onChange={(e) => setPhone(e.target.value)}
                     className="pl-9"
                     placeholder="Enter phone number"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="address">Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="pl-9"
+                    placeholder="Enter your saved address"
                   />
                 </div>
               </div>

@@ -49,8 +49,12 @@ export async function POST(req: Request) {
               address: metadata.userLocationAddress || undefined,
               city: metadata.userLocationCity,
               state: metadata.userLocationState,
-              lat: metadata.userLocationLat ? parseFloat(metadata.userLocationLat) : 0,
-              lng: metadata.userLocationLng ? parseFloat(metadata.userLocationLng) : 0,
+              lat: metadata.userLocationLat
+                ? parseFloat(metadata.userLocationLat)
+                : 0,
+              lng: metadata.userLocationLng
+                ? parseFloat(metadata.userLocationLng)
+                : 0,
             }
           : undefined;
 
@@ -65,6 +69,7 @@ export async function POST(req: Request) {
         notes: metadata.notes,
         status: "PENDING",
         stripeSessionId: session.id,
+        paymentIntentId: session.payment_intent,
         paymentStatus: "PAID",
         isDelivery,
         userLocation,
@@ -90,6 +95,26 @@ export async function POST(req: Request) {
         { error: "Booking insertion failed" },
         { status: 500 },
       );
+    }
+  } else if (
+    event.type === "refund.created" ||
+    event.type === "refund.updated"
+  ) {
+    const refund = event.data.object as any;
+    if (refund.status === "succeeded") {
+      try {
+        await connectToDatabase();
+        const updated = await TestDrive.findOneAndUpdate(
+          { paymentIntentId: refund.payment_intent },
+          { paymentStatus: "REFUNDED", status: "REJECTED" },
+          { new: true },
+        );
+        if (updated) {
+          console.log(`TestDrive ${updated._id} payment marked as REFUNDED`);
+        }
+      } catch (err) {
+        console.error("Error updating test drive status for refund:", err);
+      }
     }
   }
 

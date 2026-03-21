@@ -24,14 +24,7 @@ export interface IVendor extends mongoose.Document {
     phone: string;
     alternatePhone?: string;
   };
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    pincode: string;
-    lat?: number;
-    lng?: number;
-  };
+  address?: string;
   gstNumber?: string;
   website?: string;
   description?: string;
@@ -75,12 +68,7 @@ const VendorProfileSchema = new mongoose.Schema({
   },
 
   address: {
-    street: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    pincode: { type: String, required: true },
-    lat: { type: Number },
-    lng: { type: Number },
+    type: String,
   },
 
   // New Fields
