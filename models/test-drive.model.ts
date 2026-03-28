@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface ITestDrive extends Document {
   carId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  vendorId: mongoose.Types.ObjectId;
+  vendorId?: mongoose.Types.ObjectId;
   startDate: Date;
   endDate: Date;
   startTime: string;
@@ -21,7 +21,7 @@ const TestDriveSchema = new Schema<ITestDrive>(
   {
     carId: { type: Schema.Types.ObjectId, ref: "Car", required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    vendorId: { type: Schema.Types.ObjectId, ref: "Vendor", required: true },
+    vendorId: { type: Schema.Types.ObjectId, ref: "Vendor" },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     startTime: { type: String, required: true },
@@ -44,8 +44,13 @@ const TestDriveSchema = new Schema<ITestDrive>(
     isDelivery: { type: Boolean, default: false },
     address: { type: String },
   },
-  { timestamps: true },
+  { timestamps: true, strict: false },
 );
+
+// Force reload model in development to pick up schema changes
+if (process.env.NODE_ENV !== "production") {
+  delete mongoose.models.TestDrive;
+}
 
 export default mongoose.models.TestDrive ||
   mongoose.model<ITestDrive>("TestDrive", TestDriveSchema);

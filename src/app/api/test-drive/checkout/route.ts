@@ -18,6 +18,12 @@ export async function POST(request: Request) {
     const { carId, bookingDetails, isDelivery, userLocation } =
       await request.json();
 
+    console.log("Received checkout request:", {
+      carId,
+      isDelivery,
+      userLocation,
+    });
+
     if (!carId || !bookingDetails) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -27,11 +33,9 @@ export async function POST(request: Request) {
 
     const car = await Car.findById(carId);
     const vendor = await Vendor.findOne({ cars: carId });
-    if (!car || !vendor) {
-      return NextResponse.json(
-        { error: "Car or Vendor not found" },
-        { status: 404 },
-      );
+
+    if (!car) {
+      return NextResponse.json({ error: "Car not found" }, { status: 404 });
     }
 
     // Use car's hourly price for calculation
@@ -78,7 +82,7 @@ export async function POST(request: Request) {
 
     // Define car's address type based on standard ICar model expectations
     const carAddress = car.carAddress;
-    const vendorAddress = vendor.address;
+    const vendorAddress = vendor?.address;
 
     const startAddress = carAddress || vendorAddress;
 
@@ -140,10 +144,13 @@ export async function POST(request: Request) {
         endTime: bookingDetails.endTime,
         notes: bookingDetails.notes || "",
         isDelivery: isDelivery ? "true" : "false",
-        userLocationAddress: userLocation?.address ?? "",
+        userLocationAddress: userLocation?.address || "No address provided",
       },
     });
-    console.log("Stripe Checkout Session created: ", checkoutSession);
+    console.log(
+      "Stripe Checkout Session created with metadata:",
+      checkoutSession.metadata,
+    );
     return NextResponse.json({
       sessionId: checkoutSession.id,
       url: checkoutSession.url,

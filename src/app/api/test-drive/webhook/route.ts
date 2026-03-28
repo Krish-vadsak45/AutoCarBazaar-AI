@@ -35,33 +35,27 @@ export async function POST(req: Request) {
     const { metadata } = session;
 
     try {
+      console.log("---- Webhook Hit ----");
+      console.log("Stripe Event Metadata:", metadata);
+
       await connectToDatabase();
 
       const vendor = await Vendor.findOne({ cars: metadata.carId });
-      if (!vendor) {
-        throw new Error("Vendor not found for carId " + metadata.carId);
-      }
 
       const isDelivery = metadata.isDelivery === "true";
-      const userLocation =
-        isDelivery && metadata.userLocationCity
-          ? {
-              address: metadata.userLocationAddress || undefined,
-              city: metadata.userLocationCity,
-              state: metadata.userLocationState,
-              lat: metadata.userLocationLat
-                ? parseFloat(metadata.userLocationLat)
-                : 0,
-              lng: metadata.userLocationLng
-                ? parseFloat(metadata.userLocationLng)
-                : 0,
-            }
-          : undefined;
+      const actualAddress = metadata.userLocationAddress || undefined;
+
+      console.log(
+        "Webhook processed address:",
+        actualAddress,
+        "IsDelivery:",
+        isDelivery,
+      );
 
       const newTestDrive = await TestDrive.create({
         carId: metadata.carId,
         userId: metadata.userId,
-        vendorId: vendor._id,
+        vendorId: vendor ? vendor._id : undefined,
         startDate: new Date(metadata.startDate),
         endDate: new Date(metadata.endDate),
         startTime: metadata.startTime,
@@ -72,7 +66,8 @@ export async function POST(req: Request) {
         paymentIntentId: session.payment_intent,
         paymentStatus: "PAID",
         isDelivery,
-        userLocation,
+        address:
+          actualAddress || "DEBUG: Stripe metadata didn't have an address",
       });
       console.log("New Test Drive created from webhook: ", newTestDrive);
       const populatedTestDrive = await TestDrive.findById(

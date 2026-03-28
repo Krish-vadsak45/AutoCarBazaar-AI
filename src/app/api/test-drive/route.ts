@@ -17,7 +17,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { carId, startDate, endDate, startTime, endTime, notes } = body;
+    const {
+      carId,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      notes,
+      isDelivery,
+      userLocation,
+    } = body;
 
     if (!carId || !startDate || !endDate || !startTime || !endTime) {
       return NextResponse.json(
@@ -38,23 +47,19 @@ export async function POST(request: Request) {
 
     // Find the vendor that owns this car
     const vendor = await Vendor.findOne({ cars: carId });
-    if (!vendor) {
-      return NextResponse.json(
-        { error: "Vendor for this car not found" },
-        { status: 404 },
-      );
-    }
 
     const newTestDrive = await TestDrive.create({
       carId,
       userId,
-      vendorId: vendor._id,
+      vendorId: vendor ? vendor._id : undefined,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       startTime,
       endTime,
       notes,
       status: "PENDING",
+      isDelivery: isDelivery ?? false,
+      address: userLocation?.address || undefined,
     });
     console.log("New Test Drive created: ", newTestDrive);
     const populatedTestDrive = await newTestDrive.populate([
@@ -82,11 +87,11 @@ export async function POST(request: Request) {
           <li><strong>Request ID:</strong> ${populatedTestDrive._id}</li>
           <li><strong>Car:</strong> ${populatedTestDrive.carId.title}</li>
           <li><strong>Dealer:</strong> ${
-            populatedTestDrive.vendorId.businessName
+            populatedTestDrive.vendorId?.businessName || "Admin"
           }</li>
           <li><strong>Location:</strong> ${
-            populatedTestDrive.vendorId.address.city
-          }, ${populatedTestDrive.vendorId.address.state}</li>
+            populatedTestDrive.vendorId?.address?.city || ""
+          }, ${populatedTestDrive.vendorId?.address?.state || "N/A"}</li>
           <li><strong>Date:</strong> ${new Date(
             populatedTestDrive.startDate,
           ).toDateString()} - ${new Date(
@@ -101,7 +106,7 @@ export async function POST(request: Request) {
         <p>If you need assistance, please contact the dealer.</p>
     
         <p>Thank you for choosing ${
-          populatedTestDrive.vendorId.businessName
+          populatedTestDrive.vendorId?.businessName || "Auto Car Bazaar"
         }.</p>
       `,
     };
