@@ -7,6 +7,8 @@ declare module "next-auth" {
     email?: string;
     role?: string;
     vendorId?: string;
+    isVerified?: boolean;
+    isActive?: boolean;
   }
 
   interface Session {
@@ -16,6 +18,8 @@ declare module "next-auth" {
       email?: string;
       role?: string;
       vendorId?: string;
+      isVerified?: boolean;
+      isActive?: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -27,5 +31,7 @@ declare module "next-auth/jwt" {
     email?: string;
     role?: string;
     vendorId?: string;
+    isVerified?: boolean;
+    isActive?: boolean;
   }
 }
