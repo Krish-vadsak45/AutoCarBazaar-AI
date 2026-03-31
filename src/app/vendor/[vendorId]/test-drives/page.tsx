@@ -51,19 +51,7 @@ interface TestDriveData {
   notes: string;
   image: string;
   isDelivery: boolean;
-  userLocationCity?: string;
-  userLocationState?: string;
-  userLocationLat?: number;
-  userLocationLng?: number;
-  userLocationAddress?: string;
-  distanceKm?: number;
-}
-
-interface DistanceResult {
-  distance: string;
-  duration: string;
-  originAddress: string;
-  destinationAddress: string;
+  address?: string;
 }
 
 const statusColors: Record<Status, string> = {
@@ -80,39 +68,15 @@ export default function TestDrivesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [drives, setDrives] = useState<TestDriveData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [vendorLat, setVendorLat] = useState<number | null>(null);
-  const [vendorLng, setVendorLng] = useState<number | null>(null);
-  const [vendorCity, setVendorCity] = useState("");
-  const [vendorStateStr, setVendorStateStr] = useState("");
 
   // Accept delivery flow
   const [acceptingDrive, setAcceptingDrive] = useState<TestDriveData | null>(
     null,
   );
-  const [vendorAddressInput, setVendorAddressInput] = useState("");
-  const [distanceResult, setDistanceResult] = useState<DistanceResult | null>(
-    null,
-  );
-  const [distanceLoading, setDistanceLoading] = useState(false);
 
   useEffect(() => {
-    fetchVendorLocation();
     fetchTestDrives();
   }, []);
-
-  const fetchVendorLocation = async () => {
-    try {
-      const { data } = await axios.get("/api/vendor-location");
-      if (data.lat && data.lng) {
-        setVendorLat(data.lat);
-        setVendorLng(data.lng);
-      }
-      if (data.city) setVendorCity(data.city);
-      if (data.state) setVendorStateStr(data.state);
-    } catch {
-      // Location not set — distance won't be shown
-    }
-  };
 
   const fetchTestDrives = async () => {
     try {
@@ -137,11 +101,7 @@ export default function TestDrivesPage() {
         image:
           item.carId?.image || item.carId?.images?.[0] || "/placeholder.svg",
         isDelivery: item.isDelivery || false,
-        userLocationCity: item.userLocation?.city,
-        userLocationState: item.userLocation?.state,
-        userLocationLat: item.userLocation?.lat,
-        userLocationLng: item.userLocation?.lng,
-        userLocationAddress: item.userLocation?.address,
+        address: item.address,
       }));
 
       setDrives(formattedData);
@@ -183,45 +143,12 @@ export default function TestDrivesPage() {
 
   const openAcceptPanel = (drive: TestDriveData) => {
     setAcceptingDrive(drive);
-    setDistanceResult(null);
-    // Pre-fill vendor address from their profile
-    const pre = [vendorCity, vendorStateStr].filter(Boolean).join(", ");
-    setVendorAddressInput(pre);
-  };
-
-  const handleCalculateDistance = async () => {
-    if (!acceptingDrive) return;
-    const userAddr =
-      acceptingDrive.userLocationAddress ||
-      [acceptingDrive.userLocationCity, acceptingDrive.userLocationState]
-        .filter(Boolean)
-        .join(", ");
-    if (!userAddr) {
-      toast.error("User location not available");
-      return;
-    }
-    if (!vendorAddressInput.trim()) {
-      toast.error("Please enter your location");
-      return;
-    }
-    setDistanceLoading(true);
-    try {
-      const { data } = await axios.get("/api/calculate-distance", {
-        params: { origins: vendorAddressInput, destinations: userAddr },
-      });
-      setDistanceResult(data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Failed to calculate distance");
-    } finally {
-      setDistanceLoading(false);
-    }
   };
 
   const handleConfirmAccept = async () => {
     if (!acceptingDrive) return;
     await updateStatus(acceptingDrive.id, "CONFIRMED");
     setAcceptingDrive(null);
-    setDistanceResult(null);
   };
 
   return (
@@ -370,21 +297,10 @@ export default function TestDrivesPage() {
                       <User className="h-4 w-4 flex-shrink-0" />
                       <span>{drive.customer}</span>
                     </div>
-                    {drive.isDelivery && drive.userLocationCity && (
+                    {drive.isDelivery && drive.address && (
                       <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                         <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span>
-                          {drive.userLocationAddress}, {drive.userLocationCity},{" "}
-                          {drive.userLocationState}
-                          {vendorLat &&
-                            vendorLng &&
-                            drive.userLocationLat &&
-                            drive.userLocationLng && (
-                              <span className="ml-1 text-muted-foreground">
-                                ( km away)
-                              </span>
-                            )}
-                        </span>
+                        <span>{drive.address}</span>
                       </div>
                     )}
                   </div>
@@ -440,7 +356,7 @@ export default function TestDrivesPage() {
                   {acceptingDrive?.id === drive.id && (
                     <div className="mt-3 border border-green-200 dark:border-green-800 rounded-lg p-4 bg-green-50 dark:bg-green-950/20 space-y-3">
                       <p className="text-sm font-semibold text-green-800 dark:text-green-300">
-                        Confirm Delivery — Calculate Distance
+                        Confirm Delivery
                       </p>
 
                       {/* User location (read-only) */}
@@ -449,62 +365,12 @@ export default function TestDrivesPage() {
                           Customer Location
                         </label>
                         <p className="text-sm text-foreground bg-white dark:bg-slate-800 border border-border rounded-lg px-3 py-2">
-                          {drive.userLocationAddress +
-                            ", " +
-                            drive.userLocationCity +
-                            ", " +
-                            drive.userLocationState || "Not provided"}
+                          {drive.address || "Not provided"}
                         </p>
                       </div>
 
-                      {/* Vendor location input */}
-                      <div className="space-y-1">
-                        <label className="text-xs text-muted-foreground uppercase font-medium">
-                          Your Location
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter your full address or city, state"
-                          value={vendorAddressInput}
-                          onChange={(e) => {
-                            setVendorAddressInput(e.target.value);
-                            setDistanceResult(null);
-                          }}
-                          className="w-full px-3 py-2 text-sm border border-border bg-white dark:bg-slate-800 text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
-                      </div>
-
-                      {/* Distance result */}
-                      {distanceResult && (
-                        <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-border rounded-lg px-3 py-2.5 text-sm">
-                          <MapPin className="h-4 w-4 text-green-600 shrink-0" />
-                          <div>
-                            <span className="font-semibold text-foreground">
-                              {distanceResult.distance}
-                            </span>
-                            <span className="text-muted-foreground ml-2">
-                              (~{distanceResult.duration})
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
                       {/* Buttons */}
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-2"
-                          disabled={distanceLoading}
-                          onClick={handleCalculateDistance}
-                        >
-                          {distanceLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <MapPin className="h-4 w-4" />
-                          )}
-                          {distanceLoading ? "Calculating..." : "Get Distance"}
-                        </Button>
+                      <div className="flex gap-2 flex-wrap mt-4">
                         <Button
                           size="sm"
                           className="gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -517,7 +383,6 @@ export default function TestDrivesPage() {
                           variant="ghost"
                           onClick={() => {
                             setAcceptingDrive(null);
-                            setDistanceResult(null);
                           }}
                         >
                           Cancel

@@ -8,6 +8,7 @@ import {
   TestTube2,
   Settings,
   LogOut,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -28,6 +29,11 @@ export function AdminSidebar() {
       label: "Dashboard",
       href: `${basePath}/dashboard`,
       icon: LayoutDashboard,
+    },
+    {
+      label: "Payment",
+      href: `${basePath}/payment`,
+      icon: CreditCard,
     },
     {
       label: "Cars",

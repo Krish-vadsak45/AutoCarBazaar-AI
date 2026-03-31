@@ -29,11 +29,14 @@ export async function POST(req: Request) {
       await Vendor.findByIdAndUpdate(vendorId, {
         verificationStatus: "APPROVED",
         isVerified: true,
-        isActive: true,
+        // isActive is left false until payment is made
       });
 
-      // Update User Role to 'vendor'
-      await User.findByIdAndUpdate(vendor.userId, { role: "vendor" });
+      // Update User Role to 'vendor' and set isVerified to true
+      await User.findByIdAndUpdate(vendor.userId, {
+        role: "vendor",
+        isVerified: true,
+      });
     } else {
       await Vendor.findByIdAndUpdate(vendorId, {
         verificationStatus: "REJECTED",

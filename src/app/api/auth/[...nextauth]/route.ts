@@ -56,7 +56,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid password");
         }
 
-        // ✅ Check verification status BEFORE role validation
+        // // ✅ Check verification status BEFORE role validation - removed logic so they can login and pay
         let vendor = null;
         if (user.role === "vendor" || credentials.role === "vendor") {
           vendor = await Vendor.findOne({ userId: user._id.toString() });
@@ -65,14 +65,8 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Vendor profile not found.");
           }
 
-          if (vendor) {
-            if (vendor.verificationStatus === "PENDING") {
-              throw new Error(
-                "Your vendor application is still pending approval.",
-              );
-            } else if (vendor.verificationStatus === "REJECTED") {
-              throw new Error("Your vendor application has been rejected.");
-            }
+          if (vendor && vendor.verificationStatus === "REJECTED") {
+            throw new Error("Your vendor application has been rejected.");
           }
         }
 
@@ -93,6 +87,8 @@ export const authOptions: NextAuthOptions = {
 
         if (vendor) {
           userData.vendorId = vendor._id.toString();
+          userData.isVerified = vendor.isVerified;
+          userData.isActive = vendor.isActive;
         }
 
         return userData;
@@ -134,13 +130,24 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    async jwt({ token, user }: any) {
+    async jwt({ token, user, trigger, session }: any) {
+      if (trigger === "update" && session) {
+        if (session.isActive !== undefined) {
+          token.isActive = session.isActive;
+        }
+        if (session.isVerified !== undefined) {
+          token.isVerified = session.isVerified;
+        }
+      }
+
       if (user) {
         // 🔹 For Credentials Provider: user has `_id` & `role` from authorize()
         if (user._id) {
           token._id = user._id;
           token.role = user.role;
           token.vendorId = user.vendorId; // Ensure vendorId is passed
+          token.isVerified = user.isVerified;
+          token.isActive = user.isActive;
         }
         // 🔹 For OAuth (Google/GitHub): Fetch user from DB
         else {
@@ -157,6 +164,8 @@ export const authOptions: NextAuthOptions = {
               });
               if (vendor) {
                 token.vendorId = vendor._id.toString();
+                token.isVerified = vendor.isVerified;
+                token.isActive = vendor.isActive;
               }
             }
           }
@@ -174,6 +183,8 @@ export const authOptions: NextAuthOptions = {
         session.user.vendorId = token.vendorId as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
+        session.user.isVerified = token.isVerified as boolean | undefined;
+        session.user.isActive = token.isActive as boolean | undefined;
       }
       return session;
     },

@@ -40,6 +40,16 @@ export async function POST(req: Request) {
 
       await connectToDatabase();
 
+      if (metadata.type === "vendor_registration") {
+        const vendor = await Vendor.findById(metadata.vendorId);
+        if (vendor) {
+          vendor.isActive = true;
+          await vendor.save();
+          console.log(`Vendor ${vendor._id} activated via Stripe payment.`);
+        }
+        return NextResponse.json({ received: true });
+      }
+
       const vendor = await Vendor.findOne({ cars: metadata.carId });
 
       const isDelivery = metadata.isDelivery === "true";
