@@ -61,6 +61,11 @@ export async function POST(req: Request) {
         isDelivery,
       );
 
+      // Fix: metadata from Stripe is always string, we need to cast to Number precisely
+      const feeAmount = typeof metadata.bookingFeeAmount !== "undefined" 
+        ? Number(metadata.bookingFeeAmount) 
+        : 0;
+
       const newTestDrive = await TestDrive.create({
         carId: metadata.carId,
         userId: metadata.userId,
@@ -77,7 +82,25 @@ export async function POST(req: Request) {
         isDelivery,
         address:
           actualAddress || "DEBUG: Stripe metadata didn't have an address",
+        bookingFeeAmount: feeAmount,
       });
+
+      console.log("New Test Drive created from webhook: ", newTestDrive);
+
+      if (vendor) {
+        vendor.totalTestDrivesBooked = (vendor.totalTestDrivesBooked || 0) + 1;
+        vendor.totalRevenue = (vendor.totalRevenue || 0) + feeAmount;
+        
+        // Ensure mongoose knows the fields were modified (just in case)
+        vendor.markModified('totalTestDrivesBooked');
+        vendor.markModified('totalRevenue');
+        
+        await vendor.save();
+        console.log(
+          `Vendor ${vendor._id} updated stats (+1 booked, +${feeAmount} revenue).`,
+        );
+      }
+
       console.log("New Test Drive created from webhook: ", newTestDrive);
       const populatedTestDrive = await TestDrive.findById(
         newTestDrive._id,
@@ -108,13 +131,40 @@ export async function POST(req: Request) {
     if (refund.status === "succeeded") {
       try {
         await connectToDatabase();
-        const updated = await TestDrive.findOneAndUpdate(
-          { paymentIntentId: refund.payment_intent },
-          { paymentStatus: "REFUNDED", status: "REJECTED" },
-          { new: true },
-        );
-        if (updated) {
-          console.log(`TestDrive ${updated._id} payment marked as REFUNDED`);
+
+        // Find existing test drive FIRST to check its current status
+        const existingDrive = await TestDrive.findOne({
+          paymentIntentId: refund.payment_intent,
+        });
+
+        if (existingDrive && existingDrive.paymentStatus !== "REFUNDED") {
+          existingDrive.paymentStatus = "REFUNDED";
+          existingDrive.status = "REJECTED";
+          await existingDrive.save();
+
+          console.log(
+            `TestDrive ${existingDrive._id} payment marked as REFUNDED`,
+          );
+
+          // Decrement vendor stats
+          if (existingDrive.vendorId) {
+            const vendor = await Vendor.findById(existingDrive.vendorId);
+            if (vendor) {
+              vendor.totalTestDrivesBooked = Math.max(
+                0,
+                (vendor.totalTestDrivesBooked || 1) - 1,
+              );
+              vendor.totalRevenue = Math.max(
+                0,
+                (vendor.totalRevenue || 0) -
+                  (existingDrive.bookingFeeAmount || 0),
+              );
+              await vendor.save();
+              console.log(
+                `Vendor ${vendor._id} decremented stats (-1 booked, -${existingDrive.bookingFeeAmount || 0} revenue) via webhook.`,
+              );
+            }
+          }
         }
       } catch (err) {
         console.error("Error updating test drive status for refund:", err);

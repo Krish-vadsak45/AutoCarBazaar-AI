@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { ChevronLeft, Check, CalendarIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { loadStripe } from "@stripe/stripe-js";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
@@ -157,13 +157,10 @@ export default function TestDrivePage() {
     e.preventDefault();
 
     if (!session?.user) {
-      toast.error("Please sign in to book a test drive", {
-        description: "You need to be logged in to complete this booking.",
-        action: {
-          label: "Sign In",
-          onClick: () => router.push("/sign-in"),
-        },
-      });
+      toast.error(
+        "Please sign in to book a test drive. You need to be logged in to complete this booking.",
+      );
+      router.push("/sign-in");
       return;
     }
 
@@ -207,6 +204,10 @@ export default function TestDrivePage() {
       if (response.data.url) {
         globalThis.location.href = response.data.url;
       }
+
+      toast.success("Test drive booked successfully!");
+      // check the new fields in response.data for debugging
+      console.log("DEBUG: Checkout Response Data:", response.data);
     } catch (error: any) {
       console.error("Booking error:", error);
       toast.error(error.response?.data?.error || "Failed to initiate payment");

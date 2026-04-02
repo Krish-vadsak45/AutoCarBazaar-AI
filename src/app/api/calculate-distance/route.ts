@@ -53,6 +53,7 @@ export async function GET(request: Request) {
       destinationAddress: data.destination_addresses?.[0],
     });
   } catch (error: any) {
+    console.error("Distance API Error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch distance" },
       { status: 500 },

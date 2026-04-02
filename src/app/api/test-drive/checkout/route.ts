@@ -145,12 +145,15 @@ export async function POST(request: Request) {
         notes: bookingDetails.notes || "",
         isDelivery: isDelivery ? "true" : "false",
         userLocationAddress: userLocation?.address || "No address provided",
+        bookingFeeAmount: totalPrice.toString(),
       },
     });
-    console.log(
-      "Stripe Checkout Session created with metadata:",
-      checkoutSession.metadata,
-    );
+
+    console.log("=========================================");
+    console.log("🚗 STRIPE CHECKOUT API HIT (LOCAL) 🚗");
+    console.log("Metadata built for Stripe:", checkoutSession.metadata);
+    console.log("=========================================");
+
     return NextResponse.json({
       sessionId: checkoutSession.id,
       url: checkoutSession.url,

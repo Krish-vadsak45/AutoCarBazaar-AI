@@ -165,9 +165,27 @@ export async function DELETE(
         { carId: id, status: { $in: ["PENDING", "CONFIRMED"] } },
         {
           status: "CANCELLED",
+          paymentStatus: "REFUNDED",
           notes: "Automatically cancelled: Vendor deleted the vehicle.",
         },
       );
+
+      // Decrement vendor's metrics for all cancelled bookings that were PAID
+      const paidBookings = activeBookings.filter(b => b.paymentStatus === "PAID");
+      const totalRefundedRevenue = paidBookings.reduce((sum, b) => sum + (b.bookingFeeAmount || 0), 0);
+      const totalRefundedCount = paidBookings.length;
+
+      if (totalRefundedCount > 0) {
+        await Vendor.updateOne(
+          { _id: vendor._id },
+          {
+            $inc: {
+              totalTestDrivesBooked: -totalRefundedCount,
+              totalRevenue: -totalRefundedRevenue
+            }
+          }
+        );
+      }
     }
 
     // 4. Delete the Car Document

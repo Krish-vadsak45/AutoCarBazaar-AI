@@ -29,32 +29,35 @@ export async function GET(req: Request) {
       // Optionally verify vendor exists
       const vendor = await Vendor.findById(vendorIdParam);
       if (!vendor) {
-         return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Vendor not found" },
+          { status: 404 },
+        );
       }
     } else {
-        const userId = (session.user as any)._id;
-        console.log("DEBUG: User ID from session:", userId);
+      const userId = (session.user as any)._id;
+      console.log("DEBUG: User ID from session:", userId);
 
-        if (!userId) {
-          console.log("DEBUG: User ID missing in session object");
-          return NextResponse.json(
-            { error: "User ID not found in session" },
-            { status: 400 }
-          );
-        }
+      if (!userId) {
+        console.log("DEBUG: User ID missing in session object");
+        return NextResponse.json(
+          { error: "User ID not found in session" },
+          { status: 400 },
+        );
+      }
 
-        // Find the vendor profile associated with this user
-        const vendor = await Vendor.findOne({ userId });
-        console.log("DEBUG: Vendor profile found:", !!vendor);
+      // Find the vendor profile associated with this user
+      const vendor = await Vendor.findOne({ userId });
+      console.log("DEBUG: Vendor profile found:", !!vendor);
 
-        if (!vendor) {
-          console.log("DEBUG: No vendor profile matches userId:", userId);
-          return NextResponse.json(
-            { error: "Vendor profile not found" },
-            { status: 404 }
-          );
-        }
-        vendorIdToUse = vendor._id;
+      if (!vendor) {
+        console.log("DEBUG: No vendor profile matches userId:", userId);
+        return NextResponse.json(
+          { error: "Vendor profile not found" },
+          { status: 404 },
+        );
+      }
+      vendorIdToUse = vendor._id;
     }
 
     console.log("DEBUG: Fetching test drives for vendorId:", vendorIdToUse);
@@ -78,7 +81,7 @@ export async function GET(req: Request) {
     console.error("Error fetching vendor test drives:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -97,7 +100,7 @@ export async function PATCH(request: Request) {
     if (!id || !status) {
       return NextResponse.json(
         { error: "Booking ID and Status are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -114,23 +117,57 @@ export async function PATCH(request: Request) {
       if (!vendor) {
         return NextResponse.json(
           { error: "Vendor profile not found for this user" },
-          { status: 403 }
+          { status: 403 },
         );
       }
       query.vendorId = vendor._id;
     }
 
-    const updatedDrive = await TestDrive.findOneAndUpdate(
-      query,
-      { status: status.toUpperCase() }, // Ensure consistency (PENDING, CONFIRMED)
-      { new: true }
-    );
+    // Fetch the existing drive to know its previous state
+    const existingDrive = await TestDrive.findOne(query);
 
-    if (!updatedDrive) {
+    if (!existingDrive) {
       return NextResponse.json(
         { error: "Test drive not found or access denied" },
-        { status: 404 }
+        { status: 404 },
       );
+    }
+
+    const previousStatus = existingDrive.status;
+    const newStatus = status.toUpperCase();
+
+    const updatedDrive = await TestDrive.findOneAndUpdate(
+      query,
+      { status: newStatus }, // Ensure consistency (PENDING, CONFIRMED)
+      { new: true },
+    );
+
+    // If it was cancelled or rejected, decrement the vendor stats
+    if (
+      updatedDrive &&
+      existingDrive.paymentStatus === "PAID" &&
+      previousStatus !== "CANCELLED" &&
+      previousStatus !== "REJECTED" &&
+      (newStatus === "CANCELLED" || newStatus === "REJECTED")
+    ) {
+      updatedDrive.paymentStatus = "REFUNDED";
+      await updatedDrive.save();
+
+      if (updatedDrive && updatedDrive.vendorId) {
+        const matchingVendor = await Vendor.findById(updatedDrive.vendorId);
+        if (matchingVendor) {
+          matchingVendor.totalTestDrivesBooked = Math.max(
+            0,
+            (matchingVendor.totalTestDrivesBooked || 1) - 1,
+          );
+          matchingVendor.totalRevenue = Math.max(
+            0,
+            (matchingVendor.totalRevenue || 0) -
+              (updatedDrive.bookingFeeAmount || 0),
+          );
+          await matchingVendor.save();
+        }
+      }
     }
 
     return NextResponse.json(updatedDrive, { status: 200 });
@@ -138,7 +175,7 @@ export async function PATCH(request: Request) {
     console.error("Update Error:", error);
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

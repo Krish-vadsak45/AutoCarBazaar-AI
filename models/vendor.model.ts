@@ -42,6 +42,9 @@ export interface IVendor extends mongoose.Document {
   };
   verificationStatus: "PENDING" | "APPROVED" | "REJECTED";
   workingHours?: workingHours[];
+
+  totalTestDrivesBooked: number;
+  totalRevenue: number;
 }
 
 const VendorProfileSchema = new mongoose.Schema({
@@ -131,15 +134,18 @@ const VendorProfileSchema = new mongoose.Schema({
       closeTime: { type: String }, // Format: HH:mm
     },
   ],
+
+  // Booking Analytics
+  totalTestDrivesBooked: { type: Number, default: 0 },
+  totalRevenue: { type: Number, default: 0 },
 });
 
-// Force reload model in development to pick up schema changes
-if (process.env.NODE_ENV === "development") {
-  delete (mongoose.models as any).Vendor;
-}
+// Force reload model to pick up schema changes
+delete mongoose.models.Vendor;
 
-const Vendor: Model<IVendor> =
-  (mongoose.models.Vendor as Model<IVendor>) ||
-  mongoose.model<IVendor>("Vendor", VendorProfileSchema);
+const Vendor: Model<IVendor> = mongoose.model<IVendor>(
+  "Vendor",
+  VendorProfileSchema,
+);
 
 export default Vendor;

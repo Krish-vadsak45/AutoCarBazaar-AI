@@ -15,6 +15,7 @@ export interface ITestDrive extends Document {
   paymentStatus: "PENDING" | "PAID" | "UNPAID" | "REFUNDED";
   isDelivery: boolean;
   address?: string;
+  bookingFeeAmount: number;
 }
 
 const TestDriveSchema = new Schema<ITestDrive>(
@@ -43,14 +44,14 @@ const TestDriveSchema = new Schema<ITestDrive>(
     },
     isDelivery: { type: Boolean, default: false },
     address: { type: String },
+    bookingFeeAmount: { type: Number, default: 0, required: true },
   },
   { timestamps: true, strict: false },
 );
 
-// Force reload model in development to pick up schema changes
-if (process.env.NODE_ENV !== "production") {
-  delete mongoose.models.TestDrive;
-}
+// Force bypass cache
+delete mongoose.models.TestDrive;
 
-export default mongoose.models.TestDrive ||
-  mongoose.model<ITestDrive>("TestDrive", TestDriveSchema);
+const TestDrive = mongoose.model<ITestDrive>("TestDrive", TestDriveSchema);
+
+export default TestDrive;

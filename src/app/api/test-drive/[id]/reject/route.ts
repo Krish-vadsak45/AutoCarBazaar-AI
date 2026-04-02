@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/db";
 import TestDrive from "@/models/test-drive.model";
+import Vendor from "@/models/vendor.model";
 import { stripe } from "@/lib/stripe";
 
 export async function POST(
@@ -48,9 +49,20 @@ export async function POST(
     });
 
     if (refund.status === "succeeded" || refund.status === "pending") {
-      // 2. Update DB status
+      // 2. Update DB status and vendor metrics
       testDrive.status = "REJECTED";
       testDrive.paymentStatus = "REFUNDED";
+      
+      const vendorId = testDrive.vendorId;
+      if (vendorId) {
+        const vendor = await Vendor.findById(vendorId);
+        if (vendor) {
+          vendor.totalTestDrivesBooked = Math.max(0, (vendor.totalTestDrivesBooked || 1) - 1);
+          vendor.totalRevenue = Math.max(0, (vendor.totalRevenue || 0) - (testDrive.bookingFeeAmount || 0));
+          await vendor.save();
+        }
+      }
+
       await testDrive.save();
 
       return NextResponse.json({
