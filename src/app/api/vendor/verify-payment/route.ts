@@ -39,10 +39,18 @@ export async function POST(req: Request) {
       stripeSession.metadata?.vendorId === vendorId
     ) {
       if (!vendor.isActive) {
-        await Vendor.findByIdAndUpdate(vendorId, { isActive: true });
+        await Vendor.findByIdAndUpdate(vendorId, {
+          isActive: true,
+          isVerified: true,
+        });
         vendor.isActive = true;
+        vendor.isVerified = true;
       }
-      return NextResponse.json({ success: true, isActive: vendor.isActive });
+      return NextResponse.json({
+        success: true,
+        isActive: vendor.isActive,
+        isVerified: vendor.isVerified,
+      });
     }
 
     return NextResponse.json(

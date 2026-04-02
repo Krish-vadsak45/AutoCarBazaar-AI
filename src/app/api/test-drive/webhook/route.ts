@@ -43,14 +43,19 @@ export async function POST(req: Request) {
       if (metadata.type === "vendor_registration") {
         const vendor = await Vendor.findById(metadata.vendorId);
         if (vendor) {
-          await Vendor.findByIdAndUpdate(metadata.vendorId, { isActive: true });
-          console.log(`Vendor ${vendor._id} activated via Stripe payment.`);
+          await Vendor.findByIdAndUpdate(metadata.vendorId, {
+            isActive: true,
+            isVerified: true, // Also set isVerified to true as payment is successful
+          });
+          console.log(
+            `Vendor ${vendor._id} activated and verified via Stripe payment.`,
+          );
         }
         return NextResponse.json({ received: true });
       }
 
       let vendor: any = undefined;
-      
+
       // First try to find by the vendorId explicitly passed in metadata
       if (metadata.vendorId && metadata.vendorId !== "") {
         vendor = await Vendor.findById(metadata.vendorId);
@@ -59,18 +64,22 @@ export async function POST(req: Request) {
       // If still no vendor, find by carId matching in the cars array
       if (!vendor && metadata.carId) {
         vendor = await Vendor.findOne({ cars: metadata.carId });
-        
+
         // Manual fallback check if mongoose isn't finding it cleanly via ObjectId Array matching
         if (!vendor) {
-           const allVendors = await Vendor.find({});
-           vendor = allVendors.find(v => 
-               v.cars.some(id => id.toString() === metadata.carId.toString())
-           ) || undefined;
+          const allVendors = await Vendor.find({});
+          vendor =
+            allVendors.find((v) =>
+              v.cars.some((id) => id.toString() === metadata.carId.toString()),
+            ) || undefined;
         }
       }
 
       console.log("---- DEBUG VENDOR ----");
-      console.log("Vendor found for webhook update:", vendor ? vendor._id : "None found!");
+      console.log(
+        "Vendor found for webhook update:",
+        vendor ? vendor._id : "None found!",
+      );
       console.log("----------------------");
 
       const isDelivery = metadata.isDelivery === "true";

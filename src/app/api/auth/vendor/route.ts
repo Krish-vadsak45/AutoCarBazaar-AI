@@ -132,7 +132,10 @@ export async function POST(request: Request) {
       businessType,
       vendorType,
       gstNumber,
-      address,
+      address:
+        typeof address === "object"
+          ? `${address.city}, ${address.state}, ${address.pincode}`
+          : address,
       identityProof,
       bankDetails,
       verificationStatus: "PENDING",
