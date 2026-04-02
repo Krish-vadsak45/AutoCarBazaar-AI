@@ -49,7 +49,29 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true });
       }
 
-      const vendor = await Vendor.findOne({ cars: metadata.carId });
+      let vendor: any = undefined;
+      
+      // First try to find by the vendorId explicitly passed in metadata
+      if (metadata.vendorId && metadata.vendorId !== "") {
+        vendor = await Vendor.findById(metadata.vendorId);
+      }
+
+      // If still no vendor, find by carId matching in the cars array
+      if (!vendor && metadata.carId) {
+        vendor = await Vendor.findOne({ cars: metadata.carId });
+        
+        // Manual fallback check if mongoose isn't finding it cleanly via ObjectId Array matching
+        if (!vendor) {
+           const allVendors = await Vendor.find({});
+           vendor = allVendors.find(v => 
+               v.cars.some(id => id.toString() === metadata.carId.toString())
+           ) || undefined;
+        }
+      }
+
+      console.log("---- DEBUG VENDOR ----");
+      console.log("Vendor found for webhook update:", vendor ? vendor._id : "None found!");
+      console.log("----------------------");
 
       const isDelivery = metadata.isDelivery === "true";
       const actualAddress = metadata.userLocationAddress || undefined;
@@ -62,9 +84,10 @@ export async function POST(req: Request) {
       );
 
       // Fix: metadata from Stripe is always string, we need to cast to Number precisely
-      const feeAmount = typeof metadata.bookingFeeAmount !== "undefined" 
-        ? Number(metadata.bookingFeeAmount) 
-        : 0;
+      const feeAmount =
+        typeof metadata.bookingFeeAmount !== "undefined"
+          ? Number(metadata.bookingFeeAmount)
+          : 0;
 
       const newTestDrive = await TestDrive.create({
         carId: metadata.carId,
@@ -88,20 +111,30 @@ export async function POST(req: Request) {
       console.log("New Test Drive created from webhook: ", newTestDrive);
 
       if (vendor) {
-        vendor.totalTestDrivesBooked = (vendor.totalTestDrivesBooked || 0) + 1;
-        vendor.totalRevenue = (vendor.totalRevenue || 0) + feeAmount;
-        
-        // Ensure mongoose knows the fields were modified (just in case)
-        vendor.markModified('totalTestDrivesBooked');
-        vendor.markModified('totalRevenue');
-        
-        await vendor.save();
-        console.log(
-          `Vendor ${vendor._id} updated stats (+1 booked, +${feeAmount} revenue).`,
-        );
+        try {
+          const updatedVendor = await Vendor.findByIdAndUpdate(
+            vendor._id,
+            {
+              $inc: {
+                totalTestDrivesBooked: 1,
+                totalRevenue: feeAmount,
+              },
+            },
+            { new: true },
+          );
+
+          console.log("----- UPDATED VENDOR DETAILS -----");
+          console.log(updatedVendor);
+          console.log("----------------------------------");
+
+          console.log(
+            `Vendor ${vendor._id} updated stats (+1 booked, +${feeAmount} revenue).`,
+          );
+        } catch (updateErr) {
+          console.error("Failed to update vendor stats:", updateErr);
+        }
       }
 
-      console.log("New Test Drive created from webhook: ", newTestDrive);
       const populatedTestDrive = await TestDrive.findById(
         newTestDrive._id,
       ).populate([
@@ -148,21 +181,22 @@ export async function POST(req: Request) {
 
           // Decrement vendor stats
           if (existingDrive.vendorId) {
-            const vendor = await Vendor.findById(existingDrive.vendorId);
-            if (vendor) {
-              vendor.totalTestDrivesBooked = Math.max(
-                0,
-                (vendor.totalTestDrivesBooked || 1) - 1,
+            try {
+              const vendor = await Vendor.findByIdAndUpdate(
+                existingDrive.vendorId,
+                {
+                  $inc: {
+                    totalTestDrivesBooked: -1,
+                    totalRevenue: -(existingDrive.bookingFeeAmount || 0),
+                  },
+                },
+                { new: true },
               );
-              vendor.totalRevenue = Math.max(
-                0,
-                (vendor.totalRevenue || 0) -
-                  (existingDrive.bookingFeeAmount || 0),
-              );
-              await vendor.save();
               console.log(
-                `Vendor ${vendor._id} decremented stats (-1 booked, -${existingDrive.bookingFeeAmount || 0} revenue) via webhook.`,
+                `Vendor ${vendor?._id} decremented stats (-1 booked, -${existingDrive.bookingFeeAmount || 0} revenue) via webhook.`,
               );
+            } catch (err) {
+              console.error("Failed to decrement vendor stats:", err);
             }
           }
         }

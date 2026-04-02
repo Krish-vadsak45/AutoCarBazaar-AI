@@ -4,7 +4,7 @@ import connectToDatabase from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import Car from "@/models/car.model";
-import Vendor from "@/models/vendor.model";
+import Vendor, { IVendor } from "@/models/vendor.model";
 
 export async function POST(request: Request) {
   try {
@@ -32,7 +32,24 @@ export async function POST(request: Request) {
     }
 
     const car = await Car.findById(carId);
-    const vendor = await Vendor.findOne({ cars: carId });
+
+    console.log("Looking up vendor for carId:", carId);
+
+    // Most reliable way to find the vendor containing this car ID
+    // 1. Try finding it where cars array contains exactly this ID
+    let vendor: IVendor | null = await Vendor.findOne({
+      cars: carId.toString(),
+    }).lean<IVendor>();
+
+    // 2. Fallback: Try matching with $in on string values
+    if (!vendor) {
+      console.log("Trying with $in string match...");
+      vendor = await Vendor.findOne({
+        cars: { $in: [carId.toString()] },
+      }).lean<IVendor>();
+    }
+
+    console.log("Vendor lookup result:", vendor ? vendor._id : "null");
 
     if (!car) {
       return NextResponse.json({ error: "Car not found" }, { status: 404 });
@@ -137,6 +154,7 @@ export async function POST(request: Request) {
       cancel_url: `${baseUrl}/test-drive/${carId}?canceled=true`,
       metadata: {
         carId,
+        vendorId: vendor ? vendor._id.toString() : "",
         userId: (session.user as any)._id,
         startDate: bookingDetails.startDate,
         endDate: bookingDetails.endDate,
