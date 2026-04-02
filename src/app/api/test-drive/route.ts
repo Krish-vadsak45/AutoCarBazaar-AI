@@ -74,24 +74,24 @@ export async function POST(request: Request) {
       // populatedTestDrive.userId.email
       to: "samarthpatel1011@gmail.com",
 
-      subject: `Test Drive Request Confirmation - ${populatedTestDrive.carId.title}`,
+      subject: `Test Drive Request Confirmation - ${(populatedTestDrive.carId as any).title}`,
 
       html: `
         <h2>Test Drive Confirmation</h2>
     
-        <p>Dear ${populatedTestDrive.userId.name},</p>
+        <p>Dear ${(populatedTestDrive.userId as any).name},</p>
     
         <p>Your test drive request has been successfully submitted. Below are your booking details:</p>
     
         <ul>
           <li><strong>Request ID:</strong> ${populatedTestDrive._id}</li>
-          <li><strong>Car:</strong> ${populatedTestDrive.carId.title}</li>
+          <li><strong>Car:</strong> ${(populatedTestDrive.carId as any).title}</li>
           <li><strong>Dealer:</strong> ${
-            populatedTestDrive.vendorId?.businessName || "Admin"
+            (populatedTestDrive.vendorId as any)?.businessName || "Admin"
           }</li>
           <li><strong>Location:</strong> ${
-            populatedTestDrive.vendorId?.address?.city || ""
-          }, ${populatedTestDrive.vendorId?.address?.state || "N/A"}</li>
+            (populatedTestDrive.vendorId as any)?.address?.city || ""
+          }, ${(populatedTestDrive.vendorId as any)?.address?.state || "N/A"}</li>
           <li><strong>Date:</strong> ${new Date(
             populatedTestDrive.startDate,
           ).toDateString()} - ${new Date(
@@ -106,7 +106,8 @@ export async function POST(request: Request) {
         <p>If you need assistance, please contact the dealer.</p>
     
         <p>Thank you for choosing ${
-          populatedTestDrive.vendorId?.businessName || "Auto Car Bazaar"
+          (populatedTestDrive.vendorId as any)?.businessName ||
+          "Auto Car Bazaar"
         }.</p>
       `,
     };
