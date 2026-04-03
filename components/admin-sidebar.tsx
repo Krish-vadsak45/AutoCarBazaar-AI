@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   CreditCard,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "next-auth/react";
@@ -24,33 +25,48 @@ export function AdminSidebar() {
 
   const basePath = isVendorPath ? `/vendor/${vendorId}` : `/admin/${vendorId}`;
 
-  const navItems = [
+  const vendorNavItems = [
     {
       label: "Dashboard",
-      href: `${basePath}/dashboard`,
+      href: `/vendor/${vendorId}/dashboard`,
       icon: LayoutDashboard,
     },
     {
       label: "Payment",
-      href: `${basePath}/payment`,
+      href: `/vendor/${vendorId}/payment`,
       icon: CreditCard,
     },
     {
       label: "Cars",
-      href: `${basePath}/add-car`,
+      href: `/vendor/${vendorId}/add-car`,
       icon: Car,
     },
     {
       label: "Test Drives",
-      href: `${basePath}/test-drives`,
+      href: `/vendor/${vendorId}/test-drives`,
       icon: TestTube2,
     },
     {
       label: "Settings",
-      href: `${basePath}/settings`,
+      href: `/vendor/${vendorId}/settings`,
       icon: Settings,
     },
   ];
+
+  const adminNavItems = [
+    {
+      label: "Dashboard",
+      href: `/admin/${vendorId}/dashboard`,
+      icon: LayoutDashboard,
+    },
+    {
+      label: "Vendors",
+      href: `/admin/${vendorId}/vendors`,
+      icon: Users,
+    },
+  ];
+
+  const navItems = isVendorPath ? vendorNavItems : adminNavItems;
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out max-md:w-48">

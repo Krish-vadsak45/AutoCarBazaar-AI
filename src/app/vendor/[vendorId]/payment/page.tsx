@@ -25,6 +25,8 @@ function VendorPaymentContent() {
   const [vendorStatus, setVendorStatus] = useState({
     isVerified: false,
     isActive: false,
+    priority: 5,
+    subscriptionStatus: "INACTIVE",
   });
 
   useEffect(() => {
@@ -41,6 +43,7 @@ function VendorPaymentContent() {
             const url = new URL(window.location.href);
             url.searchParams.delete("session_id");
             url.searchParams.delete("success");
+            url.searchParams.delete("vip_success");
             window.history.replaceState({}, "", url);
           } catch (e) {
             console.error("Payment verification failed", e);
@@ -52,6 +55,8 @@ function VendorPaymentContent() {
         setVendorStatus({
           isVerified: res.data.isVerified,
           isActive: res.data.isActive,
+          priority: res.data.priority,
+          subscriptionStatus: res.data.subscriptionStatus,
         });
       } catch (error) {
         console.error("Failed to fetch vendor status", error);
@@ -78,6 +83,20 @@ function VendorPaymentContent() {
     }
   };
 
+  const handleVIPCheckout = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post("/api/vendor/vip-checkout");
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (error) {
+      console.error("VIP Checkout Error:", error);
+      toast.error("Failed to initiate VIP checkout");
+      setLoading(false);
+    }
+  };
+
   if (statusLoading) {
     return (
       <div className="flex justify-center items-center min-h-[80vh]">
@@ -86,31 +105,166 @@ function VendorPaymentContent() {
     );
   }
 
-  const { isVerified, isActive } = vendorStatus;
+  const { isVerified, isActive, priority, subscriptionStatus } = vendorStatus;
+
+  // VIP Payment Date Logic
+  const today = new Date();
+  const currentDay = today.getDate();
+  const isFirstWeek = currentDay <= 7;
+
+  const dynamicPrices: Record<number, number> = {
+    1: 1000,
+    2: 1500,
+    3: 2000,
+    4: 2500,
+    5: 3000,
+  };
+  const dynamicPrice = dynamicPrices[priority || 1] || 1000;
 
   if (isActive) {
     return (
-      <div className="flex justify-center items-center min-h-[80vh]">
-        <Card className="max-w-md w-full text-center">
-          <CardHeader>
-            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <CardTitle className="text-2xl">Account Active</CardTitle>
-            <CardDescription>
-              Your payment has been received and your account is active.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="justify-center">
-            <Button
-              onClick={() =>
-                router.push(
-                  `/vendor/${(session?.user as any)?.vendorId}/dashboard`,
-                )
-              }
-            >
-              Go to Dashboard
-            </Button>
-          </CardFooter>
-        </Card>
+      <div className="flex justify-center items-center min-h-[80vh] p-4">
+        <div className="grid md:grid-cols-2 gap-6 items-start max-w-4xl w-full">
+          {/* Active Account Status */}
+          <Card className="text-center w-full shadow-lg">
+            <CardHeader>
+              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <CardTitle className="text-2xl">Account Active</CardTitle>
+              <CardDescription>
+                Your registration payment has been received and your account is
+                active.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-center">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() =>
+                  router.push(
+                    `/vendor/${(session?.user as any)?.vendorId}/dashboard`,
+                  )
+                }
+              >
+                Go to Dashboard
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* VIP Subscription CTA */}
+          <Card className="border-2 border-primary/20 shadow-xl overflow-hidden relative w-full">
+            <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-bold rounded-bl-lg">
+              Priority Tier
+            </div>
+            <CardHeader className="text-center pb-6 border-b bg-muted/30 pt-8">
+              <div className="mx-auto bg-primary/10 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4 shadow-sm">
+                <ShieldCheck className="w-8 h-8 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold">
+                VIP Subscription
+              </CardTitle>
+              <div className="flex items-center justify-center mt-2 gap-4">
+                <div className="flex flex-col">
+                  <span className="text-sm text-muted-foreground">
+                    Current Level
+                  </span>
+                  <span className="text-3xl font-extrabold text-primary">
+                    Level {priority}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex justify-between items-center py-3 text-sm border-b border-border mb-2">
+                <span className="text-muted-foreground font-medium">
+                  Subscription Status
+                </span>
+                <span
+                  className={`font-extrabold px-3 py-1 rounded-full ${
+                    subscriptionStatus === "ACTIVE"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-500"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-500"
+                  }`}
+                >
+                  {subscriptionStatus || "INACTIVE"}
+                </span>
+              </div>
+
+              {/* Dynamic Notification Logic */}
+              {subscriptionStatus !== "ACTIVE" && (
+                <>
+                  {isFirstWeek ? (
+                    <div className="bg-blue-50 text-blue-900 border-l-4 border-blue-500 p-4 rounded-r-lg text-sm shadow-sm">
+                      <strong className="block mb-1 text-blue-700">
+                        Reminder:
+                      </strong>
+                      Please complete your VIP payment for this month before the
+                      7th to maintain your Level {priority} priority tier.
+                    </div>
+                  ) : (
+                    <div className="bg-red-50 text-red-900 border-l-4 border-red-500 p-4 rounded-r-lg text-sm shadow-sm">
+                      <strong className="block mb-1 text-red-700">
+                        Warning:
+                      </strong>
+                      The VIP payment deadline for this month is over. Your
+                      priority credits may be reduced! You can subscribe again
+                      next month in the first week.
+                    </div>
+                  )}
+                </>
+              )}
+
+              {subscriptionStatus === "ACTIVE" && (
+                <div className="bg-green-50 text-green-900 border-l-4 border-green-500 p-4 rounded-r-lg text-sm shadow-sm text-center">
+                  You are fully upgraded and receiving maximum visibility across
+                  the platform for this month!
+                </div>
+              )}
+
+              <div className="bg-orange-50 text-orange-950 p-4 rounded-xl flex justify-between items-center border border-orange-200 mt-4">
+                <span className="font-bold text-base">Monthly Fee</span>
+                <span className="text-2xl font-extrabold text-orange-600">
+                  ₹{dynamicPrice.toLocaleString()}
+                </span>
+              </div>
+            </CardContent>
+
+            <CardFooter className="pb-6 px-6">
+              {subscriptionStatus === "ACTIVE" ? (
+                <Button
+                  className="w-full text-base h-12"
+                  disabled
+                  variant="secondary"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  VIP Active
+                </Button>
+              ) : (
+                <Button
+                  className="w-full text-base h-12 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white disabled:opacity-50"
+                  onClick={handleVIPCheckout}
+                  disabled={loading || !isFirstWeek}
+                  title={
+                    !isFirstWeek
+                      ? "VIP Payments are only allowed in the first week of the month"
+                      : "Upgrade to VIP"
+                  }
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </span>
+                  ) : isFirstWeek ? (
+                    "Upgrade to VIP"
+                  ) : (
+                    "Deadline Passed"
+                  )}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </div>
       </div>
     );
   }

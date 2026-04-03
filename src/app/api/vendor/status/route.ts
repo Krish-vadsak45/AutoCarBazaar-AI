@@ -26,10 +26,13 @@ export async function GET(req: Request) {
     if (!vendor) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
     }
+    // console.log("Venodor Data:", vendor);
 
     return NextResponse.json({
       isVerified: vendor.isVerified,
       isActive: vendor.isActive,
+      priority: vendor.priority,
+      subscriptionStatus: vendor.subscriptionStatus,
     });
   } catch (error) {
     console.error("Error fetching vendor status:", error);

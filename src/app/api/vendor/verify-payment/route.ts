@@ -33,24 +33,41 @@ export async function POST(req: Request) {
 
     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (
-      stripeSession.payment_status === "paid" &&
-      stripeSession.metadata?.type === "vendor_registration" &&
-      stripeSession.metadata?.vendorId === vendorId
-    ) {
-      if (!vendor.isActive) {
-        await Vendor.findByIdAndUpdate(vendorId, {
-          isActive: true,
-          isVerified: true,
+    if (stripeSession.payment_status === "paid") {
+      if (
+        stripeSession.metadata?.type === "vendor_registration" &&
+        stripeSession.metadata?.vendorId === vendorId
+      ) {
+        if (!vendor.isActive) {
+          await Vendor.findByIdAndUpdate(vendorId, {
+            isActive: true,
+            isVerified: true,
+          });
+          vendor.isActive = true;
+          vendor.isVerified = true;
+        }
+        return NextResponse.json({
+          success: true,
+          isActive: vendor.isActive,
+          isVerified: vendor.isVerified,
         });
-        vendor.isActive = true;
-        vendor.isVerified = true;
       }
-      return NextResponse.json({
-        success: true,
-        isActive: vendor.isActive,
-        isVerified: vendor.isVerified,
-      });
+
+      if (
+        stripeSession.metadata?.type === "vip_subscription" &&
+        stripeSession.metadata?.vendorId === vendorId
+      ) {
+        if (vendor.subscriptionStatus !== "ACTIVE") {
+          await Vendor.findByIdAndUpdate(vendorId, {
+            subscriptionStatus: "ACTIVE",
+          });
+          vendor.subscriptionStatus = "ACTIVE";
+        }
+        return NextResponse.json({
+          success: true,
+          subscriptionStatus: vendor.subscriptionStatus,
+        });
+      }
     }
 
     return NextResponse.json(

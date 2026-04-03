@@ -45,6 +45,9 @@ export interface IVendor extends mongoose.Document {
 
   totalTestDrivesBooked: number;
   totalRevenue: number;
+
+  priority: number;
+  subscriptionStatus: "NONE" | "ACTIVE" | "PENDING_PENALTY";
 }
 
 const VendorProfileSchema = new mongoose.Schema({
@@ -138,6 +141,14 @@ const VendorProfileSchema = new mongoose.Schema({
   // Booking Analytics
   totalTestDrivesBooked: { type: Number, default: 0 },
   totalRevenue: { type: Number, default: 0 },
+
+  // VIP Subscription & Priority
+  priority: { type: Number, default: 1 },
+  subscriptionStatus: {
+    type: String,
+    enum: ["NONE", "ACTIVE", "PENDING_PENALTY"],
+    default: "NONE",
+  },
 });
 
 // Force reload model to pick up schema changes

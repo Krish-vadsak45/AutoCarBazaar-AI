@@ -1,0 +1,308 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  Loader2,
+  User,
+  Mail,
+  DollarSign,
+  Activity,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  ChevronDown,
+  Send,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AdminEmailModal } from "@/components/admin-email-modal";
+
+interface VendorType {
+  _id: string;
+  userId?: { name: string; email: string };
+  name?: string;
+  priority: number;
+  subscriptionStatus: string;
+  isActive: boolean;
+  totalTestDrivesBooked: number;
+  totalRevenue: number;
+  verificationStatus: string;
+  isVerified?: boolean;
+  createdAt: string;
+  cars: any[];
+}
+
+export default function AdminVendorsPage() {
+  const [vendors, setVendors] = useState<VendorType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchVendors() {
+      try {
+        const res = await axios.get("/api/admin/vendors/all");
+        setVendors(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch vendors:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchVendors();
+  }, []);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <User className="h-8 w-8 text-primary" /> Vendor Management
+            
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full h-9 w-9 ml-3 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground transition-all shadow-sm group"
+              onClick={() => setIsEmailModalOpen(true)}
+              title="Send Custom Email"
+            >
+              <Send className="h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </Button>
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Monitor your platform's vendors, their priorities, subscription
+            metrics, and active revenue.
+          </p>
+        </div>
+      </div>
+
+      <AdminEmailModal 
+        isOpen={isEmailModalOpen} 
+        onClose={() => setIsEmailModalOpen(false)} 
+      />
+
+      <div className="grid gap-4">
+        {vendors.map((vendor) => {
+          const isExpanded = expandedId === vendor._id;
+          const vendorName =
+            vendor.userId?.name || vendor.name || "Unknown Vendor";
+          const vendorEmail = vendor.userId?.email || "No Email Provided";
+
+          return (
+            <div
+              key={vendor._id}
+              className={`bg-card border rounded-xl overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md ${isExpanded ? "border-primary/50 ring-1 ring-primary/20" : "border-border"}`}
+            >
+              {/* Visible Summary Header */}
+              <div
+                className="p-5 cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                onClick={() => toggleExpand(vendor._id)}
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
+                      {vendorName}
+                      {vendor.isActive && (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      )}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                      <Mail className="h-3.5 w-3.5" />
+                      {vendorEmail}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 flex-wrap md:flex-nowrap w-full md:w-auto">
+                  {/* Priority Badge */}
+                  <div className="flex flex-col items-center bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg border border-blue-100 dark:border-blue-900/50">
+                    <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 tracking-wider">
+                      Tier
+                    </span>
+                    <span className="font-extrabold text-blue-700 dark:text-blue-300 text-sm">
+                      Level {vendor.priority || 1}
+                    </span>
+                  </div>
+
+                  {/* Subscription Status Badge */}
+                  <div className="flex flex-col items-center px-3 py-1.5 rounded-lg">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                      Subscription
+                    </span>
+                    <Badge
+                      variant={
+                        vendor.subscriptionStatus === "ACTIVE"
+                          ? "default"
+                          : "secondary"
+                      }
+                      className={
+                        vendor.subscriptionStatus === "ACTIVE"
+                          ? "bg-green-500 hover:bg-green-600"
+                          : "bg-orange-500 hover:bg-orange-600 text-white"
+                      }
+                    >
+                      {vendor.subscriptionStatus || "INACTIVE"}
+                    </Badge>
+                  </div>
+
+                  {/* Expand Chevron */}
+                  <div className="ml-2 bg-muted p-2 rounded-full">
+                    <ChevronDown
+                      className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Hidden Expanded Content */}
+              <div
+                className={`transition-all duration-500 ease-in-out ${isExpanded ? "max-h-[1000px] opacity-100 border-t border-border" : "max-h-0 opacity-0 overflow-hidden"}`}
+              >
+                <div className="p-6 bg-muted/20 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Stats Column */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
+                      Vendor Metrics
+                    </h4>
+
+                    <div className="flex justify-between items-center bg-background p-3 rounded-lg border shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-blue-500" />
+                        <span className="font-medium text-sm">
+                          Total Bookings
+                        </span>
+                      </div>
+                      <span className="font-bold">
+                        {vendor.totalTestDrivesBooked || 0}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-background p-3 rounded-lg border shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-500" />
+                        <span className="font-medium text-sm">
+                          Total Revenue
+                        </span>
+                      </div>
+                      <span className="font-bold text-green-600 dark:text-green-500">
+                        ₹{(vendor.totalRevenue || 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-background p-3 rounded-lg border shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-muted-foreground">
+                          Cars Listed
+                        </span>
+                      </div>
+                      <span className="font-bold">
+                        {vendor.cars?.length || 0}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Account Status Column */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
+                      Account Status
+                    </h4>
+
+                    <div className="bg-background p-4 rounded-lg border shadow-sm space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">
+                          Initial Payment (Done?)
+                        </span>
+                        {vendor.isActive ? (
+                          <span className="flex items-center text-green-600 font-bold text-xs">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> YES
+                          </span>
+                        ) : (
+                          <span className="flex items-center text-red-500 font-bold text-xs">
+                            <XCircle className="h-3 w-3 mr-1" /> NO
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-center text-sm border-t pt-2 mt-2">
+                        <span className="text-muted-foreground">
+                          Admin Verified
+                        </span>
+                        {vendor.verificationStatus === "APPROVED" ||
+                        vendor.isVerified ? (
+                          <span className="flex items-center text-green-600 font-bold text-xs">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> TRUE
+                          </span>
+                        ) : (
+                          <span className="flex items-center text-orange-500 font-bold text-xs">
+                            <AlertCircle className="h-3 w-3 mr-1" /> PENDING
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-center text-sm border-t pt-2 mt-2">
+                        <span className="text-muted-foreground">
+                          Joined Platform
+                        </span>
+                        <span className="font-medium text-xs">
+                          {vendor.createdAt
+                            ? new Date(vendor.createdAt).toLocaleDateString()
+                            : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions / Admin Column */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
+                      Admin View
+                    </h4>
+                    <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg flex flex-col justify-center h-[calc(100%-2rem)]">
+                      <p className="text-xs text-muted-foreground text-center mb-3">
+                        This vendor is evaluated dynamically on the 1st of every
+                        month based on their {"("}totalBooked × 500{")"} +
+                        totalRevenue formula.
+                      </p>
+                      <div className="text-center border-t border-primary/10 pt-3">
+                        <span className="text-[10px] uppercase font-bold text-primary tracking-wider block mb-1">
+                          Current Score
+                        </span>
+                        <span className="font-extrabold text-xl text-primary">
+                          {(vendor.totalTestDrivesBooked || 0) * 500 +
+                            (vendor.totalRevenue || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {vendors.length === 0 && (
+          <div className="text-center py-20 bg-muted/20 border border-dashed rounded-xl">
+            <User className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+            <h3 className="text-lg font-medium text-muted-foreground">
+              No vendors found on the platform yet.
+            </h3>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

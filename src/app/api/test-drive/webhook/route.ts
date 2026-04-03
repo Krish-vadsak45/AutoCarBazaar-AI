@@ -54,6 +54,16 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true });
       }
 
+      if (metadata.type === "vip_subscription") {
+        const vendor = await Vendor.findById(metadata.vendorId);
+        if (vendor) {
+          vendor.subscriptionStatus = "ACTIVE";
+          await vendor.save();
+          console.log(`Vendor ${vendor._id} upgraded to VIP ACTIVE status!`);
+        }
+        return NextResponse.json({ received: true });
+      }
+
       let vendor: any = undefined;
 
       // First try to find by the vendorId explicitly passed in metadata
