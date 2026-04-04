@@ -13,10 +13,12 @@ import {
   AlertCircle,
   ChevronDown,
   Send,
+  MessageSquareText,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminEmailModal } from "@/components/admin-email-modal";
+import { AdminVendorChatSheet } from "@/components/admin-vendor-chat-sheet";
 
 interface VendorType {
   _id: string;
@@ -31,6 +33,7 @@ interface VendorType {
   isVerified?: boolean;
   createdAt: string;
   cars: any[];
+  hasUnreadMessages?: boolean;
 }
 
 export default function AdminVendorsPage() {
@@ -38,6 +41,10 @@ export default function AdminVendorsPage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  // States for Q&A Chat
+  const [chatVendorId, setChatVendorId] = useState<string | null>(null);
+  const [chatVendorName, setChatVendorName] = useState("");
 
   useEffect(() => {
     async function fetchVendors() {
@@ -71,10 +78,9 @@ export default function AdminVendorsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <User className="h-8 w-8 text-primary" /> Vendor Management
-            
-            <Button 
-              variant="outline" 
-              size="icon" 
+            <Button
+              variant="outline"
+              size="icon"
               className="rounded-full h-9 w-9 ml-3 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground transition-all shadow-sm group"
               onClick={() => setIsEmailModalOpen(true)}
               title="Send Custom Email"
@@ -89,9 +95,16 @@ export default function AdminVendorsPage() {
         </div>
       </div>
 
-      <AdminEmailModal 
-        isOpen={isEmailModalOpen} 
-        onClose={() => setIsEmailModalOpen(false)} 
+      <AdminEmailModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+      />
+
+      <AdminVendorChatSheet
+        vendorId={chatVendorId}
+        vendorName={chatVendorName}
+        isOpen={!!chatVendorId}
+        onClose={() => setChatVendorId(null)}
       />
 
       <div className="grid gap-4">
@@ -112,8 +125,14 @@ export default function AdminVendorsPage() {
                 onClick={() => toggleExpand(vendor._id)}
               >
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="relative h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <User className="h-6 w-6 text-primary" />
+                    {vendor.hasUnreadMessages && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 border-2 border-background"></span>
+                      </span>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
@@ -269,23 +288,49 @@ export default function AdminVendorsPage() {
                   {/* Actions / Admin Column */}
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider mb-2">
-                      Admin View
+                      Admin Interventions
                     </h4>
-                    <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg flex flex-col justify-center h-[calc(100%-2rem)]">
-                      <p className="text-xs text-muted-foreground text-center mb-3">
-                        This vendor is evaluated dynamically on the 1st of every
-                        month based on their {"("}totalBooked × 500{")"} +
-                        totalRevenue formula.
-                      </p>
-                      <div className="text-center border-t border-primary/10 pt-3">
-                        <span className="text-[10px] uppercase font-bold text-primary tracking-wider block mb-1">
-                          Current Score
-                        </span>
-                        <span className="font-extrabold text-xl text-primary">
-                          {(vendor.totalTestDrivesBooked || 0) * 500 +
-                            (vendor.totalRevenue || 0)}
-                        </span>
+                    <div className="flex flex-col gap-3 h-full">
+                      <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg flex flex-col justify-center flex-1">
+                        <p className="text-xs text-muted-foreground text-center mb-3">
+                          Evaluated monthly: {"("}totalBooked × 500{")"} +
+                          Revenue
+                        </p>
+                        <div className="text-center border-t border-primary/10 pt-3">
+                          <span className="text-[12px] uppercase font-bold text-primary tracking-wider block mb-1">
+                            Current Score
+                          </span>
+                          <span className="font-extrabold text-2xl text-primary">
+                            {(vendor.totalTestDrivesBooked || 0) * 500 +
+                              (vendor.totalRevenue || 0)}
+                          </span>
+                        </div>
                       </div>
+
+                      {/* Open Chat Thread Action Button */}
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setChatVendorName(vendorName);
+                          setChatVendorId(vendor._id);
+                          // Auto clear dot instantly when opened
+                          setVendors((prev) =>
+                            prev.map((v) =>
+                              v._id === vendor._id
+                                ? { ...v, hasUnreadMessages: false }
+                                : v,
+                            ),
+                          );
+                        }}
+                        variant="secondary"
+                        className="w-full relative flex items-center justify-center gap-2 mt-auto mb-4 border border-blue-500/20 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-blue-400 font-bold transition-all shadow-sm"
+                      >
+                        <MessageSquareText className="h-4 w-4" />
+                        Open Q&A Chat
+                        {vendor.hasUnreadMessages && (
+                          <div className="absolute right-4 h-2 w-2 bg-green-500 rounded-full"></div>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>

@@ -48,6 +48,7 @@ export interface IVendor extends mongoose.Document {
 
   priority: number;
   subscriptionStatus: "NONE" | "ACTIVE" | "PENDING_PENALTY";
+  hasUnreadMessages?: boolean;
 }
 
 const VendorProfileSchema = new mongoose.Schema({
