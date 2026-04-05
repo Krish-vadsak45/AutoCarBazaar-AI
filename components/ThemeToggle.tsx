@@ -1,11 +1,24 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
 
 export default function ThemeToggle() {
+  const [mounted, setMounted] = useState(false);
   const { theme, setTheme, systemTheme } = useTheme();
+
+  // useEffect only runs on the client, so now we can safely show the UI
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="p-2 h-8 w-8" aria-hidden="true" /> // Placeholder of the same size
+    );
+  }
+
   const currentTheme = theme === "system" ? systemTheme : theme;
 
   function toggle() {

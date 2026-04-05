@@ -30,6 +30,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { ReviewsSection } from "./ReviewsSection";
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -54,8 +55,8 @@ export default function CarDetailClient({ car }: { car: any }) {
     car.images && car.images.length > 0
       ? car.images
       : car.image
-      ? [car.image]
-      : [];
+        ? [car.image]
+        : [];
   const [isEmiModalOpen, setIsEmiModalOpen] = useState(false); // State for EMI modal
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false); // State for PDF modal
   const [mainImage, setMainImage] = useState(images[0] || "/placeholder.svg");
@@ -74,9 +75,11 @@ export default function CarDetailClient({ car }: { car: any }) {
       try {
         const { data } = await axios.get("/api/saved-cars");
         const currentCarId = (car.id || car._id)?.toString();
-        const isCurrentlySaved = Array.isArray(data) && data.some((savedCar: any) => 
-          (savedCar?._id?.toString() === currentCarId)
-        );
+        const isCurrentlySaved =
+          Array.isArray(data) &&
+          data.some(
+            (savedCar: any) => savedCar?._id?.toString() === currentCarId,
+          );
         setIsSaved(isCurrentlySaved);
       } catch (error) {
         console.error("Error checking saved status:", error);
@@ -430,10 +433,10 @@ export default function CarDetailClient({ car }: { car: any }) {
             {shareStatus === "copied"
               ? "Link copied"
               : shareStatus === "shared"
-              ? "Shared"
-              : shareStatus === "error"
-              ? "Unable to share"
-              : "Share"}
+                ? "Shared"
+                : shareStatus === "error"
+                  ? "Unable to share"
+                  : "Share"}
           </button>
           <PDFButton onClick={() => setIsPDFModalOpen(true)} />
           <button
@@ -590,6 +593,9 @@ export default function CarDetailClient({ car }: { car: any }) {
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <ReviewsSection carId={car.id || car._id} />
       </div>
 
       {/* EMI Calculator Modal - Conditionally render based on state */}

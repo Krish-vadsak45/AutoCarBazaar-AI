@@ -37,6 +37,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BulkUploadModal } from "@/components/BulkUploadModal";
 
 // Interface matching your Car Model structure
 interface ICar {
@@ -97,7 +98,8 @@ export default function VendorCarsPage() {
 
   // Handle Toggle Status
   const handleToggleStatus = async (carId: string, currentStatus: string) => {
-    const newStatus = currentStatus === "available" ? "unavailable" : "available";
+    const newStatus =
+      currentStatus === "available" ? "unavailable" : "available";
     try {
       const { data } = await axios.patch(`/api/vend-cars/${carId}`, {
         status: newStatus,
@@ -119,6 +121,18 @@ export default function VendorCarsPage() {
       car.specs?.make?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const refreshInventory = async () => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get("/api/vend-cars");
+      setCars(data.cars);
+    } catch (error) {
+      toast.error("Failed to refresh inventory");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -128,11 +142,14 @@ export default function VendorCarsPage() {
             Manage your vehicle listings ({cars.length})
           </p>
         </div>
-        <Link href={`/vendor/${vendorId}/add-car/new-car/new-car`}>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Vehicle
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <BulkUploadModal onSuccess={() => refreshInventory()} />
+          <Link href={`/vendor/${vendorId}/add-car/new-car/new-car`}>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" /> Add Vehicle
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>
@@ -289,13 +306,19 @@ export default function VendorCarsPage() {
                         <DropdownMenuItem
                           className="cursor-pointer"
                           onClick={() =>
-                            handleToggleStatus(car._id, car.status || "available")
+                            handleToggleStatus(
+                              car._id,
+                              car.status || "available",
+                            )
                           }
                         >
                           <ToggleLeft
                             className={`mr-2 h-4 w-4 ${car.status === "available" ? "text-emerald-500" : "text-muted-foreground"}`}
                           />{" "}
-                          Mark as {car.status === "available" ? "Unavailable" : "Available"}
+                          Mark as{" "}
+                          {car.status === "available"
+                            ? "Unavailable"
+                            : "Available"}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

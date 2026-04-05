@@ -83,6 +83,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
+          image: user.image,
         };
 
         if (vendor) {
@@ -147,6 +148,7 @@ export const authOptions: NextAuthOptions = {
           token.role = user.role;
           token.vendorId = user.vendorId; // Ensure vendorId is passed
           token.isVerified = user.isVerified;
+          token.image = user.image;
           token.isActive = user.isActive;
         }
         // 🔹 For OAuth (Google/GitHub): Fetch user from DB
@@ -157,6 +159,7 @@ export const authOptions: NextAuthOptions = {
           if (dbUser) {
             token._id = dbUser._id.toString();
             token.role = dbUser.role;
+            token.image = dbUser.image;
 
             if (dbUser.role === "vendor") {
               const vendor = await Vendor.findOne({
@@ -185,6 +188,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email as string;
         session.user.isVerified = token.isVerified as boolean | undefined;
         session.user.isActive = token.isActive as boolean | undefined;
+        session.user.image = token.image as string | undefined;
       }
       return session;
     },

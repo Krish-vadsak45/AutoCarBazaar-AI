@@ -22,6 +22,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { ReviewModal } from "@/components/ReviewModal";
 
 // --- Types based on API Response ---
 interface IReservation {
@@ -66,6 +67,12 @@ export default function MyReservationsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<{
+    carId: string;
+    testDriveId: string;
+  } | null>(null);
 
   // 1. Fetch reservations on mount and when page/filter changes
   useEffect(() => {
@@ -320,7 +327,8 @@ export default function MyReservationsPage() {
                               <MapPin className="w-3.5 h-3.5" />
                               <span className="font-medium">
                                 Your location: {res.userLocation.city}
-                                {res.userLocation.state && `, ${res.userLocation.state}`}
+                                {res.userLocation.state &&
+                                  `, ${res.userLocation.state}`}
                               </span>
                             </div>
                           ) : res.vendorId ? (
@@ -386,13 +394,30 @@ export default function MyReservationsPage() {
 
                       {/* Actions */}
                       <div className="mt-auto flex flex-col sm:flex-row gap-3 justify-end pt-2">
+                        {res.status === "COMPLETED" && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                            onClick={() => {
+                              setSelectedBooking({
+                                carId: res.carId._id,
+                                testDriveId: res._id,
+                              });
+                              setIsReviewModalOpen(true);
+                            }}
+                          >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Write Review
+                          </Button>
+                        )}
                         <Button
                           asChild
                           variant="ghost"
                           size="sm"
                           className="text-muted-foreground hover:text-primary"
                         >
-                          <Link href={`/cars/${res.carId?._id}`}>
+                          <Link href={`/car/${res.carId?._id}`}>
                             View Vehicle Details
                           </Link>
                         </Button>
@@ -448,6 +473,15 @@ export default function MyReservationsPage() {
           </motion.div>
         )}
       </div>
+
+      {selectedBooking && (
+        <ReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          carId={selectedBooking.carId}
+          testDriveId={selectedBooking.testDriveId}
+        />
+      )}
     </div>
   );
 }

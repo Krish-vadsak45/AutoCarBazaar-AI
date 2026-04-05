@@ -1,10 +1,9 @@
 "use client";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "@/src/app/globals.css";
 import Header from "@/components/Header";
 import ThemeProvider from "@/components/ThemeProvider";
 import Footer from "@/components/Footer";
-import { useEffect, useState } from "react";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import AuthProvider from "./providers";
@@ -18,7 +17,8 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
 
-  const isAdminTab = pathname.includes("/admin") || pathname.includes("/vendor");
+  const isAdminTab =
+    pathname.includes("/admin") || pathname.includes("/vendor");
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className}`}>

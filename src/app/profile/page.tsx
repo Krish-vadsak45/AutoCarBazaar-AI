@@ -13,7 +13,7 @@ import { Loader2, Lock, User, Mail, Phone, Camera, MapPin } from "lucide-react";
 import axios from "axios";
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,7 +73,11 @@ export default function ProfilePage() {
 
       const data = res.data;
       setUser((prev: any) => ({ ...prev, ...data.user }));
-      toast.success("Profile updated successfully");
+      await update({
+        ...session,
+        user: { ...session?.user, image: data.user.image },
+      });
+      toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error("Failed to update profile");
     } finally {

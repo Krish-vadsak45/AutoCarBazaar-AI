@@ -9,6 +9,7 @@ declare module "next-auth" {
     vendorId?: string;
     isVerified?: boolean;
     isActive?: boolean;
+    image?: string;
   }
 
   interface Session {
@@ -20,6 +21,7 @@ declare module "next-auth" {
       vendorId?: string;
       isVerified?: boolean;
       isActive?: boolean;
+      image?: string;
     } & DefaultSession["user"];
   }
 }

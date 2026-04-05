@@ -6,6 +6,7 @@ import LandingPage from "@/components/LandingPage";
 import Loading from "@/components/Loading";
 import Platform from "@/components/platform";
 import Top10Cars from "@/components/Top10Cars";
+import { ReviewsSection } from "@/components/ReviewsSection";
 
 export default function Home() {
   return (
@@ -15,6 +16,9 @@ export default function Home() {
       <Top10Cars />
       <Company />
       <Platform />
+      <div className="container mx-auto px-4">
+        <ReviewsSection carId="" />
+      </div>
       <Faq />
       <HeroCTA />
     </>

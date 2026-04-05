@@ -4,8 +4,9 @@ import { usePathname, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Bell } from "lucide-react";
+import { Bell, Loader2 } from "lucide-react";
 import { IncomingVendorRequests } from "@/components/IncomingVendorRequests";
+import { useSession } from "next-auth/react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ interface Vendor {
 }
 
 export default function AdminDashboardPage() {
+  const { data: session, status } = useSession();
   const params = useParams();
   const adminId = params.adminId as string;
 
@@ -84,11 +86,15 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    if (!isLoginPage) {
+    if (
+      status === "authenticated" &&
+      session?.user?.role === "admin" &&
+      !isLoginPage
+    ) {
       fetchPendingVendors();
       fetchApprovedVendors();
     }
-  }, [isLoginPage]);
+  }, [status, session, isLoginPage]);
 
   const handleApproval = async (
     vendorId: string,
@@ -116,6 +122,31 @@ export default function AdminDashboardPage() {
       toast.error("Failed to remove vendor");
     }
   };
+
+  if (status === "loading") {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">
+          Verifying Admin Session...
+        </span>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated" || session?.user?.role !== "admin") {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
+        <div className="text-xl font-semibold text-red-500">Access Denied</div>
+        <p className="text-muted-foreground">
+          You do not have permission to view this dashboard.
+        </p>
+        <Button onClick={() => (window.location.href = "/admin/login")}>
+          Back to Login
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoginPage) {
     return <></>;

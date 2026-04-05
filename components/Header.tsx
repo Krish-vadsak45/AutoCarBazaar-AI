@@ -7,7 +7,7 @@ import { Heart, Layout, LogOut, Menu, User, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, getAvatarColor, getInitials } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
 import {
   DropdownMenu,
@@ -17,12 +17,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Header = () => {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const getAdminPortalHref = () => {
+    const role = (session as any)?.user?.role;
+    console.log("User role:", session?.user);
+    if (role === "admin") return `/admin/${session?.user?._id}/dashboard`;
+    if (role === "vendor")
+      return `/vendor/${(session as any)?.user?.vendorId}/dashboard`;
+    return "/admin/login";
+  };
 
   // Handle scroll effect for transparency/glassmorphism
   useEffect(() => {
@@ -118,16 +128,7 @@ const Header = () => {
                   </Button>
                 </Link>
 
-                <Link
-                  href={
-                    (session as any)?.user?.role === "admin"
-                      ? `/admin/${session.user?._id}/dashboard`
-                      : (session as any)?.user?.role === "vendor"
-                        ? `/vendor/${(session as any).user.vendorId}/dashboard`
-                        : "/admin/login"
-                  }
-                  className="hidden md:block"
-                >
+                <Link href={getAdminPortalHref()} className="hidden md:block">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -144,12 +145,22 @@ const Header = () => {
                       variant="ghost"
                       className="relative h-10 w-10 rounded-full"
                     >
-                      <Image
-                        src={session.user?.image || "/placeholder.svg"}
-                        alt={session.user?.name || "User"}
-                        fill
-                        className="rounded-full object-cover border-2 border-primary/20"
-                      />
+                      <Avatar size="lg">
+                        <AvatarImage
+                          src={session.user?.image || undefined}
+                          alt={session.user?.name || "User"}
+                        />
+                        <AvatarFallback
+                          style={{
+                            backgroundColor: getAvatarColor(
+                              session.user?.name || "",
+                            ),
+                          }}
+                          className="text-white font-semibold"
+                        >
+                          {getInitials(session.user?.name || "User")}
+                        </AvatarFallback>
+                      </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -224,12 +235,22 @@ const Header = () => {
                     variant="ghost"
                     className="relative h-8 w-8 rounded-full"
                   >
-                    <Image
-                      src={session.user?.image || "/placeholder.svg"}
-                      alt={session.user?.name || "User"}
-                      fill
-                      className="rounded-full object-cover border border-primary/20"
-                    />
+                    <Avatar size="default">
+                      <AvatarImage
+                        src={session.user?.image || undefined}
+                        alt={session.user?.name || "User"}
+                      />
+                      <AvatarFallback
+                        style={{
+                          backgroundColor: getAvatarColor(
+                            session.user?.name || "",
+                          ),
+                        }}
+                        className="text-white font-semibold"
+                      >
+                        {getInitials(session.user?.name || "User")}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -320,13 +341,7 @@ const Header = () => {
               </Link>
 
               <Link
-                href={
-                  (session as any)?.user?.role === "admin"
-                    ? `/admin/${session.user?._id}/dashboard`
-                    : (session as any)?.user?.role === "vendor"
-                      ? `/vendor/${(session as any).user.vendorId}/dashboard`
-                      : "/admin/login"
-                }
+                href={getAdminPortalHref()}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-900 rounded-xl"
               >
