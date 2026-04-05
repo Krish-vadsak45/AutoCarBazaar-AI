@@ -23,6 +23,7 @@ export interface ICar extends Document {
   specs?: ISpecs;
   tags?: string[];
   carAddress?: string;
+  vendorId?: mongoose.Types.ObjectId;
   averageRating?: number;
   reviewCount?: number;
 }

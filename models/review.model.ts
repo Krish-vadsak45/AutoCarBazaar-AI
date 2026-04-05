@@ -7,6 +7,13 @@ export interface IReview extends Document {
   rating: number;
   comment: string;
   isVerified: boolean;
+  helpfulCount: number;
+  helpfulUsers: mongoose.Types.ObjectId[];
+  replies: Array<{
+    userId: mongoose.Types.ObjectId;
+    text: string;
+    createdAt: Date;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
