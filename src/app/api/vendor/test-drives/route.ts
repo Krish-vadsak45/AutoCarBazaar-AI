@@ -142,6 +142,29 @@ export async function PATCH(request: Request) {
       { new: true },
     );
 
+    // Manage Car's totalBookedCount
+    // We consider "CONFIRMED" and "COMPLETED" as states where the car counts as "booked"
+    const prevIsBooked =
+      previousStatus === "CONFIRMED" || previousStatus === "COMPLETED";
+    const newIsBooked = newStatus === "CONFIRMED" || newStatus === "COMPLETED";
+
+    if (updatedDrive && updatedDrive.carId) {
+      if (!prevIsBooked && newIsBooked) {
+        // Status changed to booked (Increment)
+        await Car.findByIdAndUpdate(updatedDrive.carId, {
+          $inc: { totalBookedCount: 1 },
+        });
+      } else if (prevIsBooked && !newIsBooked) {
+        // Status changed OUT of booked (e.g., Cancelled, Pending) -> Decrement
+        const car = await Car.findById(updatedDrive.carId);
+        if (car && (car.totalBookedCount || 0) > 0) {
+          await Car.findByIdAndUpdate(updatedDrive.carId, {
+            $inc: { totalBookedCount: -1 },
+          });
+        }
+      }
+    }
+
     // If it was cancelled or rejected, decrement the vendor stats
     if (
       updatedDrive &&

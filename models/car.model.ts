@@ -26,6 +26,7 @@ export interface ICar extends Document {
   vendorId?: mongoose.Types.ObjectId;
   averageRating?: number;
   reviewCount?: number;
+  totalBookedCount?: number;
 }
 
 const SpecsSchema = new mongoose.Schema<ISpecs>(
@@ -65,9 +66,13 @@ const CarSchema = new mongoose.Schema<ICar>(
     },
     averageRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
+    totalBookedCount: { type: Number, default: 0 },
   },
   { timestamps: true },
 );
+
+// Force bypass cache
+delete mongoose.models.Car;
 
 const Car: Model<ICar> =
   (mongoose.models.Car as Model<ICar>) ||

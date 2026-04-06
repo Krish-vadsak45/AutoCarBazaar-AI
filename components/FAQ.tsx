@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useState } from "react";
-import { ChevronDown, Minus, Plus } from "lucide-react";
+import { Minus, Plus, MessageCircleQuestion } from "lucide-react";
 
 type Item = {
   q: string;
@@ -32,74 +32,80 @@ const items: Item[] = [
 
 export default function Faq() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
-  const contentRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const toggle = (i: number) => {
     setOpenIndex((prev) => (prev === i ? null : i));
   };
 
   return (
-    <section className="py-12 md:py-16">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="flex flex-col gap-6">
-          <div className="text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Frequently Asked Questions
+    <section className="py-16 md:py-24 bg-gray-50/50 dark:bg-slate-950/50 relative overflow-hidden">
+      {/* Decorative blurred background */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary/10 dark:bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+
+      <div className="container mx-auto px-6 max-w-4xl relative z-10">
+        <div className="flex flex-col gap-12">
+          {/* Top Section: Heading */}
+          <div className="flex flex-col items-center text-center pt-2">
+            <div className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-6">
+              <MessageCircleQuestion className="w-4 h-4" />
+              <span>FAQs</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight mb-4 tracking-tight">
+              Got Questions?{" "}
+              <span className="text-primary">We have answers.</span>
             </h2>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
-              Quick answers about buying, payments, and how our AI helps.
+            <p className="text-gray-600 dark:text-gray-400 text-lg leading-relaxed max-w-2xl">
+              Everything you need to know about buying, selling, financing, and
+              platform features on AutoCarBazaar.
             </p>
           </div>
 
+          {/* Bottom Section: Accordions */}
           <div className="flex flex-col gap-4">
             {items.map((it, idx) => {
               const isOpen = openIndex === idx;
-              const maxHeight = isOpen
-                ? `${contentRefs.current[idx]?.scrollHeight ?? 0}px`
-                : "0px";
 
               return (
                 <div
-                  key={it.q}
-                  className="bg-white dark:bg-slate-900 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm"
+                  key={idx}
+                  className={`group rounded-2xl border transition-all duration-300 overflow-hidden ${
+                    isOpen
+                      ? "bg-white dark:bg-slate-900 border-primary/40 shadow-lg shadow-primary/5"
+                      : "bg-white/60 dark:bg-slate-900/60 border-gray-200 dark:border-slate-800 hover:border-primary/30 hover:bg-white dark:hover:bg-slate-900"
+                  }`}
                 >
                   <button
                     type="button"
-                    aria-expanded={isOpen}
-                    aria-controls={`faq-content-${idx}`}
                     onClick={() => toggle(idx)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        toggle(idx);
-                      }
-                    }}
-                    className="w-full flex items-center justify-between gap-4 text-left px-5 py-1.5 md:py-3 focus:outline-none focus:ring-2 focus:ring-primary hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg transition-colors duration-150"
+                    className="w-full flex items-center justify-between gap-4 px-6 pt-6 pb-5 text-left focus:outline-none"
                   >
-                    <span className="text-base md:text-lg font-medium text-gray-900 dark:text-gray-100">
+                    <span
+                      className={`text-lg transition-colors duration-300 ${isOpen ? "text-primary font-bold" : "text-gray-900 dark:text-gray-100 font-semibold group-hover:text-primary/90"}`}
+                    >
                       {it.q}
                     </span>
-                    {!isOpen ? (
-                      <Plus
-                        className={`w-5 h-5 text-gray-500 dark:text-gray-300 transform transition-transform duration-300 ${isOpen ? "rotate-180 text-primary" : ""}`}
-                      />
-                    ) : (
-                      <Minus
-                        className={`w-5 h-5 text-gray-500 dark:text-gray-300 transform transition-transform duration-300 ${isOpen ? "rotate-180 text-primary" : ""}`}
-                      />
-                    )}
+                    <div
+                      className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-full transition-transform duration-300 ${isOpen ? "bg-primary text-white rotate-180" : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 group-hover:bg-primary/10 group-hover:text-primary"}`}
+                    >
+                      {isOpen ? (
+                        <Minus className="w-5 h-5" />
+                      ) : (
+                        <Plus className="w-5 h-5" />
+                      )}
+                    </div>
                   </button>
 
                   <div
-                    id={`faq-content-${idx}`}
-                    ref={(el) => {
-                      contentRefs.current[idx] = el;
-                    }}
-                    style={{ maxHeight }}
-                    className="px-5 overflow-hidden transition-[max-height] duration-300 ease-out"
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      isOpen
+                        ? "grid-rows-[1fr] opacity-100 pb-6"
+                        : "grid-rows-[0fr] opacity-0"
+                    }`}
                   >
-                    <div className="py-3 md:py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {it.a}
+                    <div className="overflow-hidden px-6">
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {it.a}
+                      </p>
                     </div>
                   </div>
                 </div>
