@@ -29,7 +29,7 @@ type CarCardProps = {
   onView?: () => void;
 };
 
-export default function CarCard({ cars, onView }: CarCardProps) {
+export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
   const router = useRouter();
   const {
     id,
@@ -165,4 +165,4 @@ export default function CarCard({ cars, onView }: CarCardProps) {
       </div>
     </article>
   );
-}
+});

@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Loading from "@/components/Loading";
 import { Upload, Plus, X, Loader2, Save, Sparkles, Wand2 } from "lucide-react";
 import Link from "next/link";
 import FileUpload, { FileUploadRef } from "@/components/FileUpload";
@@ -221,11 +222,7 @@ export default function CarFormPage() {
   const aiFileRef = React.useRef<HTMLInputElement>(null);
 
   if (fetching) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

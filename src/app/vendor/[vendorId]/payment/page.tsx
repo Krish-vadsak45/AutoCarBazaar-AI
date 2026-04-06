@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import Loading from "@/components/Loading";
 import {
   Card,
   CardContent,
@@ -98,11 +99,7 @@ function VendorPaymentContent() {
   };
 
   if (statusLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[80vh]">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
+    return <Loading />;
   }
 
   const { isVerified, isActive, priority, subscriptionStatus } = vendorStatus;
@@ -393,13 +390,7 @@ function VendorPaymentContent() {
 
 export default function VendorPaymentPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex justify-center items-center min-h-[80vh]">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        </div>
-      }
-    >
+    <Suspense fallback={<Loading />}>
       <VendorPaymentContent />
     </Suspense>
   );

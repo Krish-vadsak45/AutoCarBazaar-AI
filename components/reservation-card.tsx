@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ interface ReservationCardProps {
   onCancel?: (reservationId: string) => void;
 }
 
-export function ReservationCard({
+export const ReservationCard = React.memo(function ReservationCard({
   reservation,
   onCancel,
 }: ReservationCardProps) {
@@ -160,4 +160,4 @@ export function ReservationCard({
       )}
     </>
   );
-}
+});

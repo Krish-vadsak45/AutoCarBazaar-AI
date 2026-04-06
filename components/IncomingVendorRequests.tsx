@@ -38,7 +38,7 @@ interface IncomingVendorRequestsProps {
   onClose: () => void;
 }
 
-export function IncomingVendorRequests({
+export const IncomingVendorRequests = React.memo(function IncomingVendorRequests({
   pendingVendors,
   loading,
   onApprove,
@@ -136,4 +136,4 @@ export function IncomingVendorRequests({
       </Card>
     </div>
   );
-}
+});

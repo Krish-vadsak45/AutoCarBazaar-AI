@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import Loading from "@/components/Loading";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ReviewModal } from "@/components/ReviewModal";
@@ -211,14 +212,7 @@ export default function MyReservationsPage() {
 
         {/* Content List */}
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-56 w-full rounded-3xl bg-gray-200 dark:bg-slate-800 animate-pulse border border-gray-300 dark:border-slate-700"
-              />
-            ))}
-          </div>
+          <Loading />
         ) : reservations.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

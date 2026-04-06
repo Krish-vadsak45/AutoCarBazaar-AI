@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import Loading from "@/components/Loading";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -34,7 +35,7 @@ export default function LikedCarsPage() {
   const [likedCars, setLikedCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"recent" | "price-low" | "price-high">(
-    "recent"
+    "recent",
   );
 
   const fetchSavedCars = async () => {
@@ -65,7 +66,7 @@ export default function LikedCarsPage() {
       default:
         return cars.sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
     }
   };
@@ -131,14 +132,7 @@ export default function LikedCarsPage() {
 
         {/* Content Area */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-[400px] bg-white dark:bg-slate-900 rounded-3xl animate-pulse shadow-sm border border-gray-100 dark:border-slate-800"
-              />
-            ))}
-          </div>
+          <Loading />
         ) : sortedCars.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

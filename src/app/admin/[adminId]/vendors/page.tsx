@@ -15,6 +15,7 @@ import {
   Send,
   MessageSquareText,
 } from "lucide-react";
+import Loading from "@/components/Loading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AdminEmailModal } from "@/components/admin-email-modal";
@@ -65,11 +66,7 @@ export default function AdminVendorsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
+    return <Loading />;
   }
 
   return (

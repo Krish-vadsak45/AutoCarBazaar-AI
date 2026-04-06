@@ -13,7 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, Save, Loader2, CalendarDays, Moon, Sun, MapPin, Check } from "lucide-react";
+import {
+  Clock,
+  Save,
+  Loader2,
+  CalendarDays,
+  Moon,
+  Sun,
+  MapPin,
+  Check,
+} from "lucide-react";
+import Loading from "@/components/Loading";
 import { Badge } from "@/components/ui/badge";
 
 type DaySchedule = {
@@ -37,7 +47,12 @@ export default function WorkingHoursPage() {
   const [saving, setSaving] = useState(false);
 
   // Delivery location state
-  const [vendorLocation, setVendorLocation] = useState<{ lat: number | null; lng: number | null; city: string; state: string }>({
+  const [vendorLocation, setVendorLocation] = useState<{
+    lat: number | null;
+    lng: number | null;
+    city: string;
+    state: string;
+  }>({
     lat: null,
     lng: null,
     city: "",
@@ -61,7 +76,12 @@ export default function WorkingHoursPage() {
     const fetchLocation = async () => {
       try {
         const { data } = await axios.get("/api/vendor-location");
-        setVendorLocation({ lat: data.lat, lng: data.lng, city: data.city, state: data.state });
+        setVendorLocation({
+          lat: data.lat,
+          lng: data.lng,
+          city: data.city,
+          state: data.state,
+        });
       } catch {
         // Silently fail — location not required
       }
@@ -73,18 +93,18 @@ export default function WorkingHoursPage() {
   const handleToggle = (index: number) => {
     setSchedule((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, isOpen: !item.isOpen } : item
-      )
+        i === index ? { ...item, isOpen: !item.isOpen } : item,
+      ),
     );
   };
 
   const handleTimeChange = (
     index: number,
     field: "openTime" | "closeTime",
-    value: string
+    value: string,
   ) => {
     setSchedule((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
     );
   };
 
@@ -112,7 +132,11 @@ export default function WorkingHoursPage() {
           setVendorLocation({ lat: latitude, lng: longitude, city, state });
           toast.success(`Location detected: ${city}, ${state}`);
         } catch {
-          setVendorLocation((prev) => ({ ...prev, lat: latitude, lng: longitude }));
+          setVendorLocation((prev) => ({
+            ...prev,
+            lat: latitude,
+            lng: longitude,
+          }));
           toast.success("GPS coordinates captured");
         } finally {
           setLocationLoading(false);
@@ -157,11 +181,7 @@ export default function WorkingHoursPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
@@ -201,7 +221,8 @@ export default function WorkingHoursPage() {
               Delivery Location
             </h2>
             <p className="text-muted-foreground text-sm mt-1">
-              Set your location so customers can see the distance for delivery requests.
+              Set your location so customers can see the distance for delivery
+              requests.
             </p>
           </div>
           <Button

@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { Bell, Loader2 } from "lucide-react";
 import { IncomingVendorRequests } from "@/components/IncomingVendorRequests";
 import { useSession } from "next-auth/react";
+import Loading from "@/components/Loading";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -124,14 +125,7 @@ export default function AdminDashboardPage() {
   };
 
   if (status === "loading") {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-muted-foreground">
-          Verifying Admin Session...
-        </span>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (status === "unauthenticated" || session?.user?.role !== "admin") {

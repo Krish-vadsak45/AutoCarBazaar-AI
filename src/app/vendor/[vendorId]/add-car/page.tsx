@@ -36,6 +36,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import Loading from "@/components/Loading";
 import { Badge } from "@/components/ui/badge";
 import { BulkUploadModal } from "@/components/BulkUploadModal";
 
@@ -166,9 +167,7 @@ export default function VendorCarsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <Loading />
           ) : filteredCars.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               {searchQuery

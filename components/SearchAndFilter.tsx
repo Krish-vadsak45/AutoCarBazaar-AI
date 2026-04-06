@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { z } from "zod";
 import {
   Search,
@@ -53,7 +53,7 @@ interface ExtendedFiltersProps extends ProjectFiltersProps {
   onFuelChange: (v: string) => void;
 }
 
-export function SearchAndFilter({
+export const SearchAndFilter = React.memo(function SearchAndFilter({
   searchQuery,
   onSearchChange,
   selectedTool,
@@ -622,4 +622,4 @@ export function SearchAndFilter({
       </div>
     </div>
   );
-}
+});

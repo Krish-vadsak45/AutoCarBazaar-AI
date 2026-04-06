@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Loading from "@/components/Loading";
 import { Badge } from "@/components/ui/badge";
 import {
   Search,
@@ -197,10 +198,7 @@ export default function TestDrivesPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-muted-foreground">Loading test drives...</p>
-            </div>
+            <Loading />
           ) : filteredDrives.length > 0 ? (
             filteredDrives.map((drive) => (
               <div

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FileUpload from "@/components/FileUpload";
+import Loading from "@/components/Loading";
 import { toast } from "react-toastify";
 import { Loader2, Lock, User, Mail, Phone, Camera, MapPin } from "lucide-react";
 import axios from "axios";
@@ -135,11 +136,7 @@ export default function ProfilePage() {
   };
 
   if (status === "loading" || loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!session) {
