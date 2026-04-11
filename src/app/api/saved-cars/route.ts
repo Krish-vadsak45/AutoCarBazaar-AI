@@ -21,7 +21,7 @@ export async function GET() {
     const user = await User.findById(userId).populate({
       path: "savedCars",
       model: Car,
-      options: { strictPopulate: false }
+      options: { strictPopulate: false },
     });
 
     if (!user) {
@@ -33,7 +33,7 @@ export async function GET() {
     console.error("Error fetching saved cars:", error);
     return NextResponse.json(
       { error: "Failed to fetch saved cars" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
     const userId = (session.user as any)._id;
     console.log("POST /api/saved-cars: userId:", userId, "carId:", carId);
-    
+
     // Check if already saved
     const user = await User.findById(userId);
     if (!user) {
@@ -63,12 +63,15 @@ export async function POST(request: Request) {
 
     const savedCarsList = user.savedCars || [];
     console.log("Current savedCars length:", savedCarsList.length);
-    console.log("Current savedCars IDs:", savedCarsList.map((id: any) => id.toString()));
+    console.log(
+      "Current savedCars IDs:",
+      savedCarsList.map((id: any) => id.toString()),
+    );
     console.log("Checking for carId:", carId);
 
     const isSaved = savedCarsList.some((id: any) => id?.toString() === carId);
     console.log("Is car already saved?:", isSaved);
-    
+
     let action;
     let update;
 
@@ -81,17 +84,27 @@ export async function POST(request: Request) {
     }
 
     console.log("Applying update:", JSON.stringify(update));
-    const updatedUser = await User.findByIdAndUpdate(userId, update, { new: true }).lean();
-    console.log(`Car ${action} successfully for user ${userId}. Updated user savedCars:`, JSON.stringify(updatedUser?.savedCars));
-    const collectionSize = Array.isArray(updatedUser?.savedCars) ? updatedUser.savedCars.length : "N/A";
+    const updatedUser = await User.findByIdAndUpdate(userId, update, {
+      returnDocument: "after",
+    }).lean();
+    console.log(
+      `Car ${action} successfully for user ${userId}. Updated user savedCars:`,
+      JSON.stringify(updatedUser?.savedCars),
+    );
+    const collectionSize = Array.isArray(updatedUser?.savedCars)
+      ? updatedUser.savedCars.length
+      : "N/A";
     console.log(`Collection size: ${collectionSize}`);
 
-    return NextResponse.json({ message: `Car ${action} successfully`, action }, { status: 200 });
+    return NextResponse.json(
+      { message: `Car ${action} successfully`, action },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error toggling saved car:", error);
     return NextResponse.json(
       { error: "Failed to update saved cars" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

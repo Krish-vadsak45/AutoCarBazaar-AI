@@ -34,6 +34,9 @@ export const carSchema = z.object({
     .max(5, "You can upload at most 5 images")
     .optional()
     .default([]),
+  videoUrl: z
+    .union([z.string().url("Video must be a valid URL").max(2048), z.literal("")])
+    .optional(),
   specs: z.object({
     make: z.string().min(1, "Make is required"),
     model: z.string().min(1, "Model is required"),

@@ -139,7 +139,7 @@ export async function PATCH(request: Request) {
     const updatedDrive = await TestDrive.findOneAndUpdate(
       query,
       { status: newStatus }, // Ensure consistency (PENDING, CONFIRMED)
-      { new: true },
+      { returnDocument: "after" },
     );
 
     // Manage Car's totalBookedCount

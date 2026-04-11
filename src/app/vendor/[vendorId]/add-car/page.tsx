@@ -39,6 +39,8 @@ import {
 import Loading from "@/components/Loading";
 import { Badge } from "@/components/ui/badge";
 import { BulkUploadModal } from "@/components/BulkUploadModal";
+import { VIPBadge } from "@/components/VIPBadge";
+import { canUseBulkUpload, normalizeVendorPriority } from "@/lib/vip";
 
 // Interface matching your Car Model structure
 interface ICar {
@@ -64,14 +66,23 @@ export default function VendorCarsPage() {
   const [cars, setCars] = useState<ICar[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [vendorPriority, setVendorPriority] = useState(1);
+  const bulkUploadLocked = !canUseBulkUpload(vendorPriority);
+  const paymentHref =
+    typeof vendorId === "string"
+      ? `/vendor/${vendorId}/payment`
+      : "/vendor";
 
-  // Fetch Cars on Mount
+  // Fetch Cars + VIP tier on Mount
   useEffect(() => {
     const fetchCars = async () => {
       try {
-        const { data } = await axios.get("/api/vend-cars");
-        console.log("Fetched cars:", data.cars);
-        setCars(data.cars);
+        const [carsRes, statusRes] = await Promise.all([
+          axios.get("/api/vend-cars"),
+          axios.get("/api/vendor/status").catch(() => ({ data: {} })),
+        ]);
+        setCars(carsRes.data.cars);
+        setVendorPriority(normalizeVendorPriority(statusRes.data?.priority));
       } catch (error) {
         console.error("Failed to load cars", error);
         toast.error("Failed to load your inventory");
@@ -138,13 +149,20 @@ export default function VendorCarsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
+            <VIPBadge priority={vendorPriority} />
+          </div>
           <p className="text-muted-foreground mt-1">
             Manage your vehicle listings ({cars.length})
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <BulkUploadModal onSuccess={() => refreshInventory()} />
+          <BulkUploadModal
+            onSuccess={() => refreshInventory()}
+            locked={bulkUploadLocked}
+            upgradeHref={paymentHref}
+          />
           <Link href={`/vendor/${vendorId}/add-car/new-car/new-car`}>
             <Button className="gap-2">
               <Plus className="h-4 w-4" /> Add Vehicle

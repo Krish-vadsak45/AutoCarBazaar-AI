@@ -24,6 +24,7 @@ export interface ICar extends Document {
   tags?: string[];
   carAddress?: string;
   vendorId?: mongoose.Types.ObjectId;
+  videoUrl?: string;
   averageRating?: number;
   reviewCount?: number;
   totalBookedCount?: number;
@@ -64,6 +65,7 @@ const CarSchema = new mongoose.Schema<ICar>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vendor",
     },
+    videoUrl: { type: String },
     averageRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     totalBookedCount: { type: Number, default: 0 },

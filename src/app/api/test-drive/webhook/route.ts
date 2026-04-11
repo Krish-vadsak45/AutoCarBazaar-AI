@@ -139,7 +139,7 @@ export async function POST(req: Request) {
                 totalRevenue: feeAmount,
               },
             },
-            { new: true },
+            { returnDocument: "after" },
           );
 
           console.log("----- UPDATED VENDOR DETAILS -----");
@@ -209,7 +209,7 @@ export async function POST(req: Request) {
                     totalRevenue: -(existingDrive.bookingFeeAmount || 0),
                   },
                 },
-                { new: true },
+                { returnDocument: "after" },
               );
               console.log(
                 `Vendor ${vendor?._id} decremented stats (-1 booked, -${existingDrive.bookingFeeAmount || 0} revenue) via webhook.`,

@@ -16,6 +16,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Papa from "papaparse";
@@ -23,9 +24,16 @@ import axios from "axios";
 
 interface BulkUploadProps {
   readonly onSuccess?: () => void;
+  /** When true, CSV bulk upload is disabled (requires VIP 5 / priority > 4). */
+  readonly locked?: boolean;
+  readonly upgradeHref?: string;
 }
 
-export function BulkUploadModal({ onSuccess }: BulkUploadProps) {
+export function BulkUploadModal({
+  onSuccess,
+  locked = false,
+  upgradeHref = "/vendor",
+}: BulkUploadProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [data, setData] = useState<any[]>([]);
@@ -119,16 +127,38 @@ export function BulkUploadModal({ onSuccess }: BulkUploadProps) {
     }
   };
 
+  const triggerButton = (
+    <Button
+      variant="outline"
+      className="gap-2 border-primary/50 text-primary hover:bg-primary/5"
+      type="button"
+    >
+      <FileSpreadsheet className="h-4 w-4" /> Bulk Upload
+    </Button>
+  );
+
+  const lockedTitle = "Bulk upload requires VIP level 5 (priority > 4).";
+
+  if (locked) {
+    return (
+      <button
+        type="button"
+        title={lockedTitle}
+        className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-medium text-muted-foreground opacity-80 shadow-sm transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={() => {
+          toast.info(`${lockedTitle}`, { autoClose: 6000 });
+        }}
+      >
+        <Lock className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+        <FileSpreadsheet className="h-4 w-4 shrink-0" aria-hidden />
+        <span>Bulk Upload</span>
+      </button>
+    );
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="gap-2 border-primary/50 text-primary hover:bg-primary/5"
-        >
-          <FileSpreadsheet className="h-4 w-4" /> Bulk Upload
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{triggerButton}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Bulk Vehicle Upload</DialogTitle>

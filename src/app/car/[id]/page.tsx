@@ -3,18 +3,56 @@ import CarDetailClient from "@/components/CarDetailClient";
 import { notFound } from "next/navigation";
 import connectToDatabase from "@/lib/db";
 import Car from "@/models/car.model";
+import Vendor from "@/models/vendor.model";
+import mongoose from "mongoose";
 
-async function fetchCarFromDb(id: string) {
+export type VendorPublic = {
+  businessName: string;
+  address: string;
+  email: string;
+  phone: string;
+  workingHours?: {
+    day: string;
+    isOpen: boolean;
+    openTime?: string;
+    closeTime?: string;
+  }[];
+};
+
+async function fetchCarWithVendor(id: string) {
   try {
     await connectToDatabase();
     const carRaw = await Car.findById(id).lean();
     if (!carRaw) return null;
 
-    // Convert to plain object and serialize non-serializable fields
     const car = JSON.parse(JSON.stringify(carRaw));
-    // Ensure id is present as 'id' for the client component
     car.id = car._id;
-    return car;
+
+    let vendorPublic: VendorPublic | null = null;
+    const vid = car.vendorId;
+    if (vid && mongoose.Types.ObjectId.isValid(String(vid))) {
+      const v = await Vendor.findById(vid).lean();
+      if (v) {
+        vendorPublic = {
+          businessName: v.businessName ?? "",
+          address: typeof v.address === "string" ? v.address : "",
+          email: v.contactDetails?.email ?? "",
+          phone: v.contactDetails?.phone ?? "",
+          workingHours: Array.isArray(v.workingHours)
+            ? v.workingHours.map((wh: any) => ({
+                day: String(wh.day || "")
+                  .toLowerCase()
+                  .replace(/^./, (c: string) => c.toUpperCase()),
+                isOpen: Boolean(wh.isOpen),
+                openTime: wh.openTime,
+                closeTime: wh.closeTime,
+              }))
+            : undefined,
+        };
+      }
+    }
+
+    return { car, vendorPublic };
   } catch (e) {
     console.error("Error fetching car from DB:", e);
     return null;
@@ -26,9 +64,11 @@ export default async function Page(props: {
 }) {
   const params = await props.params;
   const { id } = params;
-  const car = await fetchCarFromDb(id);
+  const data = await fetchCarWithVendor(id);
 
-  if (!car) notFound();
+  if (!data) notFound();
 
-  return <CarDetailClient car={car} />;
+  return (
+    <CarDetailClient car={data.car} vendorPublic={data.vendorPublic} />
+  );
 }

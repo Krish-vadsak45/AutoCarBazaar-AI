@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import Vendor from "@/models/vendor.model";
 import { carSchema } from "@/lib/validations/car";
+import { canAddListingVideo } from "@/lib/vip";
+import type { PipelineStage } from "mongoose";
 
 export async function GET(request: Request) {
   try {
@@ -106,8 +108,37 @@ export async function GET(request: Request) {
     let carsRaw;
     let totalCars;
     try {
+      const vendorCollection = Vendor.collection.name;
+
+      const sortPipeline: PipelineStage[] = [
+        {
+          $lookup: {
+            from: vendorCollection,
+            localField: "vendorId",
+            foreignField: "_id",
+            as: "_vipVendor",
+          },
+        },
+        {
+          $addFields: {
+            vendorPriority: {
+              $ifNull: [{ $arrayElemAt: ["$_vipVendor.priority", 0] }, 1],
+            },
+          },
+        },
+        { $sort: { vendorPriority: -1, createdAt: -1 } },
+        { $project: { _vipVendor: 0 } },
+      ];
+
+      const listPipeline: PipelineStage[] = [
+        { $match: filter },
+        ...sortPipeline,
+        { $skip: skip },
+        { $limit: limit },
+      ];
+
       [carsRaw, totalCars] = await Promise.all([
-        Car.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Car.aggregate(listPipeline),
         Car.countDocuments(filter),
       ]);
       console.log("Found", carsRaw.length, "cars (Total:", totalCars, ")");
@@ -191,8 +222,27 @@ export async function POST(request: Request) {
 
     const validatedData = validation.data;
 
-    // ✅ Create Car (NO vendorId inside car)
-    const newCar = await Car.create(validatedData);
+    const video = validatedData.videoUrl?.trim();
+    if (video) {
+      if (!canAddListingVideo(vendor.priority)) {
+        return NextResponse.json(
+          {
+            error:
+              "Listing video requires VIP level 3 or higher (priority > 2).",
+          },
+          { status: 403 },
+        );
+      }
+    }
+
+    const createPayload = {
+      ...validatedData,
+      vendorId: vendor._id,
+    } as Record<string, unknown>;
+    if (video) createPayload.videoUrl = video;
+    else delete createPayload.videoUrl;
+
+    const newCar = await Car.create(createPayload);
 
     // Push carId into vendor using update to bypass potential strict schema validation errors on outdated documents
     await Vendor.findByIdAndUpdate(

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         // Optionally update verificationStatus if needed, e.g. to suspicious or removed
         verificationStatus: "REJECTED",
       },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     if (!vendor) {

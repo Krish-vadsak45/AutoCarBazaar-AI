@@ -5,6 +5,7 @@ import Vendor from "@/models/vendor.model";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { carSchema } from "@/lib/validations/car";
+import { canUseBulkUpload } from "@/lib/vip";
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +40,18 @@ export async function POST(request: Request) {
         { error: "Vendor profile not found" },
         { status: 404 },
       );
+    }
+
+    if (session.user.role === "vendor" && vendor) {
+      if (!canUseBulkUpload(vendor.priority)) {
+        return NextResponse.json(
+          {
+            error:
+              "Bulk CSV upload requires VIP level 5 (priority > 4).",
+          },
+          { status: 403 },
+        );
+      }
     }
 
     // Prepare data and validate

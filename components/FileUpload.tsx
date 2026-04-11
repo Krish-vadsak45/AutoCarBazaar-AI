@@ -13,23 +13,39 @@ interface FileUploadProps {
   onSuccess: (res: any) => void;
   onProgress?: (progress: number) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  /** Default `image` — use `video` for listing walk-around uploads (ImageKit). */
+  mediaType?: "image" | "video";
 }
 
 export interface FileUploadRef {
   uploadFile: (file: File) => Promise<void>;
 }
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+
 const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
-  ({ onSuccess, onProgress, inputRef }, ref) => {
+  ({ onSuccess, onProgress, inputRef, mediaType = "image" }, ref) => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const validateFile = (file: File) => {
+      if (mediaType === "video") {
+        if (!file.type.startsWith("video/")) {
+          setError("Please upload a valid video file");
+          return false;
+        }
+        if (file.size > MAX_VIDEO_BYTES) {
+          setError("Video size must be less than 100 MB");
+          return false;
+        }
+        return true;
+      }
       if (!file.type.startsWith("image/")) {
         setError("Please upload a valid image file");
         return false;
       }
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > MAX_IMAGE_BYTES) {
         setError("Image size must be less than 10 MB");
         return false;
       }
@@ -86,7 +102,7 @@ const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={mediaType === "video" ? "video/*" : "image/*"}
           className="hidden"
           onChange={handleFileChange}
         />

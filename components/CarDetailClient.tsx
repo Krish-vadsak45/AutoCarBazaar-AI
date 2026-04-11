@@ -32,6 +32,19 @@ import {
 import { Badge } from "./ui/badge";
 import { ReviewsSection } from "./ReviewsSection";
 
+export type CarVendorPublic = {
+  businessName: string;
+  address: string;
+  email: string;
+  phone: string;
+  workingHours?: {
+    day: string;
+    isOpen: boolean;
+    openTime?: string;
+    closeTime?: string;
+  }[];
+};
+
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -50,7 +63,13 @@ const workingHours = [
   { day: "Sunday", hours: "Closed" },
 ];
 
-export default function CarDetailClient({ car }: { car: any }) {
+export default function CarDetailClient({
+  car,
+  vendorPublic = null,
+}: {
+  car: any;
+  vendorPublic?: CarVendorPublic | null;
+}) {
   const images =
     car.images && car.images.length > 0
       ? car.images
@@ -67,6 +86,21 @@ export default function CarDetailClient({ car }: { car: any }) {
   >("idle");
 
   const { data: session } = useSession();
+
+  const hoursRows = useMemo(() => {
+    const wh = vendorPublic?.workingHours;
+    if (wh && wh.length > 0) {
+      return wh.map((h) => ({
+        day: h.day,
+        hours: !h.isOpen
+          ? "Closed"
+          : h.openTime && h.closeTime
+            ? `${h.openTime} - ${h.closeTime}`
+            : "Open",
+      }));
+    }
+    return workingHours;
+  }, [vendorPublic?.workingHours]);
 
   // Check if car is already saved
   useEffect(() => {
@@ -262,6 +296,21 @@ export default function CarDetailClient({ car }: { car: any }) {
                 ))}
               </div>
             )}
+
+            {car.videoUrl ? (
+              <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-black/5 dark:bg-black/20">
+                <p className="px-3 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Listing video
+                </p>
+                <video
+                  className="w-full max-h-[360px] object-contain bg-black"
+                  controls
+                  playsInline
+                  poster={images[0] || undefined}
+                  src={car.videoUrl}
+                />
+              </div>
+            ) : null}
           </div>
 
           {/* RIGHT COLUMN - CAR INFO */}
@@ -518,80 +567,91 @@ export default function CarDetailClient({ car }: { car: any }) {
           </div>
         </div>
 
-        {/* DEALERSHIP LOCATION */}
+        {/* DEALERSHIP / SELLER (from listing vendor only) */}
         <div className="bg-white dark:bg-slate-900 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-slate-800">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8">
-            Dealership Location
+            Seller contact
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Left - Contact Info */}
-            <div>
-              <div className="space-y-4">
-                {/* Address */}
-                <div className="flex items-start gap-3">
-                  <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
-                    <MapPin className="w-5 h-5" />
+          {vendorPublic ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                        {vendorPublic.businessName || "Seller"}
+                      </h3>
+                      {vendorPublic.address ? (
+                        <p className="text-gray-700 dark:text-gray-300 text-sm mt-1">
+                          {vendorPublic.address}
+                        </p>
+                      ) : (
+                        <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">
+                          Address not provided
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">
-                      Vehicl Motors
-                    </h3>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm mt-1">
-                      69 Car Street, Autoville, CA 69420
-                    </p>
-                  </div>
+                  {vendorPublic.phone ? (
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                        <Phone className="w-5 h-5" />
+                      </div>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm">
+                        {vendorPublic.phone}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {vendorPublic.email ? (
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                        <Mail className="w-5 h-5" />
+                      </div>
+                      <a
+                        href={`mailto:${vendorPublic.email}`}
+                        className="text-gray-700 dark:text-gray-300 text-sm hover:underline"
+                      >
+                        {vendorPublic.email}
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
+              </div>
 
-                {/* Phone */}
-                <div className="flex items-center gap-3">
-                  <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
-                    <Phone className="w-5 h-5" />
-                  </div>
-
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">
-                    +1 (555) 123-4567
-                  </p>
-                </div>
-
-                {/* Email */}
-                <div className="flex items-center gap-3">
-                  <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
-                    <Mail className="w-5 h-5" />
-                  </div>
-
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">
-                    contact@vehicl.com
-                  </p>
+              <div>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Working hours
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {hoursRows.map((hour, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <p className="text-gray-700 dark:text-gray-300 text-sm">
+                        {hour.day}
+                      </p>
+                      <p
+                        className={`font-medium text-sm text-gray-900 dark:text-gray-100 ${
+                          hour.hours === "Closed"
+                            ? "text-gray-500 dark:text-gray-600"
+                            : ""
+                        }`}
+                      >
+                        {hour.hours}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-
-            {/* Right - Working Hours */}
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Working Hours
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                {workingHours.map((hour, idx) => (
-                  <div key={idx} className="flex justify-between">
-                    <p className="text-gray-700 dark:text-gray-300 text-sm">
-                      {hour.day}
-                    </p>
-                    <p
-                      className={`font-medium text-sm text-gray-900 dark:text-gray-100 ${
-                        hour.hours === "Closed"
-                          ? "text-gray-500 dark:text-gray-600"
-                          : ""
-                      }`}
-                    >
-                      {hour.hours}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          ) : (
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Seller contact is not available for this listing.
+            </p>
+          )}
         </div>
 
         {/* Reviews Section */}

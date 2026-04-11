@@ -26,10 +26,28 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Loading from "@/components/Loading";
-import { Upload, Plus, X, Loader2, Save, Sparkles, Wand2 } from "lucide-react";
+import {
+  Upload,
+  Plus,
+  X,
+  Loader2,
+  Save,
+  Sparkles,
+  Wand2,
+  Video,
+  Trash2,
+  Lock,
+} from "lucide-react";
 import Link from "next/link";
 import FileUpload, { FileUploadRef } from "@/components/FileUpload";
 import { carSchema, CarFormValues } from "@/lib/validations/car";
+import { FeatureLock } from "@/components/FeatureLock";
+import { VIPBadge } from "@/components/VIPBadge";
+import {
+  canUseSmartAddAi,
+  canAddListingVideo,
+  normalizeVendorPriority,
+} from "@/lib/vip";
 
 export default function CarFormPage() {
   const router = useRouter();
@@ -47,6 +65,33 @@ export default function CarFormPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const uploadRef = React.useRef<FileUploadRef>(null);
   const [fetching, setFetching] = useState(isEditMode); // Loading state for fetching existing data
+  const [vendorPriority, setVendorPriority] = useState(1);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
+
+  const smartAddLocked = !canUseSmartAddAi(vendorPriority);
+  const videoUploadLocked = !canAddListingVideo(vendorPriority);
+  const paymentHref =
+    typeof vendorId === "string" ? `/vendor/${vendorId}/payment` : "/vendor";
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const { data } = await axios.get("/api/vendor/status");
+        setVendorPriority(normalizeVendorPriority(data.priority));
+      } catch {
+        /* non-vendor session — keep defaults */
+      }
+    };
+    loadStatus();
+  }, []);
+
+  const smartAddLockedTitle =
+    "Smart Add (AI) requires VIP level 4 (priority > 3).";
+
+  const showSmartAddLockedToast = () => {
+    toast.info(`${smartAddLockedTitle}`, { autoClose: 6000 });
+  };
 
   const {
     register,
@@ -106,6 +151,7 @@ export default function CarFormPage() {
             if (car.images && car.images.length > 0) {
               setImagePreviews(car.images);
             }
+            setVideoUrl(car.videoUrl || "");
           }
         } catch (error) {
           console.error("Failed to fetch car details:", error);
@@ -143,6 +189,10 @@ export default function CarFormPage() {
   };
 
   const handleSmartAdd = async (res: any) => {
+    if (!canUseSmartAddAi(vendorPriority)) {
+      showSmartAddLockedToast();
+      return;
+    }
     const imageUrl = res.url;
     setIsAnalyzing(true);
     // Add the image to previews early
@@ -196,6 +246,7 @@ export default function CarFormPage() {
       const payload = {
         ...data,
         images: imagePreviews,
+        videoUrl: videoUrl.trim(),
       };
 
       if (isEditMode) {
@@ -220,6 +271,13 @@ export default function CarFormPage() {
 
   const fileRef = React.useRef<HTMLInputElement>(null);
   const aiFileRef = React.useRef<HTMLInputElement>(null);
+  const videoFileRef = React.useRef<HTMLInputElement>(null);
+
+  const handleVideoUploadSuccess = (res: any) => {
+    setVideoUrl(res.url);
+    setIsVideoUploading(false);
+    toast.success("Video uploaded");
+  };
 
   if (fetching) {
     return <Loading />;
@@ -227,11 +285,14 @@ export default function CarFormPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {isEditMode ? "Edit Vehicle" : "Add New Vehicle"}
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              {isEditMode ? "Edit Vehicle" : "Add New Vehicle"}
+            </h1>
+            <VIPBadge priority={vendorPriority} />
+          </div>
           <p className="text-muted-foreground">
             {isEditMode
               ? "Update vehicle details and specifications."
@@ -249,7 +310,17 @@ export default function CarFormPage() {
             <TabsTrigger value="standard" className="gap-2">
               <Wand2 className="h-4 w-4" /> Standard Entry
             </TabsTrigger>
-            <TabsTrigger value="smart" className="gap-2">
+            <TabsTrigger
+              value="smart"
+              className="gap-2"
+              title={smartAddLocked ? smartAddLockedTitle : undefined}
+            >
+              {smartAddLocked ? (
+                <Lock
+                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+              ) : null}
               <Sparkles className="h-4 w-4 text-primary" /> Smart Add (AI)
             </TabsTrigger>
           </TabsList>
@@ -572,6 +643,74 @@ export default function CarFormPage() {
               </CardContent>
             </Card>
 
+            {/* Listing video (VIP priority > 2) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Listing video
+                </CardTitle>
+                <CardDescription>
+                  Optional walk-around video appears on the public listing with
+                  your images. Requires VIP level 3+ (priority &gt; 2) to upload
+                  new video.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {videoUrl ? (
+                  <div className="space-y-3">
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="w-full max-w-md rounded-lg border bg-black/80 max-h-56"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setVideoUrl("")}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Remove video
+                    </Button>
+                  </div>
+                ) : (
+                  <FeatureLock
+                    locked={videoUploadLocked}
+                    title="Listing video locked"
+                    description="Upgrade to VIP level 3 or higher (priority > 2) to upload a listing video."
+                    upgradeHref={paymentHref}
+                    upgradeLabel="Upgrade / payment"
+                  >
+                    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-8 relative min-h-[140px]">
+                      <FileUpload
+                        mediaType="video"
+                        inputRef={videoFileRef}
+                        onSuccess={handleVideoUploadSuccess}
+                        onProgress={() => setIsVideoUploading(true)}
+                      />
+                      <button
+                        type="button"
+                        disabled={isVideoUploading}
+                        className="flex flex-col items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => videoFileRef.current?.click()}
+                      >
+                        {isVideoUploading ? (
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        ) : (
+                          <Video className="h-10 w-10 text-primary" />
+                        )}
+                        {isVideoUploading
+                          ? "Uploading video…"
+                          : "Click to upload video (max 100 MB)"}
+                      </button>
+                    </div>
+                  </FeatureLock>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Actions */}
             <div className="flex justify-end gap-4">
               <Link href={`/vendor/${params?.vendorId}/add-car`}>
@@ -606,11 +745,24 @@ export default function CarFormPage() {
 
         {!isEditMode && (
           <TabsContent value="smart">
-            <Card className="border-2 border-dashed border-primary/20 bg-primary/5">
+            <Card
+              className={
+                smartAddLocked
+                  ? "border-2 border-dashed border-border bg-muted/20"
+                  : "border-2 border-dashed border-primary/20 bg-primary/5"
+              }
+            >
               <CardHeader className="text-center">
                 <CardTitle className="flex items-center justify-center gap-2 text-2xl">
-                  <Sparkles className="h-6 w-6 text-primary" /> Smart Add with
-                  AI
+                  {smartAddLocked ? (
+                    <Lock
+                      className="h-6 w-6 text-muted-foreground"
+                      aria-hidden
+                    />
+                  ) : (
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  )}
+                  Smart Add with AI
                 </CardTitle>
                 <CardDescription>
                   Upload a single photo of the car. Our AI will automatically
@@ -618,7 +770,30 @@ export default function CarFormPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                {isAnalyzing ? (
+                {smartAddLocked ? (
+                  <div className="w-full max-w-md">
+                    <button
+                      type="button"
+                      title={smartAddLockedTitle}
+                      className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-background/80 p-12 text-center shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={showSmartAddLockedToast}
+                    >
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Lock className="h-8 w-8 shrink-0" aria-hidden />
+                        <Upload
+                          className="h-8 w-8 shrink-0 opacity-60"
+                          aria-hidden
+                        />
+                      </div>
+                      <h3 className="text-lg font-medium text-muted-foreground">
+                        Select Car Image
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Smart Add is locked for your plan. Click for details.
+                      </p>
+                    </button>
+                  </div>
+                ) : isAnalyzing ? (
                   <div className="flex flex-col items-center gap-4 text-center">
                     <div className="relative">
                       <div className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
