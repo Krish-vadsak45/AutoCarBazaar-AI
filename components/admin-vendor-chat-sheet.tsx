@@ -12,6 +12,7 @@ import {
   Pencil,
   Trash2,
   X,
+  File as FileIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -27,7 +28,10 @@ import { Button } from "@/components/ui/button";
 interface MessageType {
   _id: string;
   sender: "ADMIN" | "VENDOR";
-  content: string;
+  type?: "TEXT" | "IMAGE" | "VIDEO" | "FILE" | "AUDIO";
+  content?: string;
+  fileUrl?: string;
+  fileName?: string;
   createdAt: string;
   isRead: boolean;
   isDeleted?: boolean;
@@ -54,6 +58,60 @@ const MessageBubble = memo(
     handleDeleteMessage: (id: string) => void;
   }) => {
     const isAdmin = msg.sender === "ADMIN";
+
+    const renderContent = () => {
+      if (msg.isDeleted)
+        return <span className="italic text-gray-500">Deleted message</span>;
+
+      switch (msg.type) {
+        case "IMAGE":
+          return (
+            <div className="rounded-lg overflow-hidden border border-black/5 dark:border-white/5 cursor-pointer hover:opacity-95 transition-opacity">
+              <img
+                src={msg.fileUrl}
+                alt={msg.fileName || "Image"}
+                className="max-w-[280px] max-h-[400px] object-cover"
+              />
+            </div>
+          );
+        case "VIDEO":
+          return (
+            <video
+              controls
+              className="max-w-[280px] rounded-lg border border-black/5"
+            >
+              <source src={msg.fileUrl} />
+            </video>
+          );
+        case "AUDIO":
+          return (
+            <audio controls className="max-w-[240px] scale-90 -ml-4">
+              <source src={msg.fileUrl} />
+            </audio>
+          );
+        case "FILE":
+          return (
+            <a
+              href={msg.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 p-2 rounded bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-foreground"
+            >
+              <FileIcon className="h-4 w-4" />
+              <span className="truncate max-w-[180px] text-xs font-medium">
+                {msg.fileName || "File"}
+              </span>
+            </a>
+          );
+        default:
+          return (
+            <span className="whitespace-pre-wrap leading-relaxed inline-block mb-1 text-foreground">
+              {msg.content}
+            </span>
+          );
+      }
+    };
+
     return (
       <div
         className={`flex w-full mb-2 group ${
@@ -67,6 +125,8 @@ const MessageBubble = memo(
         >
           <div
             className={`relative px-4 py-2 text-sm shadow-sm flex flex-col ${
+              msg.type && msg.type !== "TEXT" ? "p-1" : "px-4 py-2"
+            } ${
               msg.isDeleted
                 ? "bg-gray-100 dark:bg-gray-800 text-gray-500 italic rounded-2xl"
                 : isAdmin
@@ -88,14 +148,17 @@ const MessageBubble = memo(
                 Vendor: {vendorName.split(" ")[0]}
               </span>
             )}
-            <span className="whitespace-pre-wrap leading-relaxed inline-block mb-1 text-foreground">
-              {msg.content}
-              {msg.isEdited && !msg.isDeleted && (
-                <span className="ml-2 text-[10px] italic opacity-70">
-                  (edited)
-                </span>
-              )}
-            </span>
+
+            <div className="mb-1">
+              {renderContent()}
+              {msg.isEdited &&
+                !msg.isDeleted &&
+                (!msg.type || msg.type === "TEXT") && (
+                  <span className="ml-2 text-[10px] italic opacity-70 text-foreground">
+                    (edited)
+                  </span>
+                )}
+            </div>
 
             {/* Timestamp & Read Receipts */}
             <div
@@ -116,13 +179,15 @@ const MessageBubble = memo(
           {/* Action Menu (Delete/Edit) */}
           {!msg.isDeleted && isAdmin && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 mb-2">
-              <button
-                onClick={() => startEditing(msg)}
-                className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full transition-colors"
-                title="Edit"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
+              {(!msg.type || msg.type === "TEXT") && (
+                <button
+                  onClick={() => startEditing(msg)}
+                  className="p-1.5 text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-full transition-colors"
+                  title="Edit"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              )}
               <button
                 onClick={() => handleDeleteMessage(msg._id)}
                 className="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors"
@@ -177,12 +242,29 @@ export function AdminVendorChatSheet({
     // Initial fetch
     fetchMessages();
 
+    // Setup active Server-Sent Events (SSE) connection for instant messages (0 load push)
+    const eventSource = new EventSource(`/api/messages/${vendorId}/stream`);
+
+    eventSource.addEventListener("update", () => {
+      if (isMounted) fetchMessages();
+    });
+
+    eventSource.onerror = (err) => {
+      console.error("SSE Connection Error:", err);
+      eventSource.close(); // Clean up if it fails, fallback to 15s polling below
+    };
+
     // Polling setup for active chat window
-    interval = setInterval(fetchMessages, 3000); // 3 seconds for admin responsiveness
+    interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchMessages();
+      }
+    }, 15000); // Poll every 15 seconds, only when tab is active
 
     return () => {
       isMounted = false;
       if (interval) clearInterval(interval);
+      eventSource.close();
     };
   }, [isOpen, vendorId]);
 
@@ -249,7 +331,7 @@ export function AdminVendorChatSheet({
 
   const startEditing = useCallback((msg: MessageType) => {
     setEditingMsgId(msg._id);
-    setNewMessage(msg.content);
+    setNewMessage(msg.content || "");
   }, []);
 
   const cancelEditing = useCallback(() => {

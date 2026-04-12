@@ -42,7 +42,11 @@ export function AdminSidebar() {
     }
     
     checkUnread();
-    const interval = setInterval(checkUnread, 10000); // Check every 10 seconds
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        checkUnread();
+      }
+    }, 30000); // Check every 30 seconds, only when tab is active
 
     return () => {
       isMounted = false;

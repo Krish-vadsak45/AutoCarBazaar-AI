@@ -346,11 +346,29 @@ export default function VendorSupportPage({
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000); // Polling every 5 seconds
+
+    // Establish Server-Sent Events (SSE) connection for instant messages (0 load push)
+    const eventSource = new EventSource(`/api/messages/${vendorId}/stream`);
+
+    eventSource.addEventListener("update", () => {
+      if (isMounted) fetchMessages();
+    });
+
+    eventSource.onerror = (err) => {
+      console.error("SSE Connection Error:", err);
+      eventSource.close(); // Clean up if it fails, fallback to 15s polling below
+    };
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchMessages();
+      }
+    }, 15000); // Polling every 15 seconds mostly when active
 
     return () => {
       isMounted = false;
       clearInterval(interval);
+      eventSource.close();
     };
   }, [vendorId]);
 
