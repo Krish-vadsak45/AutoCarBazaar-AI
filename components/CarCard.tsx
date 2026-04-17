@@ -5,11 +5,12 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Heart as HeartIcon } from "lucide-react";
+import { Heart as HeartIcon, ArrowLeftRight } from "lucide-react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useEffect } from "react";
+import { useCompareStore } from "@/hooks/use-compare-store";
 
 type Car = {
   id?: string;
@@ -45,6 +46,26 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
   } = cars;
   const [fav, setFav] = useState(false);
   const { data: session } = useSession();
+
+  const addCar = useCompareStore((state) => state.addCar);
+  const selectedCars = useCompareStore((state) => state.selectedCars);
+
+  const carId = (id || _id)?.toString();
+  const isCompared = selectedCars.some((c) => c.id === carId);
+
+  const validImage =
+    typeof image === "string" && image.trim() !== "" ? image : "";
+
+  const handleAddCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!carId) return;
+    addCar({
+      id: carId,
+      image: validImage || "/placeholder.svg",
+      title,
+      price,
+    });
+  };
 
   // Check initial saved status
   useEffect(() => {
@@ -85,12 +106,12 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
   };
 
   return (
-    <article className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-md dark:shadow-none overflow-hidden border border-gray-100 dark:border-slate-700 transform-gpu transition-transform duration-300 transition-shadow hover:scale-105 hover:shadow-xl dark:hover:shadow-[0_30px_80px_rgba(6,182,212,0.12),0_8px_30px_rgba(6,182,212,0.08),0_0_0_12px_rgba(6,182,212,0.06)] dark:hover:ring-1 dark:hover:ring-cyan-400/25 group will-change-transform">
+    <article className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-xl shadow-md dark:shadow-none overflow-hidden border border-gray-100 dark:border-slate-700 transform-gpu transition-all duration-300 hover:scale-105 hover:shadow-xl dark:hover:shadow-[0_30px_80px_rgba(6,182,212,0.12),0_8px_30px_rgba(6,182,212,0.08),0_0_0_12px_rgba(6,182,212,0.06)] dark:hover:ring-1 dark:hover:ring-cyan-400/25 group will-change-transform">
       <div className="relative w-full h-52 overflow-hidden">
-        {image ? (
+        {validImage ? (
           <Image
-            src={image}
-            alt={title}
+            src={validImage}
+            alt={title || "Car Image"}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -99,19 +120,43 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
             No image
           </div>
         )}
-        <button
-          aria-label={fav ? "Remove from saved" : "Save car"}
-          onClick={handleToggleSave}
-          className="absolute top-3 right-3 bg-white/90 dark:bg-slate-800/70 rounded-full p-2 shadow-sm hover:scale-110 transform transition-transform z-10"
-        >
-          <HeartIcon
-            className={`w-5 h-5 cursor-pointer ${
-              fav
-                ? "text-primary fill-primary"
-                : "text-gray-600 dark:text-gray-300"
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
+          <button
+            aria-label={fav ? "Remove from saved" : "Save car"}
+            onClick={handleToggleSave}
+            title="Save Car"
+            className="bg-white/90 dark:bg-slate-800/70 rounded-full p-2 shadow-sm hover:scale-110 transform transition-transform"
+          >
+            <HeartIcon
+              className={`w-5 h-5 cursor-pointer ${
+                fav
+                  ? "text-primary fill-primary"
+                  : "text-gray-600 dark:text-gray-300"
+              }`}
+            />
+          </button>
+          <button
+            aria-label={isCompared ? "Compared" : "Compare"}
+            onClick={(e) => {
+              if (isCompared) {
+                e.stopPropagation();
+                router.push("/compare");
+              } else {
+                handleAddCompare(e);
+              }
+            }}
+            title="Compare Car"
+            className={`bg-white/90 dark:bg-slate-800/70 rounded-full p-2 shadow-sm hover:scale-110 transform transition-all duration-300 md:opacity-0 md:group-hover:opacity-100 ${
+              isCompared ? "opacity-100 md:opacity-100" : ""
             }`}
-          />
-        </button>
+          >
+            <ArrowLeftRight
+              className={`w-5 h-5 cursor-pointer ${
+                isCompared ? "text-primary" : "text-gray-600 dark:text-gray-300"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="p-4">

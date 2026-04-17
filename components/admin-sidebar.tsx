@@ -34,13 +34,15 @@ export function AdminSidebar() {
     const checkUnread = async () => {
       try {
         const role = isVendorPath ? "VENDOR" : "ADMIN";
-        const res = await axios.get(`/api/messages/unread-status?vendorId=${vendorId}&role=${role}`);
-        if(isMounted) setHasUnread(res.data.hasUnread);
+        const res = await axios.get(
+          `/api/messages/unread-status?vendorId=${vendorId}&role=${role}`,
+        );
+        if (isMounted) setHasUnread(res.data.hasUnread);
       } catch (err) {
         console.error("Failed fetching unread status", err);
       }
-    }
-    
+    };
+
     checkUnread();
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
@@ -51,7 +53,7 @@ export function AdminSidebar() {
     return () => {
       isMounted = false;
       clearInterval(interval);
-    }
+    };
   }, [vendorId, isVendorPath]);
 
   const basePath = isVendorPath ? `/vendor/${vendorId}` : `/admin/${vendorId}`;
@@ -150,7 +152,8 @@ export function AdminSidebar() {
           <button
             onClick={() =>
               signOut({
-                callbackUrl: isVendorPath ? "/vendor/login" : "/admin/login",
+                // callbackUrl: isVendorPath ? "/vendor/login" : "/admin/login",
+                callbackUrl: "/sign-in",
               })
             }
             className="flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium text-red-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/10"

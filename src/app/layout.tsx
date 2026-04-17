@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import AuthProvider from "./providers";
 import { usePathname } from "next/navigation";
+import { CompareBanner } from "@/components/CompareBanner";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export default function RootLayout({
@@ -38,6 +39,7 @@ export default function RootLayout({
               pauseOnHover
               theme="dark"
             />
+            {!isAdminTab && <CompareBanner />}
             {!isAdminTab && <Footer />}{" "}
           </ThemeProvider>
         </AuthProvider>

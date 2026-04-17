@@ -60,43 +60,47 @@ export default function LandingPage() {
 
       <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center py-20">
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-white drop-shadow-lg">
+          <h1 className="text-xl sm:text-2xl md:text-6xl font-extrabold tracking-tight text-[#225fbc] drop-shadow-lg">
             Rent The Perfect Ride. Effortless, Fast, Reliable.
           </h1>
-          <p className="mt-6 text-lg sm:text-2xl text-gray-200 drop-shadow-md font-medium">
+          <p className="mt-6 text-lg sm:text-xl text-white drop-shadow-md font-medium">
             Discover high-quality cars near you. Upload a photo of a car you
             like and we’ll find similar models available for rent.
           </p>
 
           <form
             onSubmit={handleSearch}
-            className="mt-10 bg-white/10 dark:bg-slate-900/40 rounded-2xl p-6 shadow-2xl backdrop-blur-md border border-white/20"
+            className="mt-10 mx-auto max-w-4xl bg-[#0f172a]/70 dark:bg-slate-950/80 rounded-2xl p-2 sm:p-3 shadow-2xl backdrop-blur-xl border border-white/20 transition-all hover:bg-[#0f172a]/80"
           >
-            <div className="flex flex-col sm:flex-row items-stretch gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-0">
               <Input
                 aria-label="Search cars by model, city or features"
                 placeholder="Search by model, city or features (e.g. Tesla Model 3, New York)"
-                className="flex-1 px-6 py-4 rounded-xl border-white/30 bg-white/20 text-white placeholder:text-gray-300 focus:bg-white/30 transition-all text-lg h-14"
+                className="flex-1 px-4 sm:px-6 rounded-xl border-none bg-transparent text-white placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0 text-base sm:text-lg h-14"
               />
 
-              <div className="flex items-center justify-center gap-3">
+              <div className="h-8 w-px bg-white/20 hidden sm:block mx-2"></div>
+
+              <div className="flex w-full sm:w-auto items-center justify-between sm:justify-center gap-2 px-2 pb-2 sm:pb-0 sm:px-2">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="flex items-center gap-2 bg-white/10 text-white border-white/30 hover:bg-white/20 h-14 px-6 rounded-xl"
+                  variant="ghost"
+                  className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-white/10 h-12 px-4 rounded-xl transition-colors"
                   onClick={() => {
                     setShowUpload(true);
                     fileRef.current?.click();
                   }}
                   title="Upload an image"
                 >
-                  <ImageIcon className="w-6 h-6" />
-                  <span className="font-semibold">Upload</span>
+                  <ImageIcon className="w-5 h-5" />
+                  <span className="font-semibold text-sm sm:text-base tracking-wide">
+                    Upload
+                  </span>
                 </Button>
 
                 <Button
                   type="submit"
-                  className="px-8 py-4 bg-primary hover:bg-primary/90 text-white font-bold h-14 rounded-xl shadow-lg transition-transform hover:scale-[1.02]"
+                  className="px-6 sm:px-8 bg-[#f97316] hover:bg-[#ea580c] text-white font-bold h-12 rounded-xl shadow-lg transition-transform hover:scale-[1.02] text-sm sm:text-base tracking-wide"
                 >
                   Search
                 </Button>

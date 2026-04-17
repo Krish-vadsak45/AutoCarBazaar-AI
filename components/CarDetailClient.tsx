@@ -28,9 +28,11 @@ import {
   CalendarCheck,
   CarFront,
   Clock,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { ReviewsSection } from "./ReviewsSection";
+import { useCompareStore } from "@/hooks/use-compare-store";
 
 export type CarVendorPublic = {
   businessName: string;
@@ -70,12 +72,14 @@ export default function CarDetailClient({
   car: any;
   vendorPublic?: CarVendorPublic | null;
 }) {
-  const images =
+  const images = (
     car.images && car.images.length > 0
       ? car.images
       : car.image
         ? [car.image]
-        : [];
+        : []
+  ).filter((img: any) => typeof img === "string" && img.trim() !== "");
+
   const [isEmiModalOpen, setIsEmiModalOpen] = useState(false); // State for EMI modal
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false); // State for PDF modal
   const [mainImage, setMainImage] = useState(images[0] || "/placeholder.svg");
@@ -86,6 +90,22 @@ export default function CarDetailClient({
   >("idle");
 
   const { data: session } = useSession();
+
+  const addCar = useCompareStore((state) => state.addCar);
+  const selectedCars = useCompareStore((state) => state.selectedCars);
+
+  const currentCarId = (car.id || car._id)?.toString() || "";
+  const isCompared = selectedCars.some((c) => c.id === currentCarId);
+
+  const handleAddCompare = () => {
+    if (!currentCarId) return;
+    addCar({
+      id: currentCarId,
+      image: images[0] || "/placeholder.svg",
+      title: car.title,
+      price: car.price,
+    });
+  };
 
   const hoursRows = useMemo(() => {
     const wh = vendorPublic?.workingHours;
@@ -135,7 +155,7 @@ export default function CarDetailClient({
   const handleToggleSave = async () => {
     if (!session) {
       toast.error("Please login to save cars");
-      router.push("/login");
+      router.push("/sign-in");
       return;
     }
 
@@ -303,7 +323,7 @@ export default function CarDetailClient({
                   Listing video
                 </p>
                 <video
-                  className="w-full max-h-[360px] object-contain bg-black"
+                  className="w-full max-h-90 object-contain bg-black"
                   controls
                   playsInline
                   poster={images[0] || undefined}
@@ -401,7 +421,7 @@ export default function CarDetailClient({
               className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
             >
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-600 dark:bg-blue-500 rounded text-white flex-shrink-0">
+                <div className="p-2 bg-blue-600 dark:bg-blue-500 rounded text-white shrink-0">
                   <svg
                     className="w-5 h-5"
                     fill="currentColor"
@@ -431,7 +451,7 @@ export default function CarDetailClient({
             {/* Have Questions Card */}
             <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 flex-shrink-0">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 shrink-0">
                   <svg
                     className="w-5 h-5"
                     fill="currentColor"
@@ -457,8 +477,27 @@ export default function CarDetailClient({
           </div>
         </div>
 
-        {/* FOUR ACTION BUTTONS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+        {/* FIVE ACTION BUTTONS */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-12">
+          <button
+            onClick={() => {
+              if (isCompared) {
+                router.push("/compare");
+              } else {
+                handleAddCompare();
+              }
+            }}
+            className={`py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg flex items-center justify-center gap-2 ${
+              isCompared
+                ? "bg-blue-50 text-blue-600 border border-blue-200"
+                : "bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600"
+            }`}
+          >
+            <ArrowLeftRight
+              className={`w-5 h-5 ${isCompared ? "text-blue-600" : ""}`}
+            />
+            {isCompared ? "Compared" : "Compare"}
+          </button>
           <button
             onClick={handleToggleSave}
             className={`py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg flex items-center justify-center gap-2 ${
@@ -525,7 +564,7 @@ export default function CarDetailClient({
                   key={idx}
                   className="flex items-center gap-3 text-gray-700 dark:text-gray-300"
                 >
-                  <span className="flex-shrink-0">
+                  <span className="shrink-0">
                     <Check className="w-5 h-5 text-blue-600" />
                   </span>
                   {feature}
@@ -577,7 +616,7 @@ export default function CarDetailClient({
               <div>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                    <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 shrink-0">
                       <MapPin className="w-5 h-5" />
                     </div>
                     <div>
@@ -598,7 +637,7 @@ export default function CarDetailClient({
 
                   {vendorPublic.phone ? (
                     <div className="flex items-center gap-3">
-                      <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                      <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 shrink-0">
                         <Phone className="w-5 h-5" />
                       </div>
                       <p className="text-gray-700 dark:text-gray-300 text-sm">
@@ -609,7 +648,7 @@ export default function CarDetailClient({
 
                   {vendorPublic.email ? (
                     <div className="flex items-center gap-3">
-                      <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 flex-shrink-0">
+                      <div className="p-2 dark:bg-blue-900 bg-blue-100 rounded dark:text-blue-400 text-blue-600 shrink-0">
                         <Mail className="w-5 h-5" />
                       </div>
                       <a
