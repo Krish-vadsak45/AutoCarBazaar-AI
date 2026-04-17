@@ -132,6 +132,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  button, 
+  [role="button"],
+  .cursor-pointer-all {
+    @apply cursor-pointer;
+  }
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

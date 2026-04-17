@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Loading from "@/components/Loading";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AdminEmailModal } from "@/components/admin-email-modal";
+import { AdminVendorChatSheet } from "@/components/admin-vendor-chat-sheet";
+import { VendorReportModal } from "@/components/admin/VendorReportModal";
 import {
-  Loader2,
   User,
   Mail,
   DollarSign,
@@ -14,12 +19,8 @@ import {
   ChevronDown,
   Send,
   MessageSquareText,
+  FileText,
 } from "lucide-react";
-import Loading from "@/components/Loading";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AdminEmailModal } from "@/components/admin-email-modal";
-import { AdminVendorChatSheet } from "@/components/admin-vendor-chat-sheet";
 
 interface VendorType {
   _id: string;
@@ -42,6 +43,10 @@ export default function AdminVendorsPage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  // States for Report Modal
+  const [reportVendorId, setReportVendorId] = useState<string | null>(null);
+  const [reportVendorName, setReportVendorName] = useState("");
 
   // States for Q&A Chat
   const [chatVendorId, setChatVendorId] = useState<string | null>(null);
@@ -102,6 +107,13 @@ export default function AdminVendorsPage() {
         vendorName={chatVendorName}
         isOpen={!!chatVendorId}
         onClose={() => setChatVendorId(null)}
+      />
+
+      <VendorReportModal
+        isOpen={!!reportVendorId}
+        onClose={() => setReportVendorId(null)}
+        vendorId={reportVendorId || ""}
+        vendorName={reportVendorName}
       />
 
       <div className="grid gap-4">
@@ -231,6 +243,19 @@ export default function AdminVendorsPage() {
                         {vendor.cars?.length || 0}
                       </span>
                     </div>
+
+                    <Button
+                      variant="outline"
+                      className="w-full mt-4 flex items-center justify-center gap-2 border-primary/40 hover:bg-primary/5 hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setReportVendorId(vendor._id);
+                        setReportVendorName(vendorName);
+                      }}
+                    >
+                      <FileText className="h-4 w-4" />
+                      Monthly Analysis Report
+                    </Button>
                   </div>
 
                   {/* Account Status Column */}

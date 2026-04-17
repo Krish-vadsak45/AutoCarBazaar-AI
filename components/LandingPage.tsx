@@ -49,44 +49,55 @@ export default function LandingPage() {
   };
 
   return (
-    <section className="min-h-[70vh] flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 mt-17">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center py-16">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
+    <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden mt-17 pb-55">
+      {/* Background Image with Overlay */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/landing_page_1.jpg')",
+        }}
+      ></div>
+
+      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center py-20">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-white drop-shadow-lg">
             Rent The Perfect Ride. Effortless, Fast, Reliable.
           </h1>
-          <p className="mt-4 text-lg sm:text-xl text-gray-600 dark:text-gray-300">
+          <p className="mt-6 text-lg sm:text-2xl text-gray-200 drop-shadow-md font-medium">
             Discover high-quality cars near you. Upload a photo of a car you
             like and we’ll find similar models available for rent.
           </p>
 
           <form
             onSubmit={handleSearch}
-            className="mt-8 bg-white/80 dark:bg-slate-800/70 rounded-xl p-4 shadow-md backdrop-blur-sm"
+            className="mt-10 bg-white/10 dark:bg-slate-900/40 rounded-2xl p-6 shadow-2xl backdrop-blur-md border border-white/20"
           >
-            <div className="flex flex-col sm:flex-row items-stretch gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch gap-4">
               <Input
                 aria-label="Search cars by model, city or features"
                 placeholder="Search by model, city or features (e.g. Tesla Model 3, New York)"
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-transparent text-gray-900 dark:text-gray-100"
+                className="flex-1 px-6 py-4 rounded-xl border-white/30 bg-white/20 text-white placeholder:text-gray-300 focus:bg-white/30 transition-all text-lg h-14"
               />
 
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex items-center gap-2 dark:text-gray-100 dark:hover:bg-slate-700"
+                  className="flex items-center gap-2 bg-white/10 text-white border-white/30 hover:bg-white/20 h-14 px-6 rounded-xl"
                   onClick={() => {
                     setShowUpload(true);
                     fileRef.current?.click();
                   }}
                   title="Upload an image"
                 >
-                  <ImageIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  <span className="">Upload</span>
+                  <ImageIcon className="w-6 h-6" />
+                  <span className="font-semibold">Upload</span>
                 </Button>
 
-                <Button type="submit" className="px-5 py-3">
+                <Button
+                  type="submit"
+                  className="px-8 py-4 bg-primary hover:bg-primary/90 text-white font-bold h-14 rounded-xl shadow-lg transition-transform hover:scale-[1.02]"
+                >
                   Search
                 </Button>
               </div>
