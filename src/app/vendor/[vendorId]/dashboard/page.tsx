@@ -157,7 +157,11 @@ const getBarColor = (index: number) => {
   return COLORS[index % COLORS.length];
 };
 
-export default function DashboardPage({ overrideVendorId }: { overrideVendorId?: string }) {
+export default function DashboardPage({
+  overrideVendorId,
+}: {
+  overrideVendorId?: string;
+}) {
   const [cars, setCars] = useState<any[]>([]);
   const [testDrives, setTestDrives] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -454,7 +458,7 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
   if (loading) return <Loading />;
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-20 p-6 space-y-8 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-background text-foreground pb-20 p-2 sm:p-6 space-y-8 animate-in fade-in w-full overflow-x-hidden duration-500">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Dashboard
@@ -700,10 +704,13 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
           </Card>
         </TabsContent>
 
-        <TabsContent value="test-drives" className="space-y-8">
+        <TabsContent
+          value="test-drives"
+          className="space-y-8 w-full max-w-full"
+        >
           {/* Advanced Filter UI */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3 pt-4">
+          <Card className="border-primary/20 bg-primary/5 w-full">
+            <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-primary" />
                 <CardTitle className="text-sm font-semibold">
@@ -711,9 +718,9 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                 </CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap items-end gap-6">
-                <div className="space-y-1.5">
+            <CardContent className="px-4 sm:px-6">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-end gap-4 sm:gap-6">
+                <div className="space-y-1.5 w-full sm:w-auto">
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                     Filter Method
                   </Label>
@@ -721,7 +728,7 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                     value={filterType}
                     onValueChange={(v: any) => setFilterType(v)}
                   >
-                    <SelectTrigger className="w-[160px] h-9 bg-background">
+                    <SelectTrigger className="w-full sm:w-[160px] h-9 bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -733,8 +740,8 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                 </div>
 
                 {filterType === "month" && (
-                  <>
-                    <div className="space-y-1.5">
+                  <div className="flex gap-4 w-full sm:w-auto">
+                    <div className="space-y-1.5 flex-1 sm:flex-none">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                         Month
                       </Label>
@@ -742,7 +749,7 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                         value={selectedMonth.toString()}
                         onValueChange={(v) => setSelectedMonth(parseInt(v))}
                       >
-                        <SelectTrigger className="w-[130px] h-9 bg-background">
+                        <SelectTrigger className="w-full sm:w-[130px] h-9 bg-background">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -754,7 +761,7 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 flex-1 sm:flex-none">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                         Year
                       </Label>
@@ -762,7 +769,7 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                         value={selectedYear.toString()}
                         onValueChange={(v) => setSelectedYear(parseInt(v))}
                       >
-                        <SelectTrigger className="w-[100px] h-9 bg-background">
+                        <SelectTrigger className="w-full sm:w-[100px] h-9 bg-background">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -774,12 +781,12 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                         </SelectContent>
                       </Select>
                     </div>
-                  </>
+                  </div>
                 )}
 
                 {filterType === "month-range" && (
-                  <div className="flex items-end gap-2">
-                    <div className="space-y-1.5">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2 flex-wrap sm:flex-nowrap">
+                    <div className="space-y-1.5 w-full sm:w-auto">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                         Starting Period
                       </Label>
@@ -816,10 +823,10 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                         </Select>
                       </div>
                     </div>
-                    <div className="h-9 flex items-center text-muted-foreground">
+                    <div className="hidden sm:flex h-9 items-center text-muted-foreground">
                       —
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 w-full sm:w-auto">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                         Ending Period
                       </Label>
@@ -860,8 +867,8 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                 )}
 
                 {filterType === "date-range" && (
-                  <>
-                    <div className="space-y-1.5">
+                  <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                    <div className="space-y-1.5 w-full sm:w-auto">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                         Start Date
                       </Label>
@@ -869,10 +876,10 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="h-9 w-[150px] bg-background"
+                        className="h-9 w-full sm:w-[150px] bg-background"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 w-full sm:w-auto">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                         End Date
                       </Label>
@@ -880,10 +887,10 @@ export default function DashboardPage({ overrideVendorId }: { overrideVendorId?:
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="h-9 w-[150px] bg-background"
+                        className="h-9 w-full sm:w-[150px] bg-background"
                       />
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </CardContent>

@@ -53,13 +53,13 @@ const Header = () => {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
-        isScrolled
-          ? "bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-gray-200 dark:border-slate-800 shadow-sm py-3"
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b w-full",
+        isScrolled || isMobileMenuOpen
+          ? "bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-gray-200 dark:border-slate-800 shadow-sm py-3"
           : "bg-transparent border-transparent py-5",
       )}
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 cursor-pointer">
@@ -312,7 +312,7 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-950 border-t border-gray-200 dark:border-slate-800 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200 h-[calc(100vh-80px)] overflow-y-auto">
+        <div className="md:hidden absolute top-full left-0 w-full h-[calc(100vh-80px)] bg-white dark:bg-slate-950 border-t border-gray-200 dark:border-slate-800 shadow-xl p-4 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200 overflow-y-auto">
           {navLinks.map((link) => (
             <Link
               key={link.name}

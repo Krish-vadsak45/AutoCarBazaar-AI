@@ -147,22 +147,27 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden p-2 sm:p-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Manage your platform, vendors, and settings.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline">Admin ID: {adminId}</Badge>
+          <Badge variant="outline" className="hidden sm:inline-flex">
+            Admin ID: {adminId}
+          </Badge>
           <Button
             variant="outline"
-            size="icon"
+            className="flex items-center gap-2"
             onClick={() => setShowNotifications(true)}
           >
             <Bell className="h-4 w-4" />
+            <span className="sm:hidden">Notifications</span>
           </Button>
         </div>
       </div>
@@ -180,20 +185,20 @@ export default function AdminDashboardPage() {
       {/* Pending requests card removed */}
       {/* Existing content placeholder if needed */}
 
-      <Card>
+      <Card className="w-full overflow-hidden">
         <CardHeader>
           <CardTitle>Approved Vendors</CardTitle>
           <CardDescription>
             Click on a vendor to view their dashboard and performance.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6 overflow-x-auto">
           {approvedVendors.length === 0 ? (
             <div className="text-center py-4 text-muted-foreground">
               No approved vendors found.
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[600px] w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead>Business Name</TableHead>
@@ -263,22 +268,26 @@ export default function AdminDashboardPage() {
 
       {/* Embedded Vendor Dashboard */}
       {selectedVendorId && (
-        <div className="mt-8 border-t pt-8 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold">
+        <div className="mt-8 border-t pt-8 animate-in fade-in slide-in-from-top-4 duration-500 w-full overflow-x-hidden">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-xl sm:text-2xl font-bold">
               Vendor Dashboard:{" "}
-              <span className="text-primary">
+              <span className="text-primary block sm:inline">
                 {
                   approvedVendors.find((v) => v._id === selectedVendorId)
                     ?.businessName
                 }
               </span>
             </h2>
-            <Button variant="ghost" onClick={() => setSelectedVendorId(null)}>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setSelectedVendorId(null)}
+            >
               Close Dashboard
             </Button>
           </div>
-          <div className="border rounded-xl p-4 bg-background/50 backdrop-blur-sm shadow-sm">
+          <div className="border rounded-xl p-2 sm:p-4 bg-background/50 backdrop-blur-sm shadow-sm w-full overflow-x-hidden">
             <DashboardPage overrideVendorId={selectedVendorId} />
           </div>
         </div>
