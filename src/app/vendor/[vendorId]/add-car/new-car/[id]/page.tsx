@@ -288,8 +288,9 @@ export default function CarFormPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {isEditMode ? "Edit Vehicle" : "Add New Vehicle"}
+            <div className="h-10 w-3 rounded-full bg-gradient-to-b from-blue-600 to-blue-400"></div>
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              {isEditMode ? "Edit Vehicle" : "Add Vehicle"}
             </h1>
             <VIPBadge priority={vendorPriority} />
           </div>

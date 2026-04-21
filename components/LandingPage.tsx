@@ -52,7 +52,7 @@ export default function LandingPage() {
     <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden mt-17 pb-55">
       {/* Background Image with Overlay */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 z-0 bg-cover bg-[75%_center] md:bg-center bg-no-repeat before:absolute before:inset-0 before:bg-slate-900/40 md:before:bg-transparent"
         style={{
           backgroundImage: "url('/landing_page_1.jpg')",
         }}
@@ -60,10 +60,10 @@ export default function LandingPage() {
 
       <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center py-20">
-          <h1 className="text-xl sm:text-2xl md:text-6xl font-extrabold tracking-tight text-[#225fbc] drop-shadow-lg">
+          <h1 className="text-2xl sm:text-2xl md:text-6xl font-extrabold tracking-tight text-[#225fbc] drop-shadow-lg">
             Rent The Perfect Ride. Effortless, Fast, Reliable.
           </h1>
-          <p className="mt-6 text-lg sm:text-xl text-white drop-shadow-md font-medium">
+          <p className="mt-6 text-md sm:text-xl text-white drop-shadow-md font-medium">
             Discover high-quality cars near you. Upload a photo of a car you
             like and we’ll find similar models available for rent.
           </p>

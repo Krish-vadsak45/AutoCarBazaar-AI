@@ -53,7 +53,7 @@ const Header = () => {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b w-full",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b w-screen",
         isScrolled || isMobileMenuOpen
           ? "bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-gray-200 dark:border-slate-800 shadow-sm py-3"
           : "bg-transparent border-transparent py-5",

@@ -69,9 +69,7 @@ export default function VendorCarsPage() {
   const [vendorPriority, setVendorPriority] = useState(1);
   const bulkUploadLocked = !canUseBulkUpload(vendorPriority);
   const paymentHref =
-    typeof vendorId === "string"
-      ? `/vendor/${vendorId}/payment`
-      : "/vendor";
+    typeof vendorId === "string" ? `/vendor/${vendorId}/payment` : "/vendor";
 
   // Fetch Cars + VIP tier on Mount
   useEffect(() => {
@@ -193,163 +191,293 @@ export default function VendorCarsPage() {
                 : "No cars listed yet."}
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* Header Row - Updated Grid Columns */}
-              <div className="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <span>Image</span>
-                <span>Make & Model</span>
-                <span>Year</span>
-                <span>Price</span>
-                <span>Status</span>
-                <span className="text-center">Featured</span>
-                <span className="text-right">Actions</span>
+            <>
+              {/* Mobile & Tablet Card View */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:hidden gap-4 md:gap-6">
+                {filteredCars.map((car) => (
+                  <div
+                    key={car._id}
+                    className="flex flex-col bg-[#141517] dark:bg-[#141517] border border-[#21212B] dark:border-[#21212B] rounded-2xl p-4 shadow-md hover:shadow-xl transition-all relative"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="h-[80px] w-[120px] bg-white rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-white/5 relative">
+                        {car.images && car.images.length > 0 ? (
+                          <Image
+                            src={car.images[0]}
+                            alt={car.title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <CarFront className="h-8 w-8 text-neutral-300" />
+                        )}
+                      </div>
+
+                      {/* 3 dots */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white -mr-2 -mt-2"
+                          >
+                            <MoreVertical className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-48 bg-[#1f2023] border-[#2c2d33] text-white"
+                        >
+                          <DropdownMenuLabel>Manage Vehicle</DropdownMenuLabel>
+                          <DropdownMenuSeparator className="bg-[#2c2d33]" />
+                          <Link href={`/cars/${car._id}`} target="_blank">
+                            <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white">
+                              <Eye className="mr-2 h-4 w-4 text-white/50" />{" "}
+                              View Live
+                            </DropdownMenuItem>
+                          </Link>
+                          <Link
+                            href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}
+                          >
+                            <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white">
+                              <Edit2 className="mr-2 h-4 w-4 text-white/50" />{" "}
+                              Edit Details
+                            </DropdownMenuItem>
+                          </Link>
+                          <DropdownMenuItem
+                            className="cursor-pointer focus:bg-white/10 focus:text-white"
+                            onClick={() =>
+                              handleToggleStatus(
+                                car._id,
+                                car.status || "available",
+                              )
+                            }
+                          >
+                            <ToggleLeft
+                              className={`mr-2 h-4 w-4 ${car.status === "available" ? "text-emerald-400" : "text-white/50"}`}
+                            />{" "}
+                            Mark as{" "}
+                            {car.status === "available"
+                              ? "Unavailable"
+                              : "Available"}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-[#2c2d33]" />
+                          <DropdownMenuItem
+                            className="text-red-400 focus:text-red-400 focus:bg-red-950/50 cursor-pointer"
+                            onClick={() => handleDelete(car._id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Listing
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Title & Subtitle */}
+                    <div className="mt-4">
+                      <h3 className="font-bold text-[20px] text-[#F3F4F6] tracking-tight truncate leading-tight">
+                        {car.specs?.make || "Unknown"} {car.specs?.model}
+                      </h3>
+                      <p className="text-[#9CA3AF] text-[14px] mt-0.5 truncate">
+                        {car.title}
+                      </p>
+                    </div>
+
+                    {/* 2x2 Details Grid */}
+                    <div className="grid grid-cols-2 gap-y-4 gap-x-2 mt-5">
+                      {/* Year */}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">
+                          Year
+                        </span>
+                        <span className="font-bold text-[#F3F4F6] text-[16px]">
+                          {car.specs?.year || "N/A"}
+                        </span>
+                      </div>
+
+                      {/* Price */}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">
+                          Price
+                        </span>
+                        <span className="font-bold text-[#f97316] text-[16px] tracking-tight">
+                          ${car.price.toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Status */}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">
+                          Status
+                        </span>
+                        <div className="mt-0.5">
+                          {car.status === "available" ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-transparent text-[#34d399] border-[#064e3b] font-medium px-2 py-0.5 whitespace-nowrap inline-flex items-center text-xs w-auto"
+                            >
+                              <CheckCircle2 className="h-3 w-3 mr-1.5" />
+                              Available
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="bg-transparent text-[#fb7185] border-[#881337] font-medium px-2 py-0.5 whitespace-nowrap inline-flex items-center text-xs w-auto"
+                            >
+                              <XCircle className="h-3 w-3 mr-1.5" />
+                              Unavailable
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Featured */}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">
+                          Featured
+                        </span>
+                        <div className="mt-0.5">
+                          {car.featured ? (
+                            <span className="text-[#4B5563] text-[16px] font-bold">
+                              Yes
+                            </span>
+                          ) : (
+                            <span className="text-[#4B5563] text-[16px] font-bold">
+                              No
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {filteredCars.map((car) => (
-                <div
-                  key={car._id}
-                  className="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_auto] items-center gap-4 p-3 rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-md transition-all group"
-                >
-                  {/* Image Column */}
-                  <div className="h-14 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden border">
-                    {car.images && car.images.length > 0 ? (
-                      <Image
-                        src={car.images[0]}
-                        alt={car.title}
-                        width={80}
-                        height={56}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <CarFront className="h-6 w-6 text-muted-foreground/50" />
-                    )}
-                  </div>
-
-                  {/* Make & Model Column */}
-                  <div className="flex flex-col min-w-0">
-                    <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
-                      {car.specs?.make || "Unknown"} {car.specs?.model}
-                    </h3>
-                    <p
-                      className="text-xs text-muted-foreground truncate"
-                      title={car.title}
-                    >
-                      {car.title}
-                    </p>
-                  </div>
-
-                  {/* Year Column */}
-                  <div className="text-sm font-medium">
-                    {car.specs?.year || "N/A"}
-                  </div>
-
-                  {/* Price Column */}
-                  <div className="font-bold text-sm">
-                    ${car.price.toLocaleString()}
-                  </div>
-
-                  {/* Status Column */}
-                  <div>
-                    {car.status === "available" ? (
-                      <Badge
-                        variant="outline"
-                        className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900 flex w-fit items-center gap-1"
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        Available
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900 flex w-fit items-center gap-1"
-                      >
-                        <XCircle className="h-3 w-3" />
-                        Unavailable
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Featured Column (Icon) */}
-                  <div className="flex justify-center">
-                    {car.featured ? (
-                      <div className="bg-amber-100 dark:bg-amber-900/30 p-1.5 rounded-full text-amber-600 dark:text-amber-400">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 4.427 1.102 6.617c.225 1.335-1.317 2.227-2.31 1.6l-4.577-2.77-4.577 2.77c-.993.627-2.535-.265-2.31-1.6l1.102-6.617-4.117-4.427c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground/30">-</span>
-                    )}
-                  </div>
-
-                  {/* Actions Column */}
-                  <div className="flex justify-end">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:bg-muted"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Manage Vehicle</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <Link href={`/cars/${car._id}`} target="_blank">
-                          <DropdownMenuItem className="cursor-pointer">
-                            <Eye className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
-                            View Live
-                          </DropdownMenuItem>
-                        </Link>
-                        <Link
-                          href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}
-                        >
-                          <DropdownMenuItem className="cursor-pointer">
-                            <Edit2 className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
-                            Edit Details
-                          </DropdownMenuItem>
-                        </Link>
-                        <DropdownMenuItem
-                          className="cursor-pointer"
-                          onClick={() =>
-                            handleToggleStatus(
-                              car._id,
-                              car.status || "available",
-                            )
-                          }
-                        >
-                          <ToggleLeft
-                            className={`mr-2 h-4 w-4 ${car.status === "available" ? "text-emerald-500" : "text-muted-foreground"}`}
-                          />{" "}
-                          Mark as{" "}
-                          {car.status === "available"
-                            ? "Unavailable"
-                            : "Available"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50 cursor-pointer"
-                          onClick={() => handleDelete(car._id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete Listing
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <div className="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_auto] gap-4 mb-4 text-sm font-medium text-muted-foreground px-4 py-2 bg-muted/50 rounded-lg">
+                  <div>Image</div>
+                  <div>Vehicle</div>
+                  <div>Year</div>
+                  <div>Price</div>
+                  <div>Status</div>
+                  <div>Featured</div>
+                  <div className="text-right">Actions</div>
                 </div>
-              ))}
-            </div>
+
+                <div className="space-y-2">
+                  {filteredCars.map((car) => (
+                    <div
+                      key={`table-${car._id}`}
+                      className="grid grid-cols-[80px_2fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center px-4 py-3 bg-card border rounded-lg hover:border-primary/50 transition-colors"
+                    >
+                      <div className="h-[60px] w-[80px] bg-muted rounded-md flex items-center justify-center overflow-hidden shrink-0 relative">
+                        {car.images && car.images.length > 0 ? (
+                          <Image
+                            src={car.images[0]}
+                            alt={car.title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <CarFront className="h-6 w-6 text-muted-foreground" />
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold truncate">
+                          {car.specs?.make || "Unknown"} {car.specs?.model}
+                        </h3>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {car.title}
+                        </p>
+                      </div>
+
+                      <div className="text-sm">{car.specs?.year || "N/A"}</div>
+
+                      <div className="font-medium">
+                        ${car.price.toLocaleString()}
+                      </div>
+
+                      <div>
+                        <Badge
+                          variant="secondary"
+                          className={`${
+                            car.status === "available"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                          }`}
+                        >
+                          {car.status === "available"
+                            ? "Available"
+                            : "Unavailable"}
+                        </Badge>
+                      </div>
+
+                      <div>
+                        {car.featured ? (
+                          <Badge variant="default">Featured</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">
+                            -
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <Link href={`/cars/${car._id}`} target="_blank">
+                              <DropdownMenuItem className="cursor-pointer">
+                                <Eye className="mr-2 h-4 w-4" /> View Live
+                              </DropdownMenuItem>
+                            </Link>
+                            <Link
+                              href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}
+                            >
+                              <DropdownMenuItem className="cursor-pointer">
+                                <Edit2 className="mr-2 h-4 w-4" /> Edit Details
+                              </DropdownMenuItem>
+                            </Link>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() =>
+                                handleToggleStatus(
+                                  car._id,
+                                  car.status || "available",
+                                )
+                              }
+                            >
+                              <ToggleLeft className="mr-2 h-4 w-4" /> Mark as{" "}
+                              {car.status === "available"
+                                ? "Unavailable"
+                                : "Available"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive cursor-pointer"
+                              onClick={() => handleDelete(car._id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

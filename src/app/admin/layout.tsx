@@ -23,7 +23,7 @@ export default function AdminLayout({
 
       <main className="md:ml-64 flex-1 min-w-0 flex flex-col">
         {/* Header */}
-        <header className="border-b border-border bg-card relative">
+        <header className="sticky top-0 z-30 border-b border-border bg-card">
           <div className="flex items-center justify-between px-8 py-4 max-md:px-4 max-md:pl-14">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold text-foreground">admin</h2>

@@ -60,15 +60,23 @@ export async function PATCH(req: Request) {
     const { workingHours } = await req.json();
 
     // Specific validation can go here if needed
+    // Strip `_id` to prevent Mongoose cast issues with subdocuments
+    const cleanHours = workingHours.map((h: any) => {
+      const { _id, ...rest } = h;
+      return rest;
+    });
 
-    vendor.workingHours = workingHours;
-    await vendor.save();
+    await Vendor.updateOne(
+      { _id: vendor._id },
+      { $set: { workingHours: cleanHours } },
+    );
 
     return NextResponse.json(
       { message: "Working hours updated", workingHours },
-      { status: 200 }
+      { status: 200 },
     );
-  } catch (error) {
+  } catch (error: any) {
+    console.error("PATCH working-hours error:", error.message || error);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }
