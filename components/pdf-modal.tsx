@@ -1,52 +1,71 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef } from "react";
-import { X, Download } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useGeneratePDF } from "@/hooks/use-generate-pdf";
-import { toast } from "react-toastify";
+import { useEffect, useState, useRef } from 'react';
+import { Download } from 'lucide-react';
+import { toast } from 'react-toastify';
+import Image from 'next/image';
+import mongoose from 'mongoose';
+
+import { useGeneratePDF } from '@/hooks/use-generate-pdf';
+import { ICar } from '@/models/car.model';
+import { CarListItem } from '@/src/types';
+
+type PDFCarData = Pick<
+  ICar,
+  'title' | 'price' | 'image' | 'images' | 'transmission' | 'bodyType' | 'description' | 'features' | 'tags' | 'specs'
+> & {
+  _id: string | mongoose.Types.ObjectId;
+};
 
 interface PDFModalProps {
   isOpen: boolean;
   onClose: () => void;
-  carData: any;
+  carData: PDFCarData | CarListItem | null;
 }
 
 export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
   const { generatePDF } = useGeneratePDF();
   const reportRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+  const referenceId = carData?._id ? carData._id.toString().slice(-8).toUpperCase() : null;
 
   const PLACEHOLDER =
-    "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800";
+    'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800';
 
   // Fill images with placeholder if they are missing
   const images = [...(carData?.images || [])];
-  if (images.length === 0 && carData?.image) images.push(carData.image);
-  while (images.length < 3) images.push(PLACEHOLDER);
+  if (images.length === 0 && carData?.image) {
+    images.push(carData.image);
+  }
+  while (images.length < 3) {
+    images.push(PLACEHOLDER);
+  }
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "unset";
+    document.body.style.overflow = isOpen ? 'hidden' : 'unset';
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
 
   const handleDownload = async () => {
-    if (!reportRef.current) return;
+    if (!reportRef.current) {
+      return;
+    }
     setIsGenerating(true);
     try {
       await generatePDF(reportRef.current, carData?.title);
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF. Please try again.");
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div
@@ -92,7 +111,7 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                 {/* Image Grid */}
                 <div className="grid grid-cols-3 gap-5">
                   <div className="col-span-2 relative aspect-[16/10] rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/5">
-                    <img
+                    <Image
                       src={images[0]}
                       alt="Primary View"
                       className="w-full h-full object-cover"
@@ -103,18 +122,10 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                   </div>
                   <div className="flex flex-col gap-5">
                     <div className="flex-1 rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/5">
-                      <img
-                        src={images[1]}
-                        className="w-full h-full object-cover"
-                        alt="View 2"
-                      />
+                      <Image src={images[1]} className="w-full h-full object-cover" alt="View 2" />
                     </div>
                     <div className="flex-1 rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/5">
-                      <img
-                        src={images[2]}
-                        className="w-full h-full object-cover"
-                        alt="View 3"
-                      />
+                      <Image src={images[2]} className="w-full h-full object-cover" alt="View 3" />
                     </div>
                   </div>
                 </div>
@@ -130,46 +141,46 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                   <div className="grid grid-cols-3 gap-5">
                     {[
                       {
-                        label: "Make & Model",
+                        label: 'Make & Model',
                         value: `${carData?.specs?.make} ${carData?.specs?.model}`,
-                        icon: "🚗",
+                        icon: '🚗',
                       },
                       {
-                        label: "Year",
+                        label: 'Year',
                         value: carData?.specs?.year,
-                        icon: "📅",
+                        icon: '📅',
                       },
                       {
-                        label: "Fuel Type",
+                        label: 'Fuel Type',
                         value: carData?.specs?.fuelType,
-                        icon: "⛽",
+                        icon: '⛽',
                       },
                       {
-                        label: "Mileage",
+                        label: 'Mileage',
                         value: carData?.specs?.mileage,
-                        icon: "⏲️",
+                        icon: '⏲️',
                       },
                       {
-                        label: "Transmission",
+                        label: 'Transmission',
                         value: carData?.transmission,
-                        icon: "⚙️",
+                        icon: '⚙️',
                       },
                       {
-                        label: "Color",
+                        label: 'Color',
                         value: carData?.specs?.color,
-                        icon: "🎨",
+                        icon: '🎨',
                       },
                       {
-                        label: "Body Architecture",
+                        label: 'Body Architecture',
                         value: carData?.bodyType,
-                        icon: "🚙",
+                        icon: '🚙',
                       },
                       {
-                        label: "Owner Serial",
-                        value: "First Owner",
-                        icon: "👤",
+                        label: 'Owner Serial',
+                        value: 'First Owner',
+                        icon: '👤',
                       },
-                      { label: "Reg. State", value: "Delhi", icon: "📍" },
+                      { label: 'Reg. State', value: 'Delhi', icon: '📍' },
                     ].map((spec, i) => (
                       <div
                         key={i}
@@ -183,7 +194,7 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                             {spec.label}
                           </p>
                           <p className="text-sm font-bold text-slate-900">
-                            {spec.value || "Verifying..."}
+                            {spec.value || 'Verifying...'}
                           </p>
                         </div>
                       </div>
@@ -216,11 +227,7 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                   </div>
                   <div className="relative p-10 rounded-3xl bg-slate-50 border border-slate-100 italic text-slate-600 leading-loose text-base shadow-inner">
                     <div className="absolute top-6 right-8 text-slate-200 opacity-50">
-                      <svg
-                        className="w-16 h-16"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                      <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
                       </svg>
                     </div>
@@ -245,9 +252,7 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                         <div className="w-6 h-6 rounded-full border-[3px] border-[#fbbf24] flex items-center justify-center shrink-0">
                           <div className="w-2 h-2 bg-[#fbbf24] rounded-full" />
                         </div>
-                        <span className="text-base font-bold text-slate-700">
-                          {f}
-                        </span>
+                        <span className="text-base font-bold text-slate-700">{f}</span>
                       </div>
                     ))}
                   </div>
@@ -283,16 +288,13 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                     </div>
                     <div className="grid grid-cols-1 gap-3 text-sm text-white/50 font-medium">
                       <div className="flex items-center gap-3">
-                        <span className="text-[#fbbf24]">📞</span> +91 XXX XXX
-                        XXXX
+                        <span className="text-[#fbbf24]">📞</span> +91 XXX XXX XXXX
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-[#fbbf24]">✉️</span>{" "}
-                        support@autocarbazaar.com
+                        <span className="text-[#fbbf24]">✉️</span> support@autocarbazaar.com
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-[#fbbf24]">📍</span> New Delhi -
-                        HQ, India
+                        <span className="text-[#fbbf24]">📍</span> New Delhi - HQ, India
                       </div>
                     </div>
                   </div>
@@ -301,24 +303,21 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
                       Report Valid Until
                     </p>
                     <p className="text-xl font-black mb-4">
-                      {new Date(
-                        Date.now() + 30 * 24 * 60 * 60 * 1000,
-                      ).toLocaleDateString("en-US", {
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
+                      {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
                       })}
                     </p>
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
                       <p className="text-[#fbbf24] text-xs font-black uppercase tracking-widest">
-                        REF ID: {carData?._id?.slice(-8).toUpperCase()}
+                        REF ID: {referenceId}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="pt-10 border-t border-white/5 text-center text-[10px] text-white/20 uppercase tracking-[0.4em] font-medium">
-                  © 2026 AutoCarBazaar Digital. Verified Vehicle Intelligence
-                  Report.
+                  © 2026 AutoCarBazaar Digital. Verified Vehicle Intelligence Report.
                 </div>
               </div>
             </div>
@@ -339,7 +338,7 @@ export function PDFModal({ isOpen, onClose, carData }: PDFModalProps) {
             className="px-10 py-3 bg-slate-900 hover:bg-black text-white rounded-xl font-bold transition-all shadow-xl shadow-slate-200 flex items-center gap-3 hover:-translate-y-0.5"
           >
             <Download className="w-5 h-5" />
-            {isGenerating ? "Exporting PDF..." : "Export Official PDF"}
+            {isGenerating ? 'Exporting PDF...' : 'Export Official PDF'}
           </button>
         </div>
       </div>

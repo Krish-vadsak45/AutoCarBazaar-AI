@@ -1,6 +1,7 @@
-"use client";
-import AboutUsHero from "@/components/AboutUsHero";
-import React from "react";
+'use client';
+import React from 'react';
+
+import AboutUsHero from '@/components/AboutUsHero';
 
 function page() {
   return (

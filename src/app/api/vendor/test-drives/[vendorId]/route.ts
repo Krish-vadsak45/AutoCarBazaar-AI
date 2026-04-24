@@ -1,13 +1,16 @@
-import { NextResponse } from "next/server";
-import connectToDatabase from "@/lib/db";
-import TestDrive from "@/models/test-drive.model";
-import Car from "@/models/car.model";
-import User from "@/models/user.model";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../auth/[...nextauth]/route";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+
+import connectToDatabase from '@/lib/db';
+import { getErrorMessage } from '@/lib/errors';
+import TestDrive from '@/models/test-drive.model';
+import Car from '@/models/car.model';
+import User from '@/models/user.model';
+
+import { authOptions } from '../../../auth/[...nextauth]/route';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ vendorId: string }> }
 ) {
   try {
@@ -15,16 +18,13 @@ export async function GET(
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { vendorId } = await params;
 
     if (!vendorId) {
-      return NextResponse.json(
-        { error: "Vendor ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Vendor ID is required' }, { status: 400 });
     }
 
     // Optional: Add authorization check here if you want to restrict who can see what.
@@ -32,23 +32,23 @@ export async function GET(
 
     const testDrives = await TestDrive.find({ vendorId })
       .populate({
-        path: "carId",
-        select: "title image images price",
+        path: 'carId',
+        select: 'title image images price',
         model: Car,
       })
       .populate({
-        path: "userId",
-        select: "name email",
+        path: 'userId',
+        select: 'name email',
         model: User,
       })
       .lean()
       .sort({ createdAt: -1 });
 
     return NextResponse.json(testDrives, { status: 200 });
-  } catch (error: any) {
-    console.error("Error fetching vendor test drives:", error);
+  } catch (error: unknown) {
+    console.error('Error fetching vendor test drives:', error);
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: getErrorMessage(error, 'Internal Server Error') },
       { status: 500 }
     );
   }

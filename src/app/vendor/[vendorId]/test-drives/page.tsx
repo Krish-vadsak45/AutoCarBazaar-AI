@@ -1,45 +1,31 @@
-"use client";
+'use client';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Search, Calendar, Clock, User, MapPin, MoreVertical, Eye, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import axios from 'axios';
+import Image from 'next/image';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Loading from "@/components/Loading";
-import { Badge } from "@/components/ui/badge";
-import {
-  Search,
-  Calendar,
-  Clock,
-  User,
-  MapPin,
-  MoreVertical,
-  Eye,
-  X,
-  Loader2,
-} from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import axios from "axios";
+} from '@/components/ui/dropdown-menu';
+import Loading from '@/components/Loading';
+import { Badge } from '@/components/ui/badge';
 
-type Status = "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+type Status = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
 
 interface TestDriveData {
   id: string;
@@ -56,24 +42,20 @@ interface TestDriveData {
 }
 
 const statusColors: Record<Status, string> = {
-  PENDING:
-    "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300",
-  CONFIRMED:
-    "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300",
-  COMPLETED: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300",
-  CANCELLED: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300",
+  PENDING: 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300',
+  CONFIRMED: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300',
+  COMPLETED: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300',
+  CANCELLED: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300',
 };
 
 export default function TestDrivesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [drives, setDrives] = useState<TestDriveData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Accept delivery flow
-  const [acceptingDrive, setAcceptingDrive] = useState<TestDriveData | null>(
-    null,
-  );
+  const [acceptingDrive, setAcceptingDrive] = useState<TestDriveData | null>(null);
 
   useEffect(() => {
     fetchTestDrives();
@@ -82,25 +64,42 @@ export default function TestDrivesPage() {
   const fetchTestDrives = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/vendor/test-drives");
-      const data = response.data;
+      const response = await axios.get('/api/vendor/test-drives');
+      const data = response.data as Array<{
+        _id: string;
+        startDate: string;
+        startTime: string;
+        endTime: string;
+        notes?: string;
+        status: Status;
+        isDelivery?: boolean;
+        address?: string;
+        carId?: {
+          _id?: string;
+          title?: string;
+          image?: string;
+          images?: string[];
+        };
+        userId?: {
+          name?: string;
+        };
+      }>;
 
-      const formattedData: TestDriveData[] = data.map((item: any) => ({
+      const formattedData: TestDriveData[] = data.map((item) => ({
         id: item._id,
-        carId: item.carId?._id || "",
-        car: item.carId?.title || "Unknown Car",
-        date: new Date(item.startDate).toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
+        carId: item.carId?._id || '',
+        car: item.carId?.title || 'Unknown Car',
+        date: new Date(item.startDate).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         }),
         time: `${item.startTime} - ${item.endTime}`,
-        customer: item.userId?.name || "Anonymous",
+        customer: item.userId?.name || 'Anonymous',
         status: item.status as Status,
-        notes: item.notes || "No notes provided",
-        image:
-          item.carId?.image || item.carId?.images?.[0] || "/placeholder.svg",
+        notes: item.notes || 'No notes provided',
+        image: item.carId?.image || item.carId?.images?.[0] || '/placeholder.svg',
         isDelivery: item.isDelivery || false,
         address: item.address,
       }));
@@ -108,7 +107,7 @@ export default function TestDrivesPage() {
       setDrives(formattedData);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load test drives");
+      toast.error('Failed to load test drives');
     } finally {
       setIsLoading(false);
     }
@@ -118,27 +117,22 @@ export default function TestDrivesPage() {
     const matchesSearch =
       drive.car.toLowerCase().includes(searchQuery.toLowerCase()) ||
       drive.customer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || drive.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || drive.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const updateStatus = async (driveId: string, newStatus: string) => {
     try {
-      await axios.patch("/api/vendor/test-drives", {
+      await axios.patch('/api/vendor/test-drives', {
         id: driveId,
         status: newStatus,
       });
 
-      setDrives(
-        drives.map((d) =>
-          d.id === driveId ? { ...d, status: newStatus as Status } : d,
-        ),
-      );
+      setDrives(drives.map((d) => (d.id === driveId ? { ...d, status: newStatus as Status } : d)));
       toast.success(`Status updated to ${newStatus}`);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update status");
+      toast.error('Failed to update status');
     }
   };
 
@@ -147,17 +141,17 @@ export default function TestDrivesPage() {
   };
 
   const handleConfirmAccept = async () => {
-    if (!acceptingDrive) return;
-    await updateStatus(acceptingDrive.id, "CONFIRMED");
+    if (!acceptingDrive) {
+      return;
+    }
+    await updateStatus(acceptingDrive.id, 'CONFIRMED');
     setAcceptingDrive(null);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Test Drive Management
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Test Drive Management</h1>
         <p className="text-muted-foreground mt-2">
           Manage all test drive reservations and update their status
         </p>
@@ -207,8 +201,8 @@ export default function TestDrivesPage() {
               >
                 {/* Car Image */}
                 <div className="md:w-48 flex-shrink-0">
-                  <img
-                    src={drive.image || "/placeholder.svg"}
+                  <Image
+                    src={drive.image || '/placeholder.svg'}
                     alt={drive.car}
                     className="w-full h-32 md:h-40 rounded-lg object-cover"
                   />
@@ -219,39 +213,27 @@ export default function TestDrivesPage() {
                   {/* Header with Status */}
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                     <div className="space-y-1">
-                      <h3 className="text-lg font-semibold text-foreground">
-                        {drive.car}
-                      </h3>
+                      <h3 className="text-lg font-semibold text-foreground">{drive.car}</h3>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge
-                          className={
-                            statusColors[drive.status] || "bg-gray-100"
-                          }
-                        >
+                        <Badge className={statusColors[drive.status] || 'bg-gray-100'}>
                           {drive.status}
                         </Badge>
-                        {drive.isDelivery && (
+                        {drive.isDelivery ? (
                           <Badge className="bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 gap-1">
                             <MapPin className="h-3 w-3" />
                             DELIVERY
                           </Badge>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "PENDING")}
-                        >
+                        <DropdownMenuItem onClick={() => updateStatus(drive.id, 'PENDING')}>
                           <div className="h-2 w-2 rounded-full bg-orange-500 mr-2" />
                           Pending
                         </DropdownMenuItem>
@@ -259,21 +241,17 @@ export default function TestDrivesPage() {
                           onClick={() =>
                             drive.isDelivery
                               ? openAcceptPanel(drive)
-                              : updateStatus(drive.id, "CONFIRMED")
+                              : updateStatus(drive.id, 'CONFIRMED')
                           }
                         >
                           <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
                           Confirmed
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "COMPLETED")}
-                        >
+                        <DropdownMenuItem onClick={() => updateStatus(drive.id, 'COMPLETED')}>
                           <div className="h-2 w-2 rounded-full bg-blue-500 mr-2" />
                           Completed
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => updateStatus(drive.id, "CANCELLED")}
-                        >
+                        <DropdownMenuItem onClick={() => updateStatus(drive.id, 'CANCELLED')}>
                           <div className="h-2 w-2 rounded-full bg-red-500 mr-2" />
                           Cancelled
                         </DropdownMenuItem>
@@ -295,12 +273,12 @@ export default function TestDrivesPage() {
                       <User className="h-4 w-4 flex-shrink-0" />
                       <span>{drive.customer}</span>
                     </div>
-                    {drive.isDelivery && drive.address && (
+                    {drive.isDelivery && drive.address ? (
                       <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
                         <MapPin className="h-4 w-4 flex-shrink-0" />
                         <span>{drive.address}</span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* Notes Section */}
@@ -312,22 +290,13 @@ export default function TestDrivesPage() {
 
                   {/* Actions */}
                   <div className="flex gap-2 flex-wrap pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 bg-transparent"
-                      asChild
-                    >
-                      <a
-                        href={`/car/${drive.carId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                    <Button variant="outline" size="sm" className="gap-2 bg-transparent" asChild>
+                      <a href={`/car/${drive.carId}`} target="_blank" rel="noopener noreferrer">
                         <Eye className="h-4 w-4" />
                         View Car
                       </a>
                     </Button>
-                    {drive.status === "PENDING" && drive.isDelivery && (
+                    {drive.status === 'PENDING' && drive.isDelivery ? (
                       <Button
                         size="sm"
                         className="gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -336,13 +305,13 @@ export default function TestDrivesPage() {
                         <MapPin className="h-4 w-4" />
                         Accept Delivery
                       </Button>
-                    )}
-                    {drive.status === "PENDING" && (
+                    ) : null}
+                    {drive.status === 'PENDING' && (
                       <Button
                         variant="destructive"
                         size="sm"
                         className="gap-2"
-                        onClick={() => updateStatus(drive.id, "CANCELLED")}
+                        onClick={() => updateStatus(drive.id, 'CANCELLED')}
                       >
                         <X className="h-4 w-4" />
                         Cancel
@@ -363,7 +332,7 @@ export default function TestDrivesPage() {
                           Customer Location
                         </label>
                         <p className="text-sm text-foreground bg-white dark:bg-slate-800 border border-border rounded-lg px-3 py-2">
-                          {drive.address || "Not provided"}
+                          {drive.address || 'Not provided'}
                         </p>
                       </div>
 
@@ -393,9 +362,7 @@ export default function TestDrivesPage() {
             ))
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No test drives found matching your filters.
-              </p>
+              <p className="text-muted-foreground">No test drives found matching your filters.</p>
             </div>
           )}
         </CardContent>

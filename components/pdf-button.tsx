@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { FileText } from "lucide-react";
+import { FileText } from 'lucide-react';
 
 interface PDFButtonProps {
   onClick: () => void;

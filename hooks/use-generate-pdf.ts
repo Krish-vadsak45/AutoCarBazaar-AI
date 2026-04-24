@@ -1,40 +1,46 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { toJpeg } from "html-to-image";
-import jsPDF from "jspdf";
-import { toast } from "react-toastify";
+import { useCallback } from 'react';
+import { toJpeg } from 'html-to-image';
+import jsPDF from 'jspdf';
+import { toast } from 'react-toastify';
 
 export const useGeneratePDF = () => {
-  const generatePDF = useCallback(
-    async (container: HTMLElement, title?: string) => {
-      if (!container) return;
+  const generatePDF = useCallback(async (container: HTMLElement, title?: string) => {
+    if (!container) {
+      return;
+    }
 
     try {
       const pages = Array.from(container.children) as HTMLElement[];
-      if (pages.length === 0) pages.push(container);
+      if (pages.length === 0) {
+        pages.push(container);
+      }
 
       // We'll initialize the PDF on the first page to get correct dimensions
       let pdf: jsPDF | null = null;
 
       for (let i = 0; i < pages.length; i++) {
         const page = pages[i];
-        
+
         // Ensure all images are ready
-        const imgs = Array.from(page.getElementsByTagName("img"));
+        const imgs = Array.from(page.getElementsByTagName('img'));
         await Promise.all(
-          imgs.map((img) => {
-            return new Promise((resolve) => {
-              if (img.complete && img.naturalHeight !== 0) return resolve(true);
-              const testImg = new Image();
-              testImg.onload = () => resolve(true);
-              testImg.onerror = () => {
-                img.style.visibility = "hidden";
-                resolve(false);
-              };
-              testImg.src = img.src;
-            });
-          })
+          imgs.map(
+            (img) =>
+              new Promise((resolve) => {
+                if (img.complete && img.naturalHeight !== 0) {
+                  return resolve(true);
+                }
+                const testImg = new Image();
+                testImg.onload = () => resolve(true);
+                testImg.onerror = () => {
+                  img.style.visibility = 'hidden';
+                  resolve(false);
+                };
+                testImg.src = img.src;
+              })
+          )
         );
 
         // Allow styling to settle
@@ -44,7 +50,7 @@ export const useGeneratePDF = () => {
         const dataUrl = await toJpeg(page, {
           quality: 1.0,
           pixelRatio: 2, // Sharpness
-          backgroundColor: "#ffffff",
+          backgroundColor: '#ffffff',
           cacheBust: true,
           skipFonts: false,
         });
@@ -60,34 +66,32 @@ export const useGeneratePDF = () => {
 
         if (!pdf) {
           pdf = new jsPDF({
-            orientation: "p",
-            unit: "mm",
+            orientation: 'p',
+            unit: 'mm',
             format: [pdfWidth, pdfHeight],
-            compress: true
+            compress: true,
           });
         } else {
-          pdf.addPage([pdfWidth, pdfHeight], "p");
+          pdf.addPage([pdfWidth, pdfHeight], 'p');
         }
 
         // Add image without stretching
-        pdf.addImage(dataUrl, "JPEG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
       }
 
       if (pdf) {
-        pdf.save(`${title?.replace(/ /g, "_") || "Vehicle"}_Report.pdf`);
+        pdf.save(`${title?.replace(/ /g, '_') || 'Vehicle'}_Report.pdf`);
       }
-    } catch (error: any) {
-        console.error("PDF generation failed:", error);
-        // We check if it's the "Event" error which usually means a specific resource failed
-        const msg = error?.message || "Internal Capture Error";
-        toast.error(
-          `Export Error: ${msg}. Please try scrolling through the preview once before exporting.`,
-        );
-        throw error;
-      }
-    },
-    [],
-  );
+    } catch (error: unknown) {
+      console.error('PDF generation failed:', error);
+      // We check if it's the "Event" error which usually means a specific resource failed
+      const msg = error instanceof Error ? error.message : 'Internal Capture Error';
+      toast.error(
+        `Export Error: ${msg}. Please try scrolling through the preview once before exporting.`
+      );
+      throw error;
+    }
+  }, []);
 
   return { generatePDF };
 };

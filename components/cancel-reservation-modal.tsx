@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { X, AlertTriangle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from 'react';
+import { X, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+import { Button } from '@/components/ui/button';
 
 interface ReservationData {
   _id: string;
@@ -25,19 +26,18 @@ export function CancelReservationModal({
 }: CancelReservationModalProps) {
   // Prevent body scroll when modal is open
   useEffect(() => {
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     };
   }, []);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
     });
-  };
 
   return (
     <AnimatePresence>
@@ -82,10 +82,9 @@ export function CancelReservationModal({
               <span className="font-semibold text-gray-900 dark:text-gray-200">
                 {reservation.title}
               </span>
-              <br /> on{" "}
+              <br /> on{' '}
               <span className="font-semibold text-gray-900 dark:text-gray-200">
-                {formatDate(reservation.selectedDate)} at{" "}
-                {reservation.selectedTime}
+                {formatDate(reservation.selectedDate)} at {reservation.selectedTime}
               </span>
               .
               <br /> This action cannot be undone.

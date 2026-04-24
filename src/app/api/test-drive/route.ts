@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
-import connectToDatabase from "@/lib/db";
-import TestDrive from "@/models/test-drive.model";
-import Vendor from "@/models/vendor.model";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
-import transporter from "@/lib/nodemailer";
-import { toast } from "react-toastify";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+
+import connectToDatabase from '@/lib/db';
+import TestDrive from '@/models/test-drive.model';
+import Vendor from '@/models/vendor.model';
+import { ICar, IVendor } from '@/src/types';
+
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function POST(request: Request) {
   try {
@@ -13,36 +14,21 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const {
-      carId,
-      startDate,
-      endDate,
-      startTime,
-      endTime,
-      notes,
-      isDelivery,
-      userLocation,
-    } = body;
+    const { carId, startDate, endDate, startTime, endTime, notes, isDelivery, userLocation } = body;
 
     if (!carId || !startDate || !endDate || !startTime || !endTime) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-    console.log("Session:", session);
-    // Use _id as defined in NextAuth session callback
-    const userId = (session.user as any)._id;
+    console.log('Session:', session);
+    // Use _id from session (properly typed via next-auth module augmentation)
+    const userId = session.user._id;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "User ID not found in session" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'User ID not found in session' }, { status: 400 });
     }
 
     // Find the vendor that owns this car
@@ -57,46 +43,36 @@ export async function POST(request: Request) {
       startTime,
       endTime,
       notes,
-      status: "PENDING",
+      status: 'PENDING',
       isDelivery: isDelivery ?? false,
       address: userLocation?.address || undefined,
     });
-    console.log("New Test Drive created: ", newTestDrive);
+    console.log('New Test Drive created: ', newTestDrive);
     const populatedTestDrive = await newTestDrive.populate([
-      { path: "userId" },
-      { path: "carId" },
-      { path: "vendorId" },
+      { path: 'userId' },
+      { path: 'carId' },
+      { path: 'vendorId' },
     ]);
 
-    const mailOptions = {
-      from: "samarthgabani2005@gmail.com",
+    const carDetails = populatedTestDrive.carId as unknown as ICar;
+    const vendorDetails = populatedTestDrive.vendorId as unknown as IVendor;
 
-      // populatedTestDrive.userId.email
-      to: "samarthpatel1011@gmail.com",
-
-      subject: `Test Drive Request Confirmation - ${(populatedTestDrive.carId as any).title}`,
-
+    // TODO: Send email confirmation using transporter
+    const _mailOptions = {
+      from: 'samarthgabani2005@gmail.com',
+      to: 'samarthpatel1011@gmail.com',
+      subject: `Test Drive Request Confirmation - ${carDetails.title}`,
       html: `
-        <h2>Test Drive Confirmation</h2>
-    
-        <p>Dear ${(populatedTestDrive.userId as any).name},</p>
-    
         <p>Your test drive request has been successfully submitted. Below are your booking details:</p>
     
         <ul>
           <li><strong>Request ID:</strong> ${populatedTestDrive._id}</li>
-          <li><strong>Car:</strong> ${(populatedTestDrive.carId as any).title}</li>
-          <li><strong>Dealer:</strong> ${
-            (populatedTestDrive.vendorId as any)?.businessName || "Admin"
-          }</li>
-          <li><strong>Location:</strong> ${
-            (populatedTestDrive.vendorId as any)?.address?.city || ""
-          }, ${(populatedTestDrive.vendorId as any)?.address?.state || "N/A"}</li>
+          <li><strong>Car:</strong> ${carDetails.title}</li>
+          <li><strong>Dealer:</strong> ${vendorDetails?.businessName || 'Admin'}</li>
+          <li><strong>Location:</strong> ${vendorDetails?.address || 'N/A'}</li>
           <li><strong>Date:</strong> ${new Date(
-            populatedTestDrive.startDate,
-          ).toDateString()} - ${new Date(
-            populatedTestDrive.endDate,
-          ).toDateString()}</li>
+            populatedTestDrive.startDate
+          ).toDateString()} - ${new Date(populatedTestDrive.endDate).toDateString()}</li>
           <li><strong>Time:</strong> ${populatedTestDrive.startTime} - ${
             populatedTestDrive.endTime
           }</li>
@@ -105,10 +81,7 @@ export async function POST(request: Request) {
     
         <p>If you need assistance, please contact the dealer.</p>
     
-        <p>Thank you for choosing ${
-          (populatedTestDrive.vendorId as any)?.businessName ||
-          "Auto Car Bazaar"
-        }.</p>
+        <p>Thank you for choosing ${vendorDetails?.businessName || 'Auto Car Bazaar'}.</p>
       `,
     };
 
@@ -122,14 +95,12 @@ export async function POST(request: Request) {
     // });
 
     return NextResponse.json(
-      { message: "Test drive booked successfully", testDrive: newTestDrive },
-      { status: 201 },
+      { message: 'Test drive booked successfully', testDrive: newTestDrive },
+      { status: 201 }
     );
-  } catch (error: any) {
-    console.error("Error booking test drive:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : 'Internal Server Error';
+    console.error('Error booking test drive:', error);
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

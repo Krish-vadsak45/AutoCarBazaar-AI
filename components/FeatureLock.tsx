@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { ReactNode } from "react";
-import Link from "next/link";
-import { Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ReactNode } from 'react';
+import Link from 'next/link';
+import { Lock } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
 
 type FeatureLockProps = {
   locked: boolean;
@@ -18,16 +19,23 @@ type FeatureLockProps = {
 export function FeatureLock({
   locked,
   children,
-  title = "Upgrade required",
+  title = 'Upgrade required',
   description,
-  upgradeHref = "/vendor",
-  upgradeLabel = "View plans",
+  upgradeHref = '/vendor',
+  upgradeLabel = 'View plans',
   className,
 }: FeatureLockProps) {
-  if (!locked) return <>{children}</>;
+  if (!locked) {
+    return <>{children}</>;
+  }
 
   return (
-    <div className={cn("relative rounded-lg border border-dashed border-muted-foreground/30", className)}>
+    <div
+      className={cn(
+        'relative rounded-lg border border-dashed border-muted-foreground/30',
+        className
+      )}
+    >
       <div className="pointer-events-none select-none opacity-[0.22] blur-[1px] grayscale">
         {children}
       </div>

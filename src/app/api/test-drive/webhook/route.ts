@@ -1,73 +1,69 @@
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { stripe } from "@/lib/stripe";
-import connectToDatabase from "@/lib/db";
-import TestDrive from "@/models/test-drive.model";
-import Vendor from "@/models/vendor.model";
+import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import type Stripe from 'stripe';
+
+import { stripe } from '@/lib/stripe';
+import connectToDatabase from '@/lib/db';
+import TestDrive from '@/models/test-drive.model';
+import Vendor from '@/models/vendor.model';
+import { IVendor } from '@/models/vendor.model';
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = (await headers()).get("stripe-signature");
+  const signature = (await headers()).get('stripe-signature');
 
   if (!signature || !endpointSecret) {
-    return NextResponse.json(
-      { error: "Missing signature or secret" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Missing signature or secret' }, { status: 400 });
   }
 
   let event;
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, endpointSecret);
-  } catch (err: any) {
-    console.error(`Webhook Error: ${err.message}`);
-    return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
-      { status: 400 },
-    );
+  } catch (err) {
+    console.error('Webhook Error:', err);
+    const message = err instanceof Error ? err.message : 'Unknown Webhook Error';
+    return NextResponse.json({ error: `Webhook Error: ${message}` }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as any;
-    const { metadata } = session;
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const metadata = session.metadata ?? {};
 
     try {
-      console.log("---- Webhook Hit ----");
-      console.log("Stripe Event Metadata:", metadata);
+      console.log('---- Webhook Hit ----');
+      console.log('Stripe Event Metadata:', metadata);
 
       await connectToDatabase();
 
-      if (metadata.type === "vendor_registration") {
+      if (metadata.type === 'vendor_registration') {
         const vendor = await Vendor.findById(metadata.vendorId);
         if (vendor) {
           await Vendor.findByIdAndUpdate(metadata.vendorId, {
             isActive: true,
             isVerified: true, // Also set isVerified to true as payment is successful
           });
-          console.log(
-            `Vendor ${vendor._id} activated and verified via Stripe payment.`,
-          );
+          console.log(`Vendor ${vendor._id} activated and verified via Stripe payment.`);
         }
         return NextResponse.json({ received: true });
       }
 
-      if (metadata.type === "vip_subscription") {
+      if (metadata.type === 'vip_subscription') {
         const vendor = await Vendor.findById(metadata.vendorId);
         if (vendor) {
-          vendor.subscriptionStatus = "ACTIVE";
+          vendor.subscriptionStatus = 'ACTIVE';
           await vendor.save();
           console.log(`Vendor ${vendor._id} upgraded to VIP ACTIVE status!`);
         }
         return NextResponse.json({ received: true });
       }
 
-      let vendor: any = undefined;
+      let vendor: IVendor | null | undefined = undefined;
 
       // First try to find by the vendorId explicitly passed in metadata
-      if (metadata.vendorId && metadata.vendorId !== "") {
+      if (metadata.vendorId && metadata.vendorId !== '') {
         vendor = await Vendor.findById(metadata.vendorId);
       }
 
@@ -80,33 +76,27 @@ export async function POST(req: Request) {
           const allVendors = await Vendor.find({});
           vendor =
             allVendors.find((v) =>
-              v.cars.some((id) => id.toString() === metadata.carId.toString()),
+              v.cars.some((id) => id.toString() === metadata.carId.toString())
             ) || undefined;
         }
       }
 
-      console.log("---- DEBUG VENDOR ----");
-      console.log(
-        "Vendor found for webhook update:",
-        vendor ? vendor._id : "None found!",
-      );
-      console.log("----------------------");
+      console.log('---- DEBUG VENDOR ----');
+      console.log('Vendor found for webhook update:', vendor ? vendor._id : 'None found!');
+      console.log('----------------------');
 
-      const isDelivery = metadata.isDelivery === "true";
+      const isDelivery = metadata.isDelivery === 'true';
       const actualAddress = metadata.userLocationAddress || undefined;
 
-      console.log(
-        "Webhook processed address:",
-        actualAddress,
-        "IsDelivery:",
-        isDelivery,
-      );
+      console.log('Webhook processed address:', actualAddress, 'IsDelivery:', isDelivery);
 
       // Fix: metadata from Stripe is always string, we need to cast to Number precisely
       const feeAmount =
-        typeof metadata.bookingFeeAmount !== "undefined"
-          ? Number(metadata.bookingFeeAmount)
-          : 0;
+        typeof metadata.bookingFeeAmount !== 'undefined' ? Number(metadata.bookingFeeAmount) : 0;
+      const paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id;
 
       const newTestDrive = await TestDrive.create({
         carId: metadata.carId,
@@ -117,17 +107,16 @@ export async function POST(req: Request) {
         startTime: metadata.startTime,
         endTime: metadata.endTime,
         notes: metadata.notes,
-        status: "PENDING",
+        status: 'PENDING',
         stripeSessionId: session.id,
-        paymentIntentId: session.payment_intent,
-        paymentStatus: "PAID",
+        paymentIntentId,
+        paymentStatus: 'PAID',
         isDelivery,
-        address:
-          actualAddress || "DEBUG: Stripe metadata didn't have an address",
+        address: actualAddress || "DEBUG: Stripe metadata didn't have an address",
         bookingFeeAmount: feeAmount,
       });
 
-      console.log("New Test Drive created from webhook: ", newTestDrive);
+      console.log('New Test Drive created from webhook: ', newTestDrive);
 
       if (vendor) {
         try {
@@ -139,48 +128,38 @@ export async function POST(req: Request) {
                 totalRevenue: feeAmount,
               },
             },
-            { returnDocument: "after" },
+            { returnDocument: 'after' }
           );
 
-          console.log("----- UPDATED VENDOR DETAILS -----");
+          console.log('----- UPDATED VENDOR DETAILS -----');
           console.log(updatedVendor);
-          console.log("----------------------------------");
+          console.log('----------------------------------');
 
-          console.log(
-            `Vendor ${vendor._id} updated stats (+1 booked, +${feeAmount} revenue).`,
-          );
+          console.log(`Vendor ${vendor._id} updated stats (+1 booked, +${feeAmount} revenue).`);
         } catch (updateErr) {
-          console.error("Failed to update vendor stats:", updateErr);
+          console.error('Failed to update vendor stats:', updateErr);
         }
       }
 
-      const populatedTestDrive = await TestDrive.findById(
-        newTestDrive._id,
-      ).populate([
-        { path: "userId" },
-        { path: "carId" },
-        { path: "vendorId" },
-      ] as any);
+      const populatedTestDrive = await TestDrive.findById(newTestDrive._id).populate([
+        { path: 'userId' },
+        { path: 'carId' },
+        { path: 'vendorId' },
+      ]);
 
       // --- EMAIL NOTIFICATION LOGIC (Mirroring existing route.ts) ---
       if (populatedTestDrive) {
         console.log(
-          `Booking email logically triggered from webhook for ID: ${populatedTestDrive._id}`,
+          `Booking email logically triggered from webhook for ID: ${populatedTestDrive._id}`
         );
       }
     } catch (err) {
-      console.error("Database or Email process failed in webhook: ", err);
-      return NextResponse.json(
-        { error: "Booking insertion failed" },
-        { status: 500 },
-      );
+      console.error('Database or Email process failed in webhook: ', err);
+      return NextResponse.json({ error: 'Booking insertion failed' }, { status: 500 });
     }
-  } else if (
-    event.type === "refund.created" ||
-    event.type === "refund.updated"
-  ) {
-    const refund = event.data.object as any;
-    if (refund.status === "succeeded") {
+  } else if (event.type === 'refund.created' || event.type === 'refund.updated') {
+    const refund = event.data.object as { status: string; payment_intent: string };
+    if (refund.status === 'succeeded') {
       try {
         await connectToDatabase();
 
@@ -189,14 +168,12 @@ export async function POST(req: Request) {
           paymentIntentId: refund.payment_intent,
         });
 
-        if (existingDrive && existingDrive.paymentStatus !== "REFUNDED") {
-          existingDrive.paymentStatus = "REFUNDED";
-          existingDrive.status = "REJECTED";
+        if (existingDrive && existingDrive.paymentStatus !== 'REFUNDED') {
+          existingDrive.paymentStatus = 'REFUNDED';
+          existingDrive.status = 'REJECTED';
           await existingDrive.save();
 
-          console.log(
-            `TestDrive ${existingDrive._id} payment marked as REFUNDED`,
-          );
+          console.log(`TestDrive ${existingDrive._id} payment marked as REFUNDED`);
 
           // Decrement vendor stats
           if (existingDrive.vendorId) {
@@ -209,18 +186,18 @@ export async function POST(req: Request) {
                     totalRevenue: -(existingDrive.bookingFeeAmount || 0),
                   },
                 },
-                { returnDocument: "after" },
+                { returnDocument: 'after' }
               );
               console.log(
-                `Vendor ${vendor?._id} decremented stats (-1 booked, -${existingDrive.bookingFeeAmount || 0} revenue) via webhook.`,
+                `Vendor ${vendor?._id} decremented stats (-1 booked, -${existingDrive.bookingFeeAmount || 0} revenue) via webhook.`
               );
             } catch (err) {
-              console.error("Failed to decrement vendor stats:", err);
+              console.error('Failed to decrement vendor stats:', err);
             }
           }
         }
       } catch (err) {
-        console.error("Error updating test drive status for refund:", err);
+        console.error('Error updating test drive status for refund:', err);
       }
     }
   }

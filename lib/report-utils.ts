@@ -12,10 +12,7 @@ export interface GrowthMetrics {
 /**
  * Calculates growth percentage between two values
  */
-export const calculateGrowth = (
-  current: number,
-  previous: number,
-): GrowthMetrics => {
+export const calculateGrowth = (current: number, previous: number): GrowthMetrics => {
   if (previous === 0) {
     return {
       currentValue: current,
@@ -37,9 +34,9 @@ export const calculateGrowth = (
 /**
  * Calculates distribution of booking statuses
  */
-export const calculateStatusDistribution = (testDrives: any[]) => {
+export const calculateStatusDistribution = (testDrives: Array<{ status: string }>) => {
   const total = testDrives.length;
-  if (total === 0)
+  if (total === 0) {
     return {
       COMPLETED: 0,
       CANCELLED: 0,
@@ -47,8 +44,9 @@ export const calculateStatusDistribution = (testDrives: any[]) => {
       PENDING: 0,
       CONFIRMED: 0,
     };
+  }
 
-  const distribution = testDrives.reduce((acc: any, curr: any) => {
+  const distribution = testDrives.reduce((acc: Record<string, number>, curr) => {
     acc[curr.status] = (acc[curr.status] || 0) + 1;
     return acc;
   }, {});
@@ -73,25 +71,25 @@ export const getPerformanceTips = (metrics: {
 
   if (metrics.successRate < 70) {
     tips.push(
-      "Your completion rate is below 70%. Try responding to pending requests within 2 hours to increase conversions.",
+      'Your completion rate is below 70%. Try responding to pending requests within 2 hours to increase conversions.'
     );
   }
 
   if (metrics.rejectionRate > 20) {
     tips.push(
-      "High rejection rate detected. Consider updating your 'Working Hours' or vehicle availability to better match customer expectations.",
+      "High rejection rate detected. Consider updating your 'Working Hours' or vehicle availability to better match customer expectations."
     );
   }
 
   if (metrics.revenueGrowth < 0) {
     tips.push(
-      "Monthly revenue has declined. Consider running a temporary promotion or highlighting your 'Top 3 Models' in your marketing.",
+      "Monthly revenue has declined. Consider running a temporary promotion or highlighting your 'Top 3 Models' in your marketing."
     );
   }
 
   if (tips.length === 0) {
     tips.push(
-      "Great job! Your performance metrics are strong. Keep providing excellent service to maintain your priority ranking.",
+      'Great job! Your performance metrics are strong. Keep providing excellent service to maintain your priority ranking.'
     );
   }
 

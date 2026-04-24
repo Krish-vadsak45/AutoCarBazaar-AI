@@ -1,12 +1,15 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, X, Car, ArrowRight, MapPin } from "lucide-react";
-import { CancelReservationModal } from "./cancel-reservation-modal";
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { Calendar, Clock, Car, ArrowRight } from 'lucide-react';
+import Image from 'next/image';
+
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+import { CancelReservationModal } from './cancel-reservation-modal';
 
 interface ReservationData {
   _id: string;
@@ -19,7 +22,7 @@ interface ReservationData {
   selectedDate: string;
   selectedTime: string;
   notes: string;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 }
 
 interface ReservationCardProps {
@@ -33,24 +36,23 @@ export const ReservationCard = React.memo(function ReservationCard({
 }: ReservationCardProps) {
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
-  };
 
   const statusStyles = {
     PENDING:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+      'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800',
     CONFIRMED:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
     CANCELLED:
-      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800",
+      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
     COMPLETED:
-      "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
   };
 
   return (
@@ -59,17 +61,16 @@ export const ReservationCard = React.memo(function ReservationCard({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-6">
           {/* Image Section */}
           <div className="lg:col-span-4 relative h-56 lg:h-auto overflow-hidden">
-            <img
-              src={reservation.image || "/placeholder.svg"}
+            <Image
+              src={reservation.image || '/placeholder.svg'}
               alt={reservation.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute top-4 left-4">
               <Badge
                 className={cn(
-                  "px-3 py-1 font-semibold uppercase shadow-lg backdrop-blur-md",
-                  statusStyles[reservation.status] ||
-                    "bg-gray-100 text-gray-700",
+                  'px-3 py-1 font-semibold uppercase shadow-lg backdrop-blur-md',
+                  statusStyles[reservation.status] || 'bg-gray-100 text-gray-700'
                 )}
               >
                 {reservation.status}
@@ -88,9 +89,7 @@ export const ReservationCard = React.memo(function ReservationCard({
                 <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400">
                   <Calendar className="w-4 h-4" />
                 </div>
-                <span className="font-medium">
-                  {formatDate(reservation.selectedDate)}
-                </span>
+                <span className="font-medium">{formatDate(reservation.selectedDate)}</span>
               </div>
 
               <div className="flex items-center gap-3 text-gray-600 dark:text-gray-300">
@@ -118,7 +117,7 @@ export const ReservationCard = React.memo(function ReservationCard({
                 Notes
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed italic">
-                &quot;{reservation.notes || "No additional notes provided."}
+                &quot;{reservation.notes || 'No additional notes provided.'}
                 &quot;
               </p>
             </div>
@@ -134,7 +133,7 @@ export const ReservationCard = React.memo(function ReservationCard({
                 </Button>
               </Link>
 
-              {reservation.status !== "CANCELLED" && (
+              {reservation.status !== 'CANCELLED' && (
                 <Button
                   onClick={() => setShowCancelModal(true)}
                   variant="destructive"
@@ -148,7 +147,7 @@ export const ReservationCard = React.memo(function ReservationCard({
         </div>
       </div>
 
-      {showCancelModal && (
+      {showCancelModal ? (
         <CancelReservationModal
           reservation={reservation}
           onClose={() => setShowCancelModal(false)}
@@ -157,7 +156,7 @@ export const ReservationCard = React.memo(function ReservationCard({
             onCancel?.(id);
           }}
         />
-      )}
+      ) : null}
     </>
   );
 });

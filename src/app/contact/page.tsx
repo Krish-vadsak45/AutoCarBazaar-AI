@@ -1,12 +1,11 @@
-import ContactUsPage from "@/components/ContactUsGetInTouch";
-import React from "react";
+import React from 'react';
 
-const page = () => {
-  return (
-    <>
-      <ContactUsPage />
-    </>
-  );
-};
+import ContactUsPage from '@/components/ContactUsGetInTouch';
+
+const page = () => (
+  <>
+    <ContactUsPage />
+  </>
+);
 
 export default page;

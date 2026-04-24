@@ -1,18 +1,17 @@
-import { NextResponse } from "next/server";
-import crypto from "crypto";
-import connectToDatabase from "@/lib/db";
-import User from "@/models/user.model";
-import transporter from "@/lib/nodemailer";
+import crypto from 'crypto';
+
+import { NextResponse } from 'next/server';
+
+import connectToDatabase from '@/lib/db';
+import User from '@/models/user.model';
+import transporter from '@/lib/nodemailer';
 
 export async function POST(request: Request) {
   try {
     const { email } = await request.json();
 
     if (!email) {
-      return NextResponse.json(
-        { message: "Email is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ message: 'Email is required' }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -20,10 +19,7 @@ export async function POST(request: Request) {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return NextResponse.json(
-        { message: "User with this email does not exist" },
-        { status: 404 },
-      );
+      return NextResponse.json({ message: 'User with this email does not exist' }, { status: 404 });
     }
 
     // Check if user is a credentials user (has password)
@@ -31,18 +27,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message:
-            "This account uses social login (Google/GitHub). Please sign in with that provider.",
+            'This account uses social login (Google/GitHub). Please sign in with that provider.',
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const passwordResetToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
     // Token expires in 10 minutes
     const resetTokenExpire = new Date(Date.now() + 10 * 60 * 1000);
@@ -54,13 +47,13 @@ export async function POST(request: Request) {
 
     // Create reset URL
     // Use process.env.NEXTAUTH_URL or fallback to localhost if not set (for dev) -- though for production it should be set
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
 
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: user.email,
-      subject: "Password Reset Request",
+      subject: 'Password Reset Request',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Password Reset Request</h2>
@@ -74,15 +67,9 @@ export async function POST(request: Request) {
 
     await transporter.sendMail(mailOptions);
 
-    return NextResponse.json(
-      { message: "Password reset email sent" },
-      { status: 200 },
-    );
+    return NextResponse.json({ message: 'Password reset email sent' }, { status: 200 });
   } catch (error) {
-    console.error("Forgot password error:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 },
-    );
+    console.error('Forgot password error:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

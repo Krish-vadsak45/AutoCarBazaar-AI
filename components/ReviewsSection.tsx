@@ -1,15 +1,16 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { Star, CheckCircle, ThumbsUp } from "lucide-react";
-import axios from "axios";
-import { Progress } from "./ui/progress";
-import { Button } from "./ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Badge } from "./ui/badge";
-import { Skeleton } from "./ui/skeleton";
-import { useSession } from "next-auth/react";
-import { toast } from "react-toastify";
+import React, { useEffect, useState } from 'react';
+import { Star, CheckCircle, ThumbsUp } from 'lucide-react';
+import axios from 'axios';
+import { useSession } from 'next-auth/react';
+import { toast } from 'react-toastify';
+
+import { Progress } from './ui/progress';
+import { Button } from './ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Badge } from './ui/badge';
+import { Skeleton } from './ui/skeleton';
 
 interface Review {
   _id: string;
@@ -60,57 +61,55 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
   const pageSize = carId ? 2 : 3;
 
   const fetchFullReplies = async (reviewId: string) => {
-    if (loadingReplies[reviewId]) return;
+    if (loadingReplies[reviewId]) {
+      return;
+    }
 
     try {
       setLoadingReplies((prev) => ({ ...prev, [reviewId]: true }));
       // Fetch all replies from server-side for security and consistency
-      const { data } = await axios.get(
-        `/api/reviews/${reviewId}/replies?page=1&limit=100`,
-      );
+      const { data } = await axios.get(`/api/reviews/${reviewId}/replies?page=1&limit=100`);
 
       setReviews((prev) =>
         prev.map((r) =>
-          r._id === reviewId
-            ? { ...r, replies: data.replies, hasMoreReplies: false }
-            : r,
-        ),
+          r._id === reviewId ? { ...r, replies: data.replies, hasMoreReplies: false } : r
+        )
       );
 
       setExpandedReplies((prev) => ({ ...prev, [reviewId]: true }));
     } catch (error) {
-      console.error("Failed to fetch replies", error);
-      toast.error("Failed to load replies");
+      console.error('Failed to fetch replies', error);
+      toast.error('Failed to load replies');
     } finally {
       setLoadingReplies((prev) => ({ ...prev, [reviewId]: false }));
     }
   };
 
   const isUserHelpful = (review: Review) => {
-    if (!session?.user) return false;
-    const userId = (session.user as any).id || (session.user as any)._id;
-    return review.helpfulUsers?.some(
-      (id) => id.toString() === userId?.toString(),
-    );
+    if (!session?.user) {
+      return false;
+    }
+    const userId = session.user._id || session.user.id;
+    return review.helpfulUsers?.some((id) => id.toString() === userId?.toString());
   };
 
   const updateHelpfulState = (
     prev: Review[],
     reviewId: string,
-    data: any,
+    data: { isHelpful: boolean; helpfulCount: number },
     userId: string,
-    userIdStr: string,
-  ) => {
-    return prev.map((r) => {
-      if (r._id !== reviewId) return r;
+    userIdStr: string
+  ) =>
+    prev.map((r) => {
+      if (r._id !== reviewId) {
+        return r;
+      }
 
       let newHelpfulUsers = r.helpfulUsers || [];
       if (data.isHelpful) {
         newHelpfulUsers = [...newHelpfulUsers, userId];
       } else {
-        newHelpfulUsers = newHelpfulUsers.filter(
-          (id) => id.toString() !== userIdStr,
-        );
+        newHelpfulUsers = newHelpfulUsers.filter((id) => id.toString() !== userIdStr);
       }
 
       return {
@@ -119,52 +118,54 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
         helpfulUsers: newHelpfulUsers,
       };
     });
-  };
 
   const handleHelpful = async (reviewId: string) => {
-    if (!session) {
-      toast.error("Please login to vote");
+    if (!session?.user) {
+      toast.error('Please login to vote');
       return;
     }
     try {
-      const { data } = await axios.post(`/api/reviews/${reviewId}/helpful`);
-      const userId = (session?.user as any).id || (session?.user as any)._id;
-      const userIdStr = userId?.toString();
+      const { data } = await axios.post<{
+        isHelpful: boolean;
+        helpfulCount: number;
+      }>(`/api/reviews/${reviewId}/helpful`);
+      const userId = (session.user._id || session.user.id)?.toString();
+      const userIdStr = userId;
 
-      setReviews((prev) =>
-        updateHelpfulState(prev, reviewId, data, userId, userIdStr),
-      );
+      if (userId) {
+        setReviews((prev) => updateHelpfulState(prev, reviewId, data, userId, userIdStr));
+      }
     } catch (error) {
-      console.error("Helpful update error:", error);
-      toast.error("Failed to update helpful status");
+      console.error('Helpful update error:', error);
+      toast.error('Failed to update helpful status');
     }
   };
 
   const handleReplySubmit = async (reviewId: string) => {
     if (!session) {
-      toast.error("Please login to reply");
+      toast.error('Please login to reply');
       return;
     }
-    if (!replyText[reviewId]?.trim()) return;
+    if (!replyText[reviewId]?.trim()) {
+      return;
+    }
 
     try {
       const { data } = await axios.post(`/api/reviews/${reviewId}/reply`, {
         text: replyText[reviewId],
       });
       setReviews((prev) =>
-        prev.map((r) =>
-          r._id === reviewId ? { ...r, replies: [...r.replies, data] } : r,
-        ),
+        prev.map((r) => (r._id === reviewId ? { ...r, replies: [...r.replies, data] } : r))
       );
-      setReplyText((prev) => ({ ...prev, [reviewId]: "" }));
+      setReplyText((prev) => ({ ...prev, [reviewId]: '' }));
       setShowReplyForm((prev: { [key: string]: boolean }) => ({
         ...prev,
         [reviewId]: false,
       }));
-      toast.success("Reply posted!");
+      toast.success('Reply posted!');
     } catch (error) {
-      console.error("Reply submit error:", error);
-      toast.error("Failed to post reply");
+      console.error('Reply submit error:', error);
+      toast.error('Failed to post reply');
     }
   };
 
@@ -172,14 +173,14 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
     const fetchReviews = async () => {
       try {
         setLoading(true);
-        const ratingQuery = filterRating ? `&rating=${filterRating}` : "";
+        const ratingQuery = filterRating ? `&rating=${filterRating}` : '';
         const url = `/api/reviews?carId=${carId}&page=${currentPage}&limit=${pageSize}${ratingQuery}`;
         const { data } = await axios.get(url);
         setReviews(data.reviews);
         setTotalPages(data.pagination.totalPages);
         setTotalCount(data.pagination.total);
       } catch (error) {
-        console.error("Failed to fetch reviews", error);
+        console.error('Failed to fetch reviews', error);
       } finally {
         setLoading(false);
       }
@@ -189,19 +190,14 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
 
   const averageRating =
     totalCount > 0
-      ? (
-          reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
-        ).toFixed(1)
-      : "0.0";
+      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+      : '0.0';
 
   const ratingCounts = [5, 4, 3, 2, 1].map((star) => ({
     star,
     count: reviews.filter((r) => r.rating === star).length, // This is local only, but fine for percentages UI
     percentage:
-      totalCount > 0
-        ? (reviews.filter((r) => r.rating === star).length / reviews.length) *
-          100
-        : 0,
+      totalCount > 0 ? (reviews.filter((r) => r.rating === star).length / reviews.length) * 100 : 0,
   }));
 
   if (loading && reviews.length === 0) {
@@ -242,10 +238,7 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
             </div>
             <div className="space-y-6">
               {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="bg-gray-50 dark:bg-slate-800/50 rounded-3xl p-6 space-y-4"
-                >
+                <div key={i} className="bg-gray-50 dark:bg-slate-800/50 rounded-3xl p-6 space-y-4">
                   <div className="flex items-center gap-4">
                     <Skeleton className="h-12 w-12 rounded-full" />
                     <div className="space-y-2">
@@ -295,7 +288,7 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                   {[1, 2, 3, 4, 5].map((s) => (
                     <Star
                       key={s}
-                      className={`h-5 w-5 ${s <= Math.round(Number(averageRating)) ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`}
+                      className={`h-5 w-5 ${s <= Math.round(Number(averageRating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`}
                     />
                   ))}
                 </div>
@@ -315,13 +308,11 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                   setCurrentPage(1);
                 }}
                 className={`w-full flex items-center gap-4 hover:bg-gray-100 dark:hover:bg-slate-800 p-2 rounded-xl transition-colors ${
-                  filterRating === rc.star
-                    ? "bg-primary/5 ring-1 ring-primary/20"
-                    : ""
+                  filterRating === rc.star ? 'bg-primary/5 ring-1 ring-primary/20' : ''
                 }`}
               >
                 <span
-                  className={`text-sm font-medium w-12 ${filterRating === rc.star ? "text-primary" : ""}`}
+                  className={`text-sm font-medium w-12 ${filterRating === rc.star ? 'text-primary' : ''}`}
                 >
                   {rc.star} star
                 </span>
@@ -351,9 +342,7 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
         <div className="lg:col-span-8 space-y-8">
           <div className="flex justify-between items-center">
             <h3 className="text-xl font-bold">
-              {filterRating
-                ? `${filterRating} Star Reviews`
-                : "Top Perspectives"}
+              {filterRating ? `${filterRating} Star Reviews` : 'Top Perspectives'}
             </h3>
             <div className="flex gap-2 text-sm text-muted-foreground">
               {loading ? (
@@ -367,38 +356,39 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
           </div>
 
           <div className="space-y-6">
-            {loading &&
-              [1, 2].map((i) => (
-                <div
-                  key={`skeleton-${i}`}
-                  className="bg-gray-50 dark:bg-slate-800/50 rounded-3xl p-6 space-y-4 animate-pulse"
-                >
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-12 w-12 rounded-full" />
+            {loading
+              ? [1, 2].map((i) => (
+                  <div
+                    key={`skeleton-${i}`}
+                    className="bg-gray-50 dark:bg-slate-800/50 rounded-3xl p-6 space-y-4 animate-pulse"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <div className="flex gap-4">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
                       <Skeleton className="h-4 w-24" />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-5/6" />
-                  </div>
-                  <div className="flex justify-between items-center pt-2">
-                    <div className="flex gap-4">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-20" />
-                    </div>
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                </div>
-              ))}
+                ))
+              : null}
 
             {!loading && reviews.length === 0 && (
               <div className="py-12 bg-gray-50 dark:bg-slate-800/50 rounded-2xl text-center text-muted-foreground italic">
                 {filterRating
                   ? `No ${filterRating} star reviews found.`
-                  : "No reviews yet. Be the first to review this car!"}
+                  : 'No reviews yet. Be the first to review this car!'}
               </div>
             )}
 
@@ -417,27 +407,25 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                   <div className="flex items-center gap-4 mb-4">
                     <Avatar className="h-12 w-12 border-2 border-white dark:border-slate-700">
                       <AvatarImage src={review.userId?.image} />
-                      <AvatarFallback>
-                        {review.userId?.name?.charAt(0) || "U"}
-                      </AvatarFallback>
+                      <AvatarFallback>{review.userId?.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <div>
                       <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         {review.userId?.name}
-                        {review.isVerified && (
+                        {review.isVerified ? (
                           <Badge
                             variant="secondary"
                             className="text-[10px] font-medium h-5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                           >
                             VERIFIED BUYER
                           </Badge>
-                        )}
+                        ) : null}
                       </h4>
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star
                             key={s}
-                            className={`h-4 w-4 ${s <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`}
+                            className={`h-4 w-4 ${s <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`}
                           />
                         ))}
                       </div>
@@ -453,36 +441,30 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                           onClick={() => handleHelpful(review._id)}
                           className={`font-medium flex items-center gap-1.5 transition-colors ${
                             isUserHelpful(review)
-                              ? "text-primary cursor-pointer bg-primary/10 px-2 py-0.5 rounded-full"
-                              : "text-muted-foreground hover:text-primary cursor-pointer"
+                              ? 'text-primary cursor-pointer bg-primary/10 px-2 py-0.5 rounded-full'
+                              : 'text-muted-foreground hover:text-primary cursor-pointer'
                           }`}
                         >
                           <ThumbsUp
                             className={`w-3.5 h-3.5 ${
-                              isUserHelpful(review)
-                                ? "fill-primary text-primary"
-                                : ""
+                              isUserHelpful(review) ? 'fill-primary text-primary' : ''
                             }`}
                           />
                           Helpful ({review.helpfulCount || 0})
                         </button>
                         <button
                           onClick={() =>
-                            setShowReplyForm(
-                              (prev: { [key: string]: boolean }) => ({
-                                ...prev,
-                                [review._id]: !prev[review._id],
-                              }),
-                            )
+                            setShowReplyForm((prev: { [key: string]: boolean }) => ({
+                              ...prev,
+                              [review._id]: !prev[review._id],
+                            }))
                           }
                           className="text-muted-foreground hover:text-primary cursor-pointer font-medium flex items-center gap-1 transition-colors"
                         >
                           Reply ({review.replies?.length || 0})
                         </button>
                       </div>
-                      <span>
-                        Posted {new Date(review.createdAt).toLocaleDateString()}
-                      </span>
+                      <span>Posted {new Date(review.createdAt).toLocaleDateString()}</span>
                     </div>
 
                     {/* Replies */}
@@ -497,24 +479,18 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                               <Avatar className="h-6 w-6">
                                 <AvatarImage src={reply.userId?.image} />
                                 <AvatarFallback>
-                                  {reply.userId?.name?.charAt(0) || "U"}
+                                  {reply.userId?.name?.charAt(0) || 'U'}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="font-semibold">
-                                {reply.userId?.name}
-                              </span>
+                              <span className="font-semibold">{reply.userId?.name}</span>
                               <span className="text-xs text-muted-foreground">
                                 {new Date(reply.createdAt).toLocaleDateString()}
                               </span>
                             </div>
-                            <p className="text-gray-600 dark:text-gray-400">
-                              {reply.text}
-                            </p>
+                            <p className="text-gray-600 dark:text-gray-400">{reply.text}</p>
                           </div>
                         ))}
-                        {Boolean(
-                          review.totalReplies && review.totalReplies > 2,
-                        ) && (
+                        {Boolean(review.totalReplies && review.totalReplies > 2) && (
                           <button
                             onClick={() => {
                               if (review.hasMoreReplies) {
@@ -529,25 +505,23 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                             className="text-xs font-semibold text-primary hover:underline cursor-pointer disabled:opacity-50"
                             disabled={loadingReplies[review._id]}
                           >
-                            {loadingReplies[review._id] && "Loading..."}
-                            {!loadingReplies[review._id] &&
-                            expandedReplies[review._id]
-                              ? "Hide replies"
-                              : ""}
-                            {!loadingReplies[review._id] &&
-                            !expandedReplies[review._id]
+                            {loadingReplies[review._id] ? 'Loading...' : null}
+                            {!loadingReplies[review._id] && expandedReplies[review._id]
+                              ? 'Hide replies'
+                              : ''}
+                            {!loadingReplies[review._id] && !expandedReplies[review._id]
                               ? `Show all ${review.totalReplies} replies`
-                              : ""}
+                              : ''}
                           </button>
                         )}
                       </div>
                     )}
 
                     {/* Reply Form */}
-                    {showReplyForm[review._id] && (
+                    {showReplyForm[review._id] ? (
                       <div className="mt-2 pl-6">
                         <textarea
-                          value={replyText[review._id] || ""}
+                          value={replyText[review._id] || ''}
                           onChange={(e) =>
                             setReplyText((prev) => ({
                               ...prev,
@@ -561,12 +535,10 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                         <div className="flex justify-end gap-2 mt-2">
                           <button
                             onClick={() =>
-                              setShowReplyForm(
-                                (prev: { [key: string]: boolean }) => ({
-                                  ...prev,
-                                  [review._id]: false,
-                                }),
-                              )
+                              setShowReplyForm((prev: { [key: string]: boolean }) => ({
+                                ...prev,
+                                [review._id]: false,
+                              }))
                             }
                             className="text-xs font-medium px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                           >
@@ -580,7 +552,7 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                           </button>
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -605,9 +577,9 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                       disabled={loading}
                       className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
                         currentPage === i + 1
-                          ? "bg-primary text-primary-foreground shadow-md"
-                          : "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:border-primary/50"
-                      } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                          ? 'bg-primary text-primary-foreground shadow-md'
+                          : 'bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:border-primary/50'
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {i + 1}
                     </button>
@@ -617,9 +589,7 @@ export function ReviewsSection({ carId }: Readonly<{ carId: string }>) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages || loading}
                   className="rounded-xl px-4 h-10 border-gray-200"
                 >

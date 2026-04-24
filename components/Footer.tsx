@@ -1,36 +1,36 @@
-import React from "react";
-import Link from "next/link";
-import { Instagram, Twitter, Facebook, Globe, Dribbble } from "lucide-react";
-import Image from "next/image";
+import React from 'react';
+import Link from 'next/link';
+import { Instagram, Twitter, Facebook, Globe, Dribbble } from 'lucide-react';
+import Image from 'next/image';
 
 const Footer = () => {
   const linkGroups = [
     {
-      title: "Company",
+      title: 'Company',
       links: [
-        { name: "Home", path: "/" },
-        { name: "About Us", path: "/about-us" },
-        { name: "Portfolio", path: "/portfolio" },
-        { name: "Services", path: "/services" },
-        { name: "Contact", path: "/contact" },
+        { name: 'Home', path: '/' },
+        { name: 'About Us', path: '/about-us' },
+        { name: 'Portfolio', path: '/portfolio' },
+        { name: 'Services', path: '/services' },
+        { name: 'Contact', path: '/contact' },
       ],
     },
     {
-      title: "Resources",
+      title: 'Resources',
       links: [
-        { name: "Clients", path: "/clients" },
-        { name: "Team", path: "/team" },
-        { name: "Career", path: "/career" },
-        { name: "Testimonials", path: "/testimonials" },
-        { name: "Journal", path: "/journal" },
+        { name: 'Clients', path: '/clients' },
+        { name: 'Team', path: '/team' },
+        { name: 'Career', path: '/career' },
+        { name: 'Testimonials', path: '/testimonials' },
+        { name: 'Journal', path: '/journal' },
       ],
     },
     {
-      title: "Legal",
+      title: 'Legal',
       links: [
-        { name: "Privacy Policy", path: "/privacy-policy" },
-        { name: "Terms & Conditions", path: "/terms" },
-        { name: "Partners", path: "/partners" },
+        { name: 'Privacy Policy', path: '/privacy-policy' },
+        { name: 'Terms & Conditions', path: '/terms' },
+        { name: 'Partners', path: '/partners' },
       ],
     },
   ];
@@ -60,8 +60,8 @@ const Footer = () => {
           </Link>
 
           <p className="text-gray-600 mt-4 dark:text-gray-400 leading-relaxed">
-            Discover the world's most extraordinary places to stay, from
-            boutique hotels to luxury villas and private islands.
+            Discover the world&apos;s most extraordinary places to stay, from boutique hotels to
+            luxury villas and private islands.
           </p>
         </div>
 
@@ -90,10 +90,7 @@ const Footer = () => {
           <div className="flex flex-col gap-4 text-center sm:text-left items-center sm:items-start">
             <div className="flex space-x-4 text-gray-500 text-xl">
               {socialIcons.map((Icon, i) => (
-                <span
-                  key={i}
-                  className="hover:text-slate-900 dark:hover:text-white cursor-pointer"
-                >
+                <span key={i} className="hover:text-slate-900 dark:hover:text-white cursor-pointer">
                   <Icon className="w-5 h-5" />
                 </span>
               ))}

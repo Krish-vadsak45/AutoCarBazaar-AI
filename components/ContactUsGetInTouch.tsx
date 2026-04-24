@@ -1,22 +1,17 @@
-"use client";
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+'use client';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import {
   Phone,
   Mail,
   MapPin,
-  Clock,
   MessageCircle,
   Send,
   User,
   FileText,
-  Headphones,
-  Award,
-  Shield,
-  Zap,
   Plus,
   Minus,
-} from "lucide-react";
+} from 'lucide-react';
 
 type FormData = {
   name: string;
@@ -41,105 +36,70 @@ const ContactUsGetInTouch = () => {
   };
 
   const onSubmit = (data: FormData) => {
-    console.log("Form submitted:", data);
+    console.log('Form submitted:', data);
     reset();
   };
 
   const contactTimeline = [
     {
-      title: "Call Us Anytime",
-      value: "+1 (555) 123-4567",
-      description:
-        "Our phone lines are open 24/7. Get instant support from our dedicated team.",
+      title: 'Call Us Anytime',
+      value: '+1 (555) 123-4567',
+      description: 'Our phone lines are open 24/7. Get instant support from our dedicated team.',
       icon: Phone,
-      gradient: "from-blue-500 to-cyan-500",
-      href: "tel:+15551234567",
+      gradient: 'from-blue-500 to-cyan-500',
+      href: 'tel:+15551234567',
     },
     {
-      title: "Email Support",
-      value: "support@carsale.com",
-      description:
-        "Send us your queries and we'll respond within 2 hours during business days.",
+      title: 'Email Support',
+      value: 'support@carsale.com',
+      description: "Send us your queries and we'll respond within 2 hours during business days.",
       icon: Mail,
-      gradient: "from-purple-500 to-pink-500",
-      href: "mailto:support@carsale.com",
+      gradient: 'from-purple-500 to-pink-500',
+      href: 'mailto:support@carsale.com',
     },
     {
-      title: "WhatsApp Chat",
-      value: "+1 (555) 987-6543",
-      description:
-        "Prefer instant messaging? Chat with us on WhatsApp for quick responses.",
+      title: 'WhatsApp Chat',
+      value: '+1 (555) 987-6543',
+      description: 'Prefer instant messaging? Chat with us on WhatsApp for quick responses.',
       icon: MessageCircle,
-      gradient: "from-green-500 to-emerald-500",
-      href: "https://wa.me/15559876543",
+      gradient: 'from-green-500 to-emerald-500',
+      href: 'https://wa.me/15559876543',
     },
     {
-      title: "Visit Our Showroom",
-      value: "123 Auto Street, Car City, CA 90210",
-      description:
-        "Come see our collection in person. Our team is ready to welcome you.",
+      title: 'Visit Our Showroom',
+      value: '123 Auto Street, Car City, CA 90210',
+      description: 'Come see our collection in person. Our team is ready to welcome you.',
       icon: MapPin,
-      gradient: "from-orange-500 to-red-500",
-      href: "#map",
-    },
-  ];
-
-  const reasons = [
-    {
-      title: "24/7 Support",
-      description:
-        "Our dedicated support team is available round the clock to answer your questions and help you find the perfect car.",
-      icon: Headphones,
-      gradient: "from-blue-500 to-indigo-600",
-    },
-    {
-      title: "Expert Guidance",
-      description:
-        "Get personalized recommendations from our experienced car specialists who understand your needs and budget.",
-      icon: Award,
-      gradient: "from-emerald-500 to-teal-600",
-    },
-    {
-      title: "Secure Process",
-      description:
-        "Your information is protected with bank-level security. We ensure safe and transparent transactions.",
-      icon: Shield,
-      gradient: "from-pink-500 to-rose-600",
-    },
-    {
-      title: "Quick Response",
-      description:
-        "We value your time. Expect responses within 2 hours during business days and priority support for urgent queries.",
-      icon: Zap,
-      gradient: "from-amber-500 to-orange-600",
+      gradient: 'from-orange-500 to-red-500',
+      href: '#map',
     },
   ];
 
   const faqItems = [
     {
-      question: "What are your business hours?",
+      question: 'What are your business hours?',
       answer:
-        "We are open Monday through Saturday, 9:00 AM to 6:00 PM. We are closed on Sundays and public holidays. For urgent matters outside business hours, please use our WhatsApp service.",
+        'We are open Monday through Saturday, 9:00 AM to 6:00 PM. We are closed on Sundays and public holidays. For urgent matters outside business hours, please use our WhatsApp service.',
     },
     {
-      question: "How long does it take to respond to inquiries?",
+      question: 'How long does it take to respond to inquiries?',
       answer:
-        "We aim to respond to all inquiries within 24 hours during business days. For weekend inquiries, we will get back to you on the next business day.",
+        'We aim to respond to all inquiries within 24 hours during business days. For weekend inquiries, we will get back to you on the next business day.',
     },
     {
-      question: "Do you provide test drives?",
+      question: 'Do you provide test drives?',
       answer:
-        "Yes! We offer free test drives for all our vehicles. Please contact us to schedule an appointment at your preferred time.",
+        'Yes! We offer free test drives for all our vehicles. Please contact us to schedule an appointment at your preferred time.',
     },
     {
-      question: "What financing options are available?",
+      question: 'What financing options are available?',
       answer:
-        "We offer flexible financing options including bank loans, direct financing, and lease options. Our team will help you find the best solution for your needs.",
+        'We offer flexible financing options including bank loans, direct financing, and lease options. Our team will help you find the best solution for your needs.',
     },
     {
-      question: "Can I buy online?",
+      question: 'Can I buy online?',
       answer:
-        "Yes, we offer online purchasing with convenient delivery options. You can browse our inventory and complete the purchase process from our website.",
+        'Yes, we offer online purchasing with convenient delivery options. You can browse our inventory and complete the purchase process from our website.',
     },
   ];
 
@@ -162,16 +122,15 @@ const ContactUsGetInTouch = () => {
             </div>
 
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-tight text-balance">
-              Let's Start a{" "}
+              Let&apos;s Start a{' '}
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
                 Conversation
               </span>
             </h1>
 
             <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Have questions about our vehicles or services? Our dedicated team
-              is here to help. Reach out to us today and let's find the perfect
-              solution for you.
+              Have questions about our vehicles or services? Our dedicated team is here to help.
+              Reach out to us today and let&apos;s find the perfect solution for you.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
@@ -191,7 +150,7 @@ const ContactUsGetInTouch = () => {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Let's{" "}
+              Let&apos;s{' '}
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Connect
               </span>
@@ -216,16 +175,14 @@ const ContactUsGetInTouch = () => {
                       Full Name *
                     </label>
                     <input
-                      {...register("name", { required: "Name is required" })}
+                      {...register('name', { required: 'Name is required' })}
                       type="text"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none"
                       placeholder="John Doe"
                     />
-                    {errors.name && (
-                      <span className="text-sm text-red-500">
-                        {errors.name.message}
-                      </span>
-                    )}
+                    {errors.name ? (
+                      <span className="text-sm text-red-500">{errors.name.message}</span>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -234,22 +191,20 @@ const ContactUsGetInTouch = () => {
                       Email Address *
                     </label>
                     <input
-                      {...register("email", {
-                        required: "Email is required",
+                      {...register('email', {
+                        required: 'Email is required',
                         pattern: {
                           value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                          message: "Invalid email address",
+                          message: 'Invalid email address',
                         },
                       })}
                       type="email"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none"
                       placeholder="john@example.com"
                     />
-                    {errors.email && (
-                      <span className="text-sm text-red-500">
-                        {errors.email.message}
-                      </span>
-                    )}
+                    {errors.email ? (
+                      <span className="text-sm text-red-500">{errors.email.message}</span>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -258,7 +213,7 @@ const ContactUsGetInTouch = () => {
                       Phone Number
                     </label>
                     <input
-                      {...register("phone")}
+                      {...register('phone')}
                       type="tel"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none"
                       placeholder="+1 (555) 000-0000"
@@ -271,18 +226,16 @@ const ContactUsGetInTouch = () => {
                       Subject *
                     </label>
                     <input
-                      {...register("subject", {
-                        required: "Subject is required",
+                      {...register('subject', {
+                        required: 'Subject is required',
                       })}
                       type="text"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none"
                       placeholder="Inquiry about buying a car"
                     />
-                    {errors.subject && (
-                      <span className="text-sm text-red-500">
-                        {errors.subject.message}
-                      </span>
-                    )}
+                    {errors.subject ? (
+                      <span className="text-sm text-red-500">{errors.subject.message}</span>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -291,18 +244,16 @@ const ContactUsGetInTouch = () => {
                       Your Message *
                     </label>
                     <textarea
-                      {...register("message", {
-                        required: "Message is required",
+                      {...register('message', {
+                        required: 'Message is required',
                       })}
                       rows={5}
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none resize-none"
                       placeholder="Tell us how we can help you find your perfect car..."
                     />
-                    {errors.message && (
-                      <span className="text-sm text-red-500">
-                        {errors.message.message}
-                      </span>
-                    )}
+                    {errors.message ? (
+                      <span className="text-sm text-red-500">{errors.message.message}</span>
+                    ) : null}
                   </div>
 
                   <button
@@ -333,18 +284,15 @@ const ContactUsGetInTouch = () => {
                           <div
                             className={`p-3 rounded-full bg-gradient-to-br ${item.gradient} shadow-lg`}
                           >
-                            <Icon
-                              className="w-5 h-5 text-white"
-                              strokeWidth={2}
-                            />
+                            <Icon className="w-5 h-5 text-white" strokeWidth={2} />
                           </div>
                         </div>
 
                         {/* Content Card */}
                         <a
-                          href={item.href || "#"}
+                          href={item.href || '#'}
                           className={`group block bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1 border border-gray-100 dark:border-slate-800 ${
-                            !item.href ? "cursor-default" : "cursor-pointer"
+                            !item.href ? 'cursor-default' : 'cursor-pointer'
                           }`}
                         >
                           <div
@@ -380,14 +328,14 @@ const ContactUsGetInTouch = () => {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Visit Our{" "}
+              Visit Our{' '}
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Showroom
               </span>
             </h2>
             <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Come see our extensive collection of quality vehicles in person.
-              Click on the map for directions.
+              Come see our extensive collection of quality vehicles in person. Click on the map for
+              directions.
             </p>
           </div>
 
@@ -412,7 +360,7 @@ const ContactUsGetInTouch = () => {
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-              Frequently Asked{" "}
+              Frequently Asked{' '}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                 Questions
               </span>
@@ -461,8 +409,7 @@ const ContactUsGetInTouch = () => {
               Still have questions?
             </h3>
             <p className="text-muted-foreground mb-6">
-              Can't find the answer you're looking for? Please contact our
-              support team.
+              Can&apos;t find the answer you&apos;re looking for? Please contact our support team.
             </p>
             <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30">
               Contact Support

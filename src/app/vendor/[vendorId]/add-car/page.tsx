@@ -1,28 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-import Link from "next/link";
-import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
-import { toast } from "react-toastify";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useParams } from 'next/navigation';
+import { toast } from 'react-toastify';
 import {
   Plus,
   Search,
@@ -31,16 +14,27 @@ import {
   Trash2,
   Edit2,
   CarFront,
-  Loader2,
   ToggleLeft,
   CheckCircle2,
   XCircle,
-} from "lucide-react";
-import Loading from "@/components/Loading";
-import { Badge } from "@/components/ui/badge";
-import { BulkUploadModal } from "@/components/BulkUploadModal";
-import { VIPBadge } from "@/components/VIPBadge";
-import { canUseBulkUpload, normalizeVendorPriority } from "@/lib/vip";
+} from 'lucide-react';
+
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import Loading from '@/components/Loading';
+import { Badge } from '@/components/ui/badge';
+import { BulkUploadModal } from '@/components/BulkUploadModal';
+import { VIPBadge } from '@/components/VIPBadge';
+import { canUseBulkUpload, normalizeVendorPriority } from '@/lib/vip';
 
 // Interface matching your Car Model structure
 interface ICar {
@@ -61,29 +55,27 @@ interface ICar {
 }
 
 export default function VendorCarsPage() {
-  const router = useRouter();
   const { vendorId } = useParams();
   const [cars, setCars] = useState<ICar[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [vendorPriority, setVendorPriority] = useState(1);
   const bulkUploadLocked = !canUseBulkUpload(vendorPriority);
-  const paymentHref =
-    typeof vendorId === "string" ? `/vendor/${vendorId}/payment` : "/vendor";
+  const paymentHref = typeof vendorId === 'string' ? `/vendor/${vendorId}/payment` : '/vendor';
 
   // Fetch Cars + VIP tier on Mount
   useEffect(() => {
     const fetchCars = async () => {
       try {
         const [carsRes, statusRes] = await Promise.all([
-          axios.get("/api/vend-cars"),
-          axios.get("/api/vendor/status").catch(() => ({ data: {} })),
+          axios.get('/api/vend-cars'),
+          axios.get('/api/vendor/status').catch(() => ({ data: {} })),
         ]);
         setCars(carsRes.data.cars);
         setVendorPriority(normalizeVendorPriority(statusRes.data?.priority));
       } catch (error) {
-        console.error("Failed to load cars", error);
-        toast.error("Failed to load your inventory");
+        console.error('Failed to load cars', error);
+        toast.error('Failed to load your inventory');
       } finally {
         setLoading(false);
       }
@@ -94,33 +86,33 @@ export default function VendorCarsPage() {
 
   // Handle Delete (Example)
   const handleDelete = async (carId: string) => {
-    if (!confirm("Are you sure you want to delete this car?")) return;
+    if (!confirm('Are you sure you want to delete this car?')) {
+      return;
+    }
 
     try {
       // Create DELETE route at /api/cars/[id]
       await axios.delete(`/api/vend-cars/${carId}`);
       setCars((prev) => prev.filter((c) => c._id !== carId));
-      toast.success("Car deleted successfully");
+      toast.success('Car deleted successfully');
     } catch (error) {
-      toast.error("Failed to delete car");
+      console.error('Failed to delete car', error);
+      toast.error('Failed to delete car');
     }
   };
 
   // Handle Toggle Status
   const handleToggleStatus = async (carId: string, currentStatus: string) => {
-    const newStatus =
-      currentStatus === "available" ? "unavailable" : "available";
+    const newStatus = currentStatus === 'available' ? 'unavailable' : 'available';
     try {
-      const { data } = await axios.patch(`/api/vend-cars/${carId}`, {
+      await axios.patch(`/api/vend-cars/${carId}`, {
         status: newStatus,
       });
-      setCars((prev) =>
-        prev.map((c) => (c._id === carId ? { ...c, status: newStatus } : c)),
-      );
+      setCars((prev) => prev.map((c) => (c._id === carId ? { ...c, status: newStatus } : c)));
       toast.success(`Car marked as ${newStatus}`);
     } catch (error) {
-      console.error("Failed to update status", error);
-      toast.error("Failed to update status");
+      console.error('Failed to update status', error);
+      toast.error('Failed to update status');
     }
   };
 
@@ -128,16 +120,17 @@ export default function VendorCarsPage() {
   const filteredCars = cars.filter(
     (car) =>
       car.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      car.specs?.make?.toLowerCase().includes(searchQuery.toLowerCase()),
+      car.specs?.make?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const refreshInventory = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/api/vend-cars");
+      const { data } = await axios.get('/api/vend-cars');
       setCars(data.cars);
     } catch (error) {
-      toast.error("Failed to refresh inventory");
+      toast.error('Failed to refresh inventory');
+      console.error('Failed to refresh inventory', error);
     } finally {
       setLoading(false);
     }
@@ -151,9 +144,7 @@ export default function VendorCarsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Inventory</h1>
             <VIPBadge priority={vendorPriority} />
           </div>
-          <p className="text-muted-foreground mt-1">
-            Manage your vehicle listings ({cars.length})
-          </p>
+          <p className="text-muted-foreground mt-1">Manage your vehicle listings ({cars.length})</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <BulkUploadModal
@@ -186,9 +177,7 @@ export default function VendorCarsPage() {
             <Loading />
           ) : filteredCars.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {searchQuery
-                ? "No cars found matching your search."
-                : "No cars listed yet."}
+              {searchQuery ? 'No cars found matching your search.' : 'No cars listed yet.'}
             </div>
           ) : (
             <>
@@ -232,34 +221,22 @@ export default function VendorCarsPage() {
                           <DropdownMenuSeparator className="bg-[#2c2d33]" />
                           <Link href={`/cars/${car._id}`} target="_blank">
                             <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white">
-                              <Eye className="mr-2 h-4 w-4 text-white/50" />{" "}
-                              View Live
+                              <Eye className="mr-2 h-4 w-4 text-white/50" /> View Live
                             </DropdownMenuItem>
                           </Link>
-                          <Link
-                            href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}
-                          >
+                          <Link href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}>
                             <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white">
-                              <Edit2 className="mr-2 h-4 w-4 text-white/50" />{" "}
-                              Edit Details
+                              <Edit2 className="mr-2 h-4 w-4 text-white/50" /> Edit Details
                             </DropdownMenuItem>
                           </Link>
                           <DropdownMenuItem
                             className="cursor-pointer focus:bg-white/10 focus:text-white"
-                            onClick={() =>
-                              handleToggleStatus(
-                                car._id,
-                                car.status || "available",
-                              )
-                            }
+                            onClick={() => handleToggleStatus(car._id, car.status || 'available')}
                           >
                             <ToggleLeft
-                              className={`mr-2 h-4 w-4 ${car.status === "available" ? "text-emerald-400" : "text-white/50"}`}
-                            />{" "}
-                            Mark as{" "}
-                            {car.status === "available"
-                              ? "Unavailable"
-                              : "Available"}
+                              className={`mr-2 h-4 w-4 ${car.status === 'available' ? 'text-emerald-400' : 'text-white/50'}`}
+                            />{' '}
+                            Mark as {car.status === 'available' ? 'Unavailable' : 'Available'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-[#2c2d33]" />
                           <DropdownMenuItem
@@ -275,30 +252,24 @@ export default function VendorCarsPage() {
                     {/* Title & Subtitle */}
                     <div className="mt-4">
                       <h3 className="font-bold text-[20px] text-[#F3F4F6] tracking-tight truncate leading-tight">
-                        {car.specs?.make || "Unknown"} {car.specs?.model}
+                        {car.specs?.make || 'Unknown'} {car.specs?.model}
                       </h3>
-                      <p className="text-[#9CA3AF] text-[14px] mt-0.5 truncate">
-                        {car.title}
-                      </p>
+                      <p className="text-[#9CA3AF] text-[14px] mt-0.5 truncate">{car.title}</p>
                     </div>
 
                     {/* 2x2 Details Grid */}
                     <div className="grid grid-cols-2 gap-y-4 gap-x-2 mt-5">
                       {/* Year */}
                       <div className="flex flex-col gap-1">
-                        <span className="text-[#9CA3AF] text-[13px] font-medium">
-                          Year
-                        </span>
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">Year</span>
                         <span className="font-bold text-[#F3F4F6] text-[16px]">
-                          {car.specs?.year || "N/A"}
+                          {car.specs?.year || 'N/A'}
                         </span>
                       </div>
 
                       {/* Price */}
                       <div className="flex flex-col gap-1">
-                        <span className="text-[#9CA3AF] text-[13px] font-medium">
-                          Price
-                        </span>
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">Price</span>
                         <span className="font-bold text-[#f97316] text-[16px] tracking-tight">
                           ${car.price.toLocaleString()}
                         </span>
@@ -306,11 +277,9 @@ export default function VendorCarsPage() {
 
                       {/* Status */}
                       <div className="flex flex-col gap-1">
-                        <span className="text-[#9CA3AF] text-[13px] font-medium">
-                          Status
-                        </span>
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">Status</span>
                         <div className="mt-0.5">
-                          {car.status === "available" ? (
+                          {car.status === 'available' ? (
                             <Badge
                               variant="outline"
                               className="bg-transparent text-[#34d399] border-[#064e3b] font-medium px-2 py-0.5 whitespace-nowrap inline-flex items-center text-xs w-auto"
@@ -332,18 +301,12 @@ export default function VendorCarsPage() {
 
                       {/* Featured */}
                       <div className="flex flex-col gap-1">
-                        <span className="text-[#9CA3AF] text-[13px] font-medium">
-                          Featured
-                        </span>
+                        <span className="text-[#9CA3AF] text-[13px] font-medium">Featured</span>
                         <div className="mt-0.5">
                           {car.featured ? (
-                            <span className="text-[#4B5563] text-[16px] font-bold">
-                              Yes
-                            </span>
+                            <span className="text-[#4B5563] text-[16px] font-bold">Yes</span>
                           ) : (
-                            <span className="text-[#4B5563] text-[16px] font-bold">
-                              No
-                            </span>
+                            <span className="text-[#4B5563] text-[16px] font-bold">No</span>
                           )}
                         </div>
                       </div>
@@ -385,31 +348,25 @@ export default function VendorCarsPage() {
 
                       <div>
                         <h3 className="font-semibold truncate">
-                          {car.specs?.make || "Unknown"} {car.specs?.model}
+                          {car.specs?.make || 'Unknown'} {car.specs?.model}
                         </h3>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {car.title}
-                        </p>
+                        <p className="text-sm text-muted-foreground truncate">{car.title}</p>
                       </div>
 
-                      <div className="text-sm">{car.specs?.year || "N/A"}</div>
+                      <div className="text-sm">{car.specs?.year || 'N/A'}</div>
 
-                      <div className="font-medium">
-                        ${car.price.toLocaleString()}
-                      </div>
+                      <div className="font-medium">${car.price.toLocaleString()}</div>
 
                       <div>
                         <Badge
                           variant="secondary"
                           className={`${
-                            car.status === "available"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                            car.status === 'available'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                           }`}
                         >
-                          {car.status === "available"
-                            ? "Available"
-                            : "Unavailable"}
+                          {car.status === 'available' ? 'Available' : 'Unavailable'}
                         </Badge>
                       </div>
 
@@ -417,20 +374,14 @@ export default function VendorCarsPage() {
                         {car.featured ? (
                           <Badge variant="default">Featured</Badge>
                         ) : (
-                          <span className="text-muted-foreground text-sm">
-                            -
-                          </span>
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </div>
 
                       <div className="flex items-center justify-end gap-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -442,26 +393,17 @@ export default function VendorCarsPage() {
                                 <Eye className="mr-2 h-4 w-4" /> View Live
                               </DropdownMenuItem>
                             </Link>
-                            <Link
-                              href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}
-                            >
+                            <Link href={`/vendor/${vendorId}/add-car/new-car/${car._id}`}>
                               <DropdownMenuItem className="cursor-pointer">
                                 <Edit2 className="mr-2 h-4 w-4" /> Edit Details
                               </DropdownMenuItem>
                             </Link>
                             <DropdownMenuItem
                               className="cursor-pointer"
-                              onClick={() =>
-                                handleToggleStatus(
-                                  car._id,
-                                  car.status || "available",
-                                )
-                              }
+                              onClick={() => handleToggleStatus(car._id, car.status || 'available')}
                             >
-                              <ToggleLeft className="mr-2 h-4 w-4" /> Mark as{" "}
-                              {car.status === "available"
-                                ? "Unavailable"
-                                : "Available"}
+                              <ToggleLeft className="mr-2 h-4 w-4" /> Mark as{' '}
+                              {car.status === 'available' ? 'Unavailable' : 'Available'}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem

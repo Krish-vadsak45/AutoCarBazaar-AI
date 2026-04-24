@@ -1,24 +1,20 @@
-import { NextResponse } from "next/server";
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
-import connectToDatabase from "@/lib/db";
-import User from "@/models/user.model";
+import crypto from 'crypto';
+
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+
+import connectToDatabase from '@/lib/db';
+import User from '@/models/user.model';
 
 export async function POST(request: Request) {
   try {
     const { token, password } = await request.json();
 
     if (!token || !password) {
-      return NextResponse.json(
-        { message: "Token and password are required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ message: 'Token and password are required' }, { status: 400 });
     }
 
-    const resetPasswordToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
 
     await connectToDatabase();
 
@@ -28,10 +24,7 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { message: "Invalid or expired token" },
-        { status: 400 },
-      );
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 400 });
     }
 
     // Hash new password
@@ -43,15 +36,9 @@ export async function POST(request: Request) {
     user.resetPasswordExpire = undefined;
     await user.save();
 
-    return NextResponse.json(
-      { message: "Password reset successful" },
-      { status: 200 },
-    );
+    return NextResponse.json({ message: 'Password reset successful' }, { status: 200 });
   } catch (error) {
-    console.error("Reset password error:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 },
-    );
+    console.error('Reset password error:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

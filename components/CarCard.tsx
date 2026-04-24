@@ -1,16 +1,18 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Heart as HeartIcon, ArrowLeftRight } from "lucide-react";
-import { useSession } from "next-auth/react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { useEffect } from "react";
-import { useCompareStore } from "@/hooks/use-compare-store";
+import Image from 'next/image';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Heart as HeartIcon, ArrowLeftRight } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { useEffect } from 'react';
+
+import { useCompareStore } from '@/hooks/use-compare-store';
+
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 type Car = {
   id?: string;
@@ -22,7 +24,7 @@ type Car = {
   transmission?: string;
   fuel?: string;
   tags?: string[];
-  status?: "available" | "unavailable";
+  status?: 'available' | 'unavailable';
 };
 
 type CarCardProps = {
@@ -42,7 +44,7 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
     transmission,
     fuel,
     tags = [],
-    status = "available",
+    status = 'available',
   } = cars;
   const [fav, setFav] = useState(false);
   const { data: session } = useSession();
@@ -53,15 +55,16 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
   const carId = (id || _id)?.toString();
   const isCompared = selectedCars.some((c) => c.id === carId);
 
-  const validImage =
-    typeof image === "string" && image.trim() !== "" ? image : "";
+  const validImage = typeof image === 'string' && image.trim() !== '' ? image : '';
 
   const handleAddCompare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!carId) return;
+    if (!carId) {
+      return;
+    }
     addCar({
       id: carId,
-      image: validImage || "/placeholder.svg",
+      image: validImage || '/placeholder.svg',
       title,
       price,
     });
@@ -70,16 +73,18 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
   // Check initial saved status
   useEffect(() => {
     const checkStatus = async () => {
-      if (!session) return;
+      if (!session) {
+        return;
+      }
       try {
-        const { data } = await axios.get("/api/saved-cars");
+        const { data } = await axios.get('/api/saved-cars');
         const currentCarId = (id || _id)?.toString();
         const isSaved =
           Array.isArray(data) &&
-          data.some((c: any) => c?._id?.toString() === currentCarId);
+          data.some((c: Car) => (c._id || c.id)?.toString() === currentCarId);
         setFav(isSaved);
       } catch (err) {
-        console.error("Error checking fav status", err);
+        console.error('Error checking fav status', err);
       }
     };
     checkStatus();
@@ -89,19 +94,19 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
   const handleToggleSave = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!session) {
-      toast.error("Please login to save cars");
-      router.push("/login");
+      toast.error('Please login to save cars');
+      router.push('/login');
       return;
     }
 
     try {
       const carId = (id || _id)?.toString();
-      const { data } = await axios.post("/api/saved-cars", { carId });
-      setFav(data.action === "saved");
+      const { data } = await axios.post('/api/saved-cars', { carId });
+      setFav(data.action === 'saved');
       toast.success(data.message);
     } catch (error) {
-      console.error("Error toggling save status:", error);
-      toast.error("Failed to update collection");
+      console.error('Error toggling save status:', error);
+      toast.error('Failed to update collection');
     }
   };
 
@@ -111,7 +116,7 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
         {validImage ? (
           <Image
             src={validImage}
-            alt={title || "Car Image"}
+            alt={title || 'Car Image'}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -122,37 +127,35 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
         )}
         <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
           <button
-            aria-label={fav ? "Remove from saved" : "Save car"}
+            aria-label={fav ? 'Remove from saved' : 'Save car'}
             onClick={handleToggleSave}
             title="Save Car"
             className="bg-white/90 dark:bg-slate-800/70 rounded-full p-2 shadow-sm hover:scale-110 transform transition-transform"
           >
             <HeartIcon
               className={`w-5 h-5 cursor-pointer ${
-                fav
-                  ? "text-primary fill-primary"
-                  : "text-gray-600 dark:text-gray-300"
+                fav ? 'text-primary fill-primary' : 'text-gray-600 dark:text-gray-300'
               }`}
             />
           </button>
           <button
-            aria-label={isCompared ? "Compared" : "Compare"}
+            aria-label={isCompared ? 'Compared' : 'Compare'}
             onClick={(e) => {
               if (isCompared) {
                 e.stopPropagation();
-                router.push("/compare");
+                router.push('/compare');
               } else {
                 handleAddCompare(e);
               }
             }}
             title="Compare Car"
             className={`bg-white/90 dark:bg-slate-800/70 rounded-full p-2 shadow-sm hover:scale-110 transform transition-all duration-300 md:opacity-0 md:group-hover:opacity-100 ${
-              isCompared ? "opacity-100 md:opacity-100" : ""
+              isCompared ? 'opacity-100 md:opacity-100' : ''
             }`}
           >
             <ArrowLeftRight
               className={`w-5 h-5 cursor-pointer ${
-                isCompared ? "text-primary" : "text-gray-600 dark:text-gray-300"
+                isCompared ? 'text-primary' : 'text-gray-600 dark:text-gray-300'
               }`}
             />
           </button>
@@ -164,11 +167,8 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
           <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 transition-colors duration-200 group-hover:text-primary leading-tight">
             {title}
           </h3>
-          {status === "unavailable" && (
-            <Badge
-              variant="destructive"
-              className="ml-2 text-[10px] px-1.5 py-0 h-4"
-            >
+          {status === 'unavailable' && (
+            <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0 h-4">
               Sold Out
             </Badge>
           )}
@@ -184,11 +184,7 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
 
         <div className="mt-3 flex flex-wrap gap-2">
           {tags.map((t) => (
-            <Badge
-              key={t}
-              variant="outline"
-              className="text-xs bg-gray-100 dark:bg-slate-800"
-            >
+            <Badge key={t} variant="outline" className="text-xs bg-gray-100 dark:bg-slate-800">
               {t}
             </Badge>
           ))}
@@ -199,9 +195,13 @@ export default React.memo(function CarCard({ cars, onView }: CarCardProps) {
             variant="default"
             className="w-full bg-black text-white hover:opacity-95 transform transition-transform hover:-translate-y-0.5 cursor-pointer"
             onClick={() => {
-              if (onView) return onView();
+              if (onView) {
+                return onView();
+              }
               const carId = id ?? _id;
-              if (carId) router.push(`/car/${carId}`);
+              if (carId) {
+                router.push(`/car/${carId}`);
+              }
             }}
           >
             View Car

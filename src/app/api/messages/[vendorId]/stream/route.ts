@@ -1,13 +1,16 @@
-import { NextRequest } from "next/server";
-import Chat from "@/models/message.model";
-import connectToDatabase from "@/lib/db";
+import { NextRequest } from 'next/server';
 
-export const dynamic = "force-dynamic";
+import Chat from '@/models/message.model';
+import connectToDatabase from '@/lib/db';
 
-export async function GET(
-  req: NextRequest,
-  props: { params: Promise<{ vendorId: string }> },
-) {
+export const dynamic = 'force-dynamic';
+
+type ChangeStreamLike = {
+  close: () => Promise<void> | void;
+  on: (event: string, listener: (payload: unknown) => void) => void;
+};
+
+export async function GET(req: NextRequest, props: { params: Promise<{ vendorId: string }> }) {
   const { vendorId } = await props.params;
 
   let isStreaming = true;
@@ -17,7 +20,7 @@ export async function GET(
       // Send an initial ping
       controller.enqueue(`event: ping\ndata: connected\n\n`);
 
-      let changeStream: any = null;
+      let changeStream: ChangeStreamLike | null = null;
 
       const stopStreaming = () => {
         isStreaming = false;
@@ -26,10 +29,12 @@ export async function GET(
         }
         try {
           controller.close();
-        } catch (e) {}
+        } catch (e) {
+          console.error('Error closing stream:', e);
+        }
       };
 
-      req.signal.addEventListener("abort", stopStreaming);
+      req.signal.addEventListener('abort', stopStreaming);
 
       try {
         await connectToDatabase();
@@ -43,21 +48,20 @@ export async function GET(
 
         if (chat) {
           // Watch for changes specifically on this chat document
-          changeStream = Chat.watch(
-            [{ $match: { "documentKey._id": chat._id } }],
-            { fullDocument: "updateLookup" },
-          );
+          changeStream = Chat.watch([{ $match: { 'documentKey._id': chat._id } }], {
+            fullDocument: 'updateLookup',
+          });
 
-          changeStream.on("change", (change: any) => {
+          changeStream.on('change', (_change: unknown) => {
             if (isStreaming) {
               controller.enqueue(
-                `event: update\ndata: ${JSON.stringify({ time: Date.now() })}\n\n`,
+                `event: update\ndata: ${JSON.stringify({ time: Date.now() })}\n\n`
               );
             }
           });
 
-          changeStream.on("error", (error: any) => {
-            console.error("Change Stream Error:", error);
+          changeStream.on('error', (error: unknown) => {
+            console.error('Change Stream Error:', error);
             stopStreaming();
           });
         }
@@ -71,7 +75,7 @@ export async function GET(
           }
         }, 20000);
       } catch (error) {
-        console.error("SSE Setup Error:", error);
+        console.error('SSE Setup Error:', error);
         stopStreaming();
       }
     },
@@ -79,9 +83,9 @@ export async function GET(
 
   return new Response(stream, {
     headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
     },
   });
 }

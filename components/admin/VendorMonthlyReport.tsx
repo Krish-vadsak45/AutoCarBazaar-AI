@@ -1,51 +1,78 @@
-"use client";
+'use client';
 
-import React from "react";
-import { format } from "date-fns";
-import { AlertCircle } from "lucide-react";
+import React from 'react';
+import { format } from 'date-fns';
+import { AlertCircle } from 'lucide-react';
+
 import {
   calculateGrowth,
   calculateStatusDistribution,
   getPerformanceTips,
-} from "@/lib/report-utils";
+} from '@/lib/report-utils';
+
+export interface VendorMonthlyReportData {
+  vendor: {
+    businessName: string;
+    priority: number;
+    subscriptionStatus: string;
+  };
+  stats: {
+    current: {
+      total: number;
+      completed: number;
+      rejected: number;
+      revenue: number;
+    };
+    previous: {
+      total: number;
+      revenue: number;
+    };
+  };
+  topCars: Array<{
+    carModel: string;
+    make: string;
+    monthBookings: number;
+    price: number;
+    title?: string;
+    count?: number;
+  }>;
+  bookingsTable: Array<{
+    _id: string;
+    status: string;
+    createdAt: string;
+    carId?: {
+      carModel: string;
+    };
+    userId?: {
+      name: string;
+    };
+    paymentStatus?: string;
+    bookingFeeAmount?: number;
+    carName?: string;
+    customerName?: string;
+    date?: string;
+  }>;
+  reportMonth: {
+    month: number;
+    year: number;
+  };
+}
 
 interface VendorReportProps {
-  data: {
-    vendor: any;
-    stats: {
-      current: any;
-      previous: any;
-    };
-    topCars: any[];
-    bookingsTable: any[];
-    reportMonth: { month: number; year: number };
-  };
+  data: VendorMonthlyReportData;
 }
 
 export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
   const { vendor, stats, topCars, bookingsTable, reportMonth } = data;
-  const monthName = format(
-    new Date(reportMonth.year, reportMonth.month),
-    "MMMM yyyy",
-  );
+  const monthName = format(new Date(reportMonth.year, reportMonth.month), 'MMMM yyyy');
 
   // Metrics
-  const revenueGrowth = calculateGrowth(
-    stats.current.revenue,
-    stats.previous.revenue,
-  );
-  const bookingGrowth = calculateGrowth(
-    stats.current.total,
-    stats.previous.total,
-  );
+  const revenueGrowth = calculateGrowth(stats.current.revenue, stats.previous.revenue);
+  const bookingGrowth = calculateGrowth(stats.current.total, stats.previous.total);
   const successRate =
-    stats.current.total > 0
-      ? (stats.current.completed / stats.current.total) * 100
-      : 0;
+    stats.current.total > 0 ? (stats.current.completed / stats.current.total) * 100 : 0;
   const rejectionRate =
-    stats.current.total > 0
-      ? (stats.current.rejected / stats.current.total) * 100
-      : 0;
+    stats.current.total > 0 ? (stats.current.rejected / stats.current.total) * 100 : 0;
 
   const statusDist = calculateStatusDistribution(bookingsTable);
   const tips = getPerformanceTips({
@@ -89,10 +116,7 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
           growth={bookingGrowth.percentageChange}
           isPositive={bookingGrowth.isPositive}
         />
-        <MetricCard
-          label="Success Rate"
-          value={`${Math.round(successRate)}%`}
-        />
+        <MetricCard label="Success Rate" value={`${Math.round(successRate)}%`} />
         <MetricCard
           label="Priority Score"
           value={vendor.priority || 1}
@@ -152,12 +176,8 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
                 <tr>
                   <th className="px-4 py-3 font-semibold">Car Model</th>
                   <th className="px-4 py-3 font-semibold">Make</th>
-                  <th className="px-4 py-3 font-semibold text-center">
-                    Month Bookings
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-right">
-                    Unit Price
-                  </th>
+                  <th className="px-4 py-3 font-semibold text-center">Month Bookings</th>
+                  <th className="px-4 py-3 font-semibold text-right">Unit Price</th>
                 </tr>
               </thead>
               <tbody>
@@ -165,12 +185,8 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
                   <tr key={idx} className="border-t">
                     <td className="px-4 py-3 font-medium">{car.carModel}</td>
                     <td className="px-4 py-3">{car.make}</td>
-                    <td className="px-4 py-3 text-center">
-                      {car.monthBookings}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-xs">
-                      ${car.price}
-                    </td>
+                    <td className="px-4 py-3 text-center">{car.monthBookings}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs">${car.price}</td>
                   </tr>
                 ))}
               </tbody>
@@ -198,28 +214,21 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
                   <th className="px-4 py-3 font-semibold">Date</th>
                   <th className="px-4 py-3 font-semibold">Car Model</th>
                   <th className="px-4 py-3 font-semibold">Customer Name</th>
-                  <th className="px-4 py-3 font-semibold text-center">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 font-semibold text-right">
-                    Revenue
-                  </th>
+                  <th className="px-4 py-3 font-semibold text-center">Status</th>
+                  <th className="px-4 py-3 font-semibold text-right">Revenue</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {bookingsTable.map((booking, idx) => (
-                  <tr
-                    key={idx}
-                    className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
+                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-4 py-3 text-xs">
-                      {format(new Date(booking.createdAt), "dd MMM HH:mm")}
+                      {format(new Date(booking.createdAt), 'dd MMM HH:mm')}
                     </td>
                     <td className="px-4 py-3 font-medium text-xs">
-                      {booking.carId?.carModel || "Deleted Car"}
+                      {booking.carId?.carModel || 'Deleted Car'}
                     </td>
                     <td className="px-4 py-3 text-xs truncate max-w-[120px]">
-                      {booking.userId?.name || "Member"}
+                      {booking.userId?.name || 'Member'}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
@@ -229,9 +238,7 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-xs">
-                      {booking.paymentStatus === "PAID"
-                        ? `$${booking.bookingFeeAmount}`
-                        : "-"}
+                      {booking.paymentStatus === 'PAID' ? `$${booking.bookingFeeAmount}` : '-'}
                     </td>
                   </tr>
                 ))}
@@ -247,8 +254,7 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
               No test-drive bookings found for {monthName}.
             </p>
             <p className="text-gray-400 text-xs text-center mt-1">
-              Analytics metrics will appear as zero until new activity is
-              recorded.
+              Analytics metrics will appear as zero until new activity is recorded.
             </p>
           </div>
         )}
@@ -256,10 +262,7 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
 
       {/* Footer Disclaimer */}
       <div className="text-center text-[10px] text-gray-400 mt-20 border-t pt-4">
-        <p>
-          This report was automatically generated on{" "}
-          {format(new Date(), "PPpp")}.
-        </p>
+        <p>This report was automatically generated on {format(new Date(), 'PPpp')}.</p>
         <p>© 2026 AutoCarBazaar AI - Platform Services Team.</p>
       </div>
     </div>
@@ -267,49 +270,58 @@ export const VendorMonthlyReport: React.FC<VendorReportProps> = ({ data }) => {
 };
 
 // Sub-components
-const MetricCard = ({ label, value, growth, isPositive, subText }: any) => (
+interface MetricCardProps {
+  label: string;
+  value: string | number;
+  growth?: number;
+  isPositive?: boolean;
+  subText?: string;
+}
+
+const MetricCard = ({ label, value, growth, isPositive, subText }: MetricCardProps) => (
   <div className="bg-white border rounded-lg p-5 shadow-sm text-center">
-    <p className="text-xs text-gray-500 uppercase tracking-tighter mb-2">
-      {label}
-    </p>
+    <p className="text-xs text-gray-500 uppercase tracking-tighter mb-2">{label}</p>
     <p className="text-2xl font-bold">{value}</p>
     {growth !== undefined && (
       <p
-        className={`text-[10px] mt-2 font-semibold ${isPositive ? "text-green-600" : "text-red-500"}`}
+        className={`text-[10px] mt-2 font-semibold ${isPositive ? 'text-green-600' : 'text-red-500'}`}
       >
-        {isPositive ? "▲" : "▼"} {Math.abs(growth)}% vs Prev Month
+        {isPositive ? '▲' : '▼'} {Math.abs(growth)}% vs Prev Month
       </p>
     )}
-    {subText && <p className="text-[10px] text-gray-400 mt-1">{subText}</p>}
+    {subText ? <p className="text-[10px] text-gray-400 mt-1">{subText}</p> : null}
   </div>
 );
 
-const ProgressBar = ({ label, percentage, color }: any) => (
+interface ProgressBarProps {
+  label: string;
+  percentage: number;
+  color: string;
+}
+
+const ProgressBar = ({ label, percentage, color }: ProgressBarProps) => (
   <div>
     <div className="flex justify-between text-[11px] mb-1">
       <span className="font-semibold text-gray-600">{label}</span>
       <span className="font-mono">{percentage}%</span>
     </div>
     <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-      <div
-        className={`${color} h-1.5`}
-        style={{ width: `${percentage}%` }}
-      ></div>
+      <div className={`${color} h-1.5`} style={{ width: `${percentage}%` }}></div>
     </div>
   </div>
 );
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "COMPLETED":
-      return "bg-green-600";
-    case "REJECTED":
-      return "bg-red-600";
-    case "CANCELLED":
-      return "bg-orange-500";
-    case "CONFIRMED":
-      return "bg-blue-600";
+    case 'COMPLETED':
+      return 'bg-green-600';
+    case 'REJECTED':
+      return 'bg-red-600';
+    case 'CANCELLED':
+      return 'bg-orange-500';
+    case 'CONFIRMED':
+      return 'bg-blue-600';
     default:
-      return "bg-gray-500";
+      return 'bg-gray-500';
   }
 };

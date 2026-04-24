@@ -1,18 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { Star } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
+import { useState } from 'react';
+import axios, { AxiosError } from 'axios';
+import { toast } from 'react-toastify';
+import { Star } from 'lucide-react';
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
+import { Button } from './ui/button';
+import { Textarea } from './ui/textarea';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -22,41 +17,38 @@ interface ReviewModalProps {
   onSuccess?: () => void;
 }
 
-export function ReviewModal({
-  isOpen,
-  onClose,
-  carId,
-  testDriveId,
-  onSuccess,
-}: ReviewModalProps) {
+export function ReviewModal({ isOpen, onClose, carId, testDriveId, onSuccess }: ReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.error("Please select a rating");
+      toast.error('Please select a rating');
       return;
     }
     if (!comment.trim()) {
-      toast.error("Please write a comment");
+      toast.error('Please write a comment');
       return;
     }
 
     setLoading(true);
     try {
-      await axios.post("/api/reviews", {
+      await axios.post('/api/reviews', {
         carId,
         testDriveId,
         rating,
         comment,
       });
-      toast.success("Review submitted successfully!");
-      if (onSuccess) onSuccess();
+      toast.success('Review submitted successfully!');
+      if (onSuccess) {
+        onSuccess();
+      }
       onClose();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to submit review");
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<{ error: string }>;
+      toast.error(axiosError.response?.data?.error || 'Failed to submit review');
     } finally {
       setLoading(false);
     }
@@ -81,9 +73,7 @@ export function ReviewModal({
               >
                 <Star
                   className={`h-8 w-8 transition-colors ${
-                    (hover || rating) >= star
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
+                    (hover || rating) >= star ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
                   }`}
                 />
               </button>
@@ -105,7 +95,7 @@ export function ReviewModal({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "Submitting..." : "Submit Review"}
+            {loading ? 'Submitting...' : 'Submit Review'}
           </Button>
         </DialogFooter>
       </DialogContent>

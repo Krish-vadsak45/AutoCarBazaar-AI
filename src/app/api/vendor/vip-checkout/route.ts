@@ -1,28 +1,27 @@
-import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
-import connectToDatabase from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
-import Vendor from "@/models/vendor.model";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 
-export async function POST(request: Request) {
+import { stripe } from '@/lib/stripe';
+import connectToDatabase from '@/lib/db';
+import Vendor from '@/models/vendor.model';
+
+import { authOptions } from '../../auth/[...nextauth]/route';
+
+export async function POST(_request: Request) {
   try {
     await connectToDatabase();
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = (session.user as any)._id; // Check vendor session
+    const userId = (session.user as { _id?: string })._id; // Check vendor session
 
     const vendor = await Vendor.findOne({ userId });
 
     if (!vendor) {
-      return NextResponse.json(
-        { error: "Vendor profile not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: 'Vendor profile not found' }, { status: 404 });
     }
 
     // Only allow VIP checkouts if they have a priority > 1 (You can change this logic)
@@ -39,15 +38,15 @@ export async function POST(request: Request) {
     };
     const monthlyFee = dynamicPrices[priority] || 1000;
     const vipMonthlyFeeInCents = monthlyFee * 100;
-    
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
     const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
-            currency: "inr",
+            currency: 'inr',
             product_data: {
               name: `VIP Priority Subscription (Level ${priority})`,
               description: `Maintain your Priority Tier ${priority} & Unlock maximum visibility.`,
@@ -55,33 +54,31 @@ export async function POST(request: Request) {
             unit_amount: vipMonthlyFeeInCents,
             // To make this a recurring subscription, set recurring:
             recurring: {
-              interval: "month",
+              interval: 'month',
             },
           },
           quantity: 1,
         },
       ],
-      mode: "subscription",
+      mode: 'subscription',
       success_url: `${baseUrl}/vendor/${vendor._id}/payment?vip_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/vendor/${vendor._id}/payment?vip_canceled=true`,
       metadata: {
         vendorId: vendor._id.toString(),
-        type: "vip_subscription",
+        type: 'vip_subscription',
       },
     });
 
-    console.log("VIP Checkout created for vendor:", vendor._id);
-    console.log("Metadata:", checkoutSession.metadata);
+    console.log('VIP Checkout created for vendor:', vendor._id);
+    console.log('Metadata:', checkoutSession.metadata);
 
     return NextResponse.json({
       sessionId: checkoutSession.id,
       url: checkoutSession.url,
     });
-  } catch (error: any) {
-    console.error("VIP Stripe Session Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+  } catch (error) {
+    console.error('VIP Stripe Session Error:', error);
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

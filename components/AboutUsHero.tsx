@@ -1,5 +1,6 @@
-"use client";
-import React from "react";
+'use client';
+import React from 'react';
+import Image from 'next/image';
 import {
   Users,
   Target,
@@ -12,103 +13,103 @@ import {
   Linkedin,
   Twitter,
   Mail,
-} from "lucide-react";
+} from 'lucide-react';
 
 export default function AboutUsHero() {
   const stats = [
     {
-      label: "Happy Customers",
-      value: "10K+",
+      label: 'Happy Customers',
+      value: '10K+',
       icon: Users,
-      gradient: "from-blue-500 to-cyan-500",
+      gradient: 'from-blue-500 to-cyan-500',
     },
     {
-      label: "Cars Sold",
-      value: "5K+",
+      label: 'Cars Sold',
+      value: '5K+',
       icon: Award,
-      gradient: "from-amber-500 to-orange-500",
+      gradient: 'from-amber-500 to-orange-500',
     },
     {
-      label: "Years Experience",
-      value: "15+",
+      label: 'Years Experience',
+      value: '15+',
       icon: Target,
-      gradient: "from-purple-500 to-pink-500",
+      gradient: 'from-purple-500 to-pink-500',
     },
     {
-      label: "Satisfaction Rate",
-      value: "98%",
+      label: 'Satisfaction Rate',
+      value: '98%',
       icon: Heart,
-      gradient: "from-red-500 to-rose-500",
+      gradient: 'from-red-500 to-rose-500',
     },
   ];
 
   const values = [
     {
-      title: "Trust & Transparency",
+      title: 'Trust & Transparency',
       description:
-        "We believe in honest dealings and clear communication at every step of your car buying journey.",
+        'We believe in honest dealings and clear communication at every step of your car buying journey.',
       icon: Shield,
-      gradient: "from-blue-500 to-indigo-600",
-      hoverEffect: "hover:rotate-12",
+      gradient: 'from-blue-500 to-indigo-600',
+      hoverEffect: 'hover:rotate-12',
     },
     {
-      title: "Quality Assurance",
+      title: 'Quality Assurance',
       description:
-        "Every vehicle is thoroughly inspected and verified to meet our high standards before listing.",
+        'Every vehicle is thoroughly inspected and verified to meet our high standards before listing.',
       icon: Award,
-      gradient: "from-emerald-500 to-teal-600",
-      hoverEffect: "hover:-rotate-12",
+      gradient: 'from-emerald-500 to-teal-600',
+      hoverEffect: 'hover:-rotate-12',
     },
     {
-      title: "Customer First",
+      title: 'Customer First',
       description:
         "Your satisfaction is our priority. We're here to help you find the perfect car for your needs.",
       icon: Heart,
-      gradient: "from-pink-500 to-rose-600",
-      hoverEffect: "hover:scale-110",
+      gradient: 'from-pink-500 to-rose-600',
+      hoverEffect: 'hover:scale-110',
     },
     {
-      title: "Innovation",
+      title: 'Innovation',
       description:
-        "We leverage AI and modern technology to make car buying smarter and more efficient.",
+        'We leverage AI and modern technology to make car buying smarter and more efficient.',
       icon: Zap,
-      gradient: "from-amber-500 to-orange-600",
-      hoverEffect: "hover:rotate-180",
+      gradient: 'from-amber-500 to-orange-600',
+      hoverEffect: 'hover:rotate-180',
     },
   ];
 
   const team = [
     {
-      name: "John Smith",
-      role: "CEO & Founder",
-      image: "/logo.png",
-      bio: "15+ years in automotive industry",
-      social: { linkedin: "#", twitter: "#", email: "john@example.com" },
-      gradient: "from-blue-500 to-purple-600",
+      name: 'John Smith',
+      role: 'CEO & Founder',
+      image: '/logo.png',
+      bio: '15+ years in automotive industry',
+      social: { linkedin: '#', twitter: '#', email: 'john@example.com' },
+      gradient: 'from-blue-500 to-purple-600',
     },
     {
-      name: "Sarah Johnson",
-      role: "Head of Operations",
-      image: "/ford.webp",
-      bio: "Operations expert with MBA",
-      social: { linkedin: "#", twitter: "#", email: "sarah@example.com" },
-      gradient: "from-pink-500 to-rose-600",
+      name: 'Sarah Johnson',
+      role: 'Head of Operations',
+      image: '/ford.webp',
+      bio: 'Operations expert with MBA',
+      social: { linkedin: '#', twitter: '#', email: 'sarah@example.com' },
+      gradient: 'from-pink-500 to-rose-600',
     },
     {
-      name: "Mike Chen",
-      role: "Tech Lead",
-      image: "/placeholder.svg",
-      bio: "AI & Machine Learning specialist",
-      social: { linkedin: "#", twitter: "#", email: "mike@example.com" },
-      gradient: "from-emerald-500 to-teal-600",
+      name: 'Mike Chen',
+      role: 'Tech Lead',
+      image: '/placeholder.svg',
+      bio: 'AI & Machine Learning specialist',
+      social: { linkedin: '#', twitter: '#', email: 'mike@example.com' },
+      gradient: 'from-emerald-500 to-teal-600',
     },
     {
-      name: "Emily Davis",
-      role: "Customer Success",
-      image: "/placeholder.svg",
-      bio: "Customer satisfaction champion",
-      social: { linkedin: "#", twitter: "#", email: "emily@example.com" },
-      gradient: "from-amber-500 to-orange-600",
+      name: 'Emily Davis',
+      role: 'Customer Success',
+      image: '/placeholder.svg',
+      bio: 'Customer satisfaction champion',
+      social: { linkedin: '#', twitter: '#', email: 'emily@example.com' },
+      gradient: 'from-amber-500 to-orange-600',
     },
   ];
 
@@ -123,21 +124,19 @@ export default function AboutUsHero() {
             <div className="text-center lg:text-left space-y-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 rounded-full mb-2">
                 <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                  Your Trusted Car Partner
-                </span>
+                <span className="text-sm font-medium text-primary">Your Trusted Car Partner</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                About{" "}
+                About{' '}
                 <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
                   Us
                 </span>
               </h1>
 
               <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 leading-relaxed">
-                Revolutionizing the way people buy and sell cars with trust,
-                technology, and exceptional service since 2009.
+                Revolutionizing the way people buy and sell cars with trust, technology, and
+                exceptional service since 2009.
               </p>
 
               {/* Feature Pills */}
@@ -165,28 +164,16 @@ export default function AboutUsHero() {
               {/* Stats */}
               <div className="grid grid-cols-3 gap-6 pt-6">
                 <div className="text-center lg:text-left">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
-                    15+
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Years Experience
-                  </div>
+                  <div className="text-3xl md:text-4xl font-bold text-primary mb-1">15+</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Years Experience</div>
                 </div>
                 <div className="text-center lg:text-left">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
-                    5K+
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Cars Sold
-                  </div>
+                  <div className="text-3xl md:text-4xl font-bold text-primary mb-1">5K+</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Cars Sold</div>
                 </div>
                 <div className="text-center lg:text-left">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-1">
-                    98%
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Satisfaction
-                  </div>
+                  <div className="text-3xl md:text-4xl font-bold text-primary mb-1">98%</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Satisfaction</div>
                 </div>
               </div>
             </div>
@@ -198,9 +185,11 @@ export default function AboutUsHero() {
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent z-10 group-hover:opacity-0 transition-opacity duration-500"></div>
 
                 {/* Main Image */}
-                <img
+                <Image
                   src="/placeholder.svg"
                   alt="About our dealership"
+                  width={800}
+                  height={500}
                   className="w-full h-[400px] md:h-[500px] object-cover group-hover:scale-110 transition-transform duration-700"
                 />
 
@@ -212,9 +201,7 @@ export default function AboutUsHero() {
                         <TrendingUp className="w-6 h-6 text-primary" />
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Trusted by
-                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Trusted by</div>
                         <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
                           10,000+ Customers
                         </div>
@@ -231,9 +218,7 @@ export default function AboutUsHero() {
                 {/* Corner Badge */}
                 <div className="absolute top-6 right-6 bg-gradient-to-br from-amber-400 to-orange-500 text-white px-4 py-2 rounded-full shadow-lg z-20 flex items-center gap-2">
                   <Award className="w-5 h-5" />
-                  <span className="font-semibold text-sm">
-                    Best Dealership 2024
-                  </span>
+                  <span className="font-semibold text-sm">Best Dealership 2024</span>
                 </div>
               </div>
 
@@ -286,29 +271,29 @@ export default function AboutUsHero() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
-                Our{" "}
+                Our{' '}
                 <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   Story
                 </span>
               </h2>
               <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                Founded in 2009, we started with a simple mission: to make car
-                buying and selling transparent, efficient, and enjoyable. What
-                began as a small dealership has grown into a trusted platform
-                serving thousands of customers.
+                Founded in 2009, we started with a simple mission: to make car buying and selling
+                transparent, efficient, and enjoyable. What began as a small dealership has grown
+                into a trusted platform serving thousands of customers.
               </p>
               <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                Today, we combine cutting-edge AI technology with personalized
-                service to help you find your dream car or sell your vehicle
-                with confidence. Every member of our team is committed to
-                delivering excellence at every touchpoint.
+                Today, we combine cutting-edge AI technology with personalized service to help you
+                find your dream car or sell your vehicle with confidence. Every member of our team
+                is committed to delivering excellence at every touchpoint.
               </p>
             </div>
             <div className="relative h-64 md:h-96 rounded-2xl overflow-hidden shadow-2xl group">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent z-10 group-hover:opacity-0 transition-opacity duration-500"></div>
-              <img
+              <Image
                 src="/placeholder.svg"
                 alt="Our showroom"
+                width={800}
+                height={600}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
             </div>
@@ -321,7 +306,7 @@ export default function AboutUsHero() {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Our{" "}
+              Our{' '}
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Values
               </span>
@@ -371,7 +356,7 @@ export default function AboutUsHero() {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Meet Our{" "}
+              Meet Our{' '}
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 Team
               </span>
@@ -392,9 +377,11 @@ export default function AboutUsHero() {
                   <div
                     className={`absolute inset-0 bg-gradient-to-br ${member.gradient} opacity-0 group-hover:opacity-30 transition-opacity duration-500 z-10`}
                   ></div>
-                  <img
+                  <Image
                     src={member.image}
                     alt={member.name}
+                    width={400}
+                    height={400}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
 
@@ -456,8 +443,7 @@ export default function AboutUsHero() {
             Ready to Find Your Perfect Car?
           </h2>
           <p className="text-base md:text-lg text-white/95 dark:text-white/90 mb-6">
-            Join thousands of satisfied customers who found their dream cars
-            with us.
+            Join thousands of satisfied customers who found their dream cars with us.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
             <button className="group/second relative px-6 py-2.5 md:px-8 md:py-3 bg-white dark:bg-white text-orange-600 dark:text-orange-700 rounded-lg font-semibold text-sm md:text-base hover:bg-orange-50 dark:hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-white/40 dark:hover:shadow-white/30 hover:scale-105 overflow-hidden">

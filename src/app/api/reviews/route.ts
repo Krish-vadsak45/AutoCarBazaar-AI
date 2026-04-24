@@ -1,16 +1,23 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import connectToDatabase from "@/lib/db";
-import Review from "@/models/review.model";
-import TestDrive from "@/models/test-drive.model";
-import Car from "@/models/car.model";
-import mongoose from "mongoose";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import mongoose from 'mongoose';
+
+import connectToDatabase from '@/lib/db';
+import { getErrorMessage } from '@/lib/errors';
+import Review from '@/models/review.model';
+import TestDrive from '@/models/test-drive.model';
+import Car from '@/models/car.model';
+import { ReviewData } from '@/src/types';
+
+type ReplySummary = {
+  createdAt: string | Date;
+};
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession();
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
@@ -18,10 +25,7 @@ export async function POST(req: Request) {
     const { carId, testDriveId, rating, comment } = body;
 
     if (!carId || !testDriveId || !rating || !comment) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Verify test drive is completed and belongs to the user
@@ -29,13 +33,13 @@ export async function POST(req: Request) {
       _id: testDriveId,
       carId,
       // userId: session.user.id, // Assuming session.user has an id
-      status: "COMPLETED",
+      status: 'COMPLETED',
     });
 
     if (!testDrive) {
       return NextResponse.json(
-        { error: "No completed test drive found for this car" },
-        { status: 400 },
+        { error: 'No completed test drive found for this car' },
+        { status: 400 }
       );
     }
 
@@ -43,18 +47,17 @@ export async function POST(req: Request) {
     const existingReview = await Review.findOne({ testDriveId });
     if (existingReview) {
       return NextResponse.json(
-        { error: "You have already reviewed this test drive" },
-        { status: 400 },
+        { error: 'You have already reviewed this test drive' },
+        { status: 400 }
       );
     }
 
     // Create review - handle user identification correctly
     // Since I don't see the exact session user ID field, we'll try to find user by email or use session.user.id
-    const user = await mongoose
-      .model("User")
-      .findOne({ email: session.user.email });
-    if (!user)
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const user = await mongoose.model('User').findOne({ email: session.user.email });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     const review = await Review.create({
       carId,
@@ -76,23 +79,23 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(review, { status: 201 });
-  } catch (error: any) {
-    console.error("Error creating review:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Error creating review:', error);
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const carId = searchParams.get("carId");
-    const page = Number.parseInt(searchParams.get("page") || "1");
-    const limit = Number.parseInt(searchParams.get("limit") || "10");
-    const rating = searchParams.get("rating");
+    const carId = searchParams.get('carId');
+    const page = Number.parseInt(searchParams.get('page') || '1');
+    const limit = Number.parseInt(searchParams.get('limit') || '10');
+    const rating = searchParams.get('rating');
 
     await connectToDatabase();
 
-    const query: any = carId
+    const query: { carId?: mongoose.Types.ObjectId; rating?: number } = carId
       ? { carId: new mongoose.Types.ObjectId(carId) }
       : {};
     if (rating) {
@@ -103,10 +106,10 @@ export async function GET(req: Request) {
 
     const [reviews, total] = await Promise.all([
       Review.find(query)
-        .populate("userId", "name image")
+        .populate('userId', 'name image')
         .populate({
-          path: "replies.userId",
-          select: "name image",
+          path: 'replies.userId',
+          select: 'name image',
         })
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -116,11 +119,11 @@ export async function GET(req: Request) {
     ]);
 
     // Enhance reviews with a 'hasMoreReplies' flag for the UI
-    const enhancedReviews = reviews.map((review: any) => {
+    const enhancedReviews = reviews.map((review: ReviewData) => {
       // Sort replies by date (recent first) before slicing
       const sortedReplies = [...review.replies].sort(
-        (a: any, b: any) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        (a: ReplySummary, b: ReplySummary) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
       return {
@@ -142,10 +145,10 @@ export async function GET(req: Request) {
           totalPages: Math.ceil(total / limit),
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Error fetching reviews:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Error fetching reviews:', error);
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }

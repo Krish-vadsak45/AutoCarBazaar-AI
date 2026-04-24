@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState } from 'react';
+import { X } from 'lucide-react';
 
 interface EmiCalculatorModalProps {
   isOpen: boolean;
@@ -11,19 +11,14 @@ interface EmiCalculatorModalProps {
 }
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
     maximumFractionDigits: 2,
   }).format(amount);
 }
 
-export function EmiCalculatorModal({
-  isOpen,
-  setIsEmiModalOpen,
-  onClose,
-  carPrice,
-}: EmiCalculatorModalProps) {
+export function EmiCalculatorModal({ isOpen, onClose, carPrice }: EmiCalculatorModalProps) {
   const [vehiclePrice, setVehiclePrice] = useState(carPrice);
   const [downPayment, setDownPayment] = useState(Math.round(carPrice * 0.15));
   const [interestRate, setInterestRate] = useState(5);
@@ -50,7 +45,9 @@ export function EmiCalculatorModal({
   const totalInterest = totalPayments - loanAmount;
   const totalAmount = downPayment + totalPayments;
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 ">
@@ -76,9 +73,7 @@ export function EmiCalculatorModal({
               Vehicle Price
             </label>
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                $
-              </span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">$</span>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {vehiclePrice.toLocaleString()}
               </span>
@@ -104,9 +99,7 @@ export function EmiCalculatorModal({
               Down Payment
             </label>
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                $
-              </span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">$</span>
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
                 {downPayment.toLocaleString()}
               </span>
@@ -153,9 +146,7 @@ export function EmiCalculatorModal({
                 Loan Term
               </label>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {loanTerm}
-                </span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{loanTerm}</span>
                 <span className="text-gray-600 dark:text-gray-400">Years</span>
               </div>
               <input
@@ -172,9 +163,7 @@ export function EmiCalculatorModal({
 
           {/* Monthly Payment */}
           <div className="bg-blue-50 dark:bg-slate-800 border-2 border-blue-200 dark:border-slate-700 rounded-lg p-4 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              Monthly Payment
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Monthly Payment</p>
             <p className="text-4xl font-bold text-gray-900 dark:text-white">
               {formatCurrency(monthlyPayment)}
             </p>
@@ -183,33 +172,25 @@ export function EmiCalculatorModal({
           {/* Breakdown */}
           <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-slate-700">
             <div className="flex justify-between py-2">
-              <span className="text-gray-600 dark:text-gray-400">
-                Vehicle Price
-              </span>
+              <span className="text-gray-600 dark:text-gray-400">Vehicle Price</span>
               <span className="font-semibold text-gray-900 dark:text-white">
                 {formatCurrency(vehiclePrice)}
               </span>
             </div>
             <div className="flex justify-between py-2">
-              <span className="text-gray-600 dark:text-gray-400">
-                Down Payment
-              </span>
+              <span className="text-gray-600 dark:text-gray-400">Down Payment</span>
               <span className="font-semibold text-gray-900 dark:text-white">
                 {formatCurrency(downPayment)}
               </span>
             </div>
             <div className="flex justify-between py-2">
-              <span className="text-gray-600 dark:text-gray-400">
-                Loan Amount
-              </span>
+              <span className="text-gray-600 dark:text-gray-400">Loan Amount</span>
               <span className="font-semibold text-gray-900 dark:text-white">
                 {formatCurrency(loanAmount)}
               </span>
             </div>
             <div className="flex justify-between py-2">
-              <span className="text-gray-600 dark:text-gray-400">
-                Total Interest
-              </span>
+              <span className="text-gray-600 dark:text-gray-400">Total Interest</span>
               <span className="font-semibold text-gray-900 dark:text-white">
                 {formatCurrency(totalInterest)}
               </span>
@@ -227,8 +208,7 @@ export function EmiCalculatorModal({
 
           {/* Disclaimer */}
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center pt-4">
-            This is an estimate. Actual EMI may vary based on your credit score
-            and lender terms.
+            This is an estimate. Actual EMI may vary based on your credit score and lender terms.
           </p>
         </div>
       </div>

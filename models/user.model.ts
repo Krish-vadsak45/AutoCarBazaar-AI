@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Document, Model } from 'mongoose';
 
 export interface IUser extends Document {
   email?: string;
@@ -13,6 +13,8 @@ export interface IUser extends Document {
   resetPasswordExpire?: Date;
   address?: string;
   savedCars: mongoose.Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const UserSchema = new mongoose.Schema<IUser>(
@@ -20,7 +22,7 @@ const UserSchema = new mongoose.Schema<IUser>(
     email: { type: String, required: true, unique: true, sparse: true },
     name: { type: String },
     password: { type: String },
-    role: { type: String, enum: ["admin", "user", "vendor"], default: "user" },
+    role: { type: String, enum: ['admin', 'user', 'vendor'], default: 'user' },
     image: {
       type: String,
     },
@@ -30,18 +32,17 @@ const UserSchema = new mongoose.Schema<IUser>(
     isVerified: { type: Boolean, default: false },
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date },
-    savedCars: [{ type: mongoose.Schema.Types.ObjectId, ref: "Car" }],
+    savedCars: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Car' }],
   },
-  { timestamps: true, strict: false },
+  { timestamps: true, strict: false }
 );
 
 // Force reload model in development to pick up schema changes
-if (process.env.NODE_ENV === "development") {
-  delete (mongoose.models as any).User;
+if (process.env.NODE_ENV === 'development') {
+  delete mongoose.models.User;
 }
 
 const User: Model<IUser> =
-  (mongoose.models.User as Model<IUser>) ||
-  mongoose.model<IUser>("User", UserSchema);
+  (mongoose.models.User as Model<IUser>) || mongoose.model<IUser>('User', UserSchema);
 
 export default User;

@@ -1,26 +1,26 @@
-"use client";
-import React from "react";
-import { CheckCircle, Zap, Shield } from "lucide-react";
+'use client';
+import React from 'react';
+import { CheckCircle, Zap, Shield } from 'lucide-react';
 
 export default function Platform() {
   const cards = [
     {
-      title: "Verified Listings",
-      desc: "Every car is verified by our team so you can buy with confidence.",
+      title: 'Verified Listings',
+      desc: 'Every car is verified by our team so you can buy with confidence.',
       icon: (
         <CheckCircle className="w-8 h-8 text-primary transition-colors duration-300 group-hover:text-white" />
       ),
     },
     {
-      title: "Smart Matches",
-      desc: "AI-powered recommendations surface the best cars for your needs.",
+      title: 'Smart Matches',
+      desc: 'AI-powered recommendations surface the best cars for your needs.',
       icon: (
         <Zap className="w-8 h-8 text-primary transition-colors duration-300 group-hover:text-white" />
       ),
     },
     {
-      title: "Secure Payments",
-      desc: "Payments protected with end-to-end encryption and buyer protection.",
+      title: 'Secure Payments',
+      desc: 'Payments protected with end-to-end encryption and buyer protection.',
       icon: (
         <Shield className="w-8 h-8 text-primary transition-colors duration-300 group-hover:text-white" />
       ),
@@ -36,9 +36,9 @@ export default function Platform() {
               Why choose our platform
             </h2>
             <p className="text-gray-600 dark:text-gray-300 max-w-xl text-center">
-              We make buying and selling cars simple, safe and smart — combining
-              verified listings, AI-powered matching, and secure payments so you
-              spend less time searching and more time driving.
+              We make buying and selling cars simple, safe and smart — combining verified listings,
+              AI-powered matching, and secure payments so you spend less time searching and more
+              time driving.
             </p>
           </div>
 
@@ -59,9 +59,7 @@ export default function Platform() {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       {c.title}
                     </h3>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                      {c.desc}
-                    </p>
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{c.desc}</p>
                   </div>
                 </div>
               </div>

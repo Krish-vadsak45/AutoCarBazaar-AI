@@ -1,10 +1,13 @@
-"use client";
+'use client';
 
-import React, { useRef, useState } from "react";
-import { Image as ImageIcon, X as XIcon, Loader2 } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import FileUpload, { FileUploadRef } from "./FileUpload";
+import type { UploadResponse } from '@imagekit/next';
+import React, { useRef, useState } from 'react';
+import Image from 'next/image';
+import { Image as ImageIcon, X as XIcon, Loader2 } from 'lucide-react';
+
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import FileUpload, { FileUploadRef } from './FileUpload';
 
 export default function LandingPage() {
   const [showUpload, setShowUpload] = useState(false);
@@ -14,17 +17,24 @@ export default function LandingPage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const uploadRef = useRef<FileUploadRef>(null);
 
-  const handleUploadSuccess = (res: any) => {
+  const handleUploadSuccess = (res: UploadResponse) => {
+    if (!res.url) {
+      setUploadError('Upload succeeded but no preview URL was returned.');
+      setIsUploading(false);
+      return;
+    }
+
     setPreviews([res.url]);
+    setUploadError(null);
     setIsUploading(false);
     setShowUpload(true);
   };
 
-  const handleUploadProgress = (progress: number) => {
+  const handleUploadProgress = () => {
     setIsUploading(true);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const _handleInputChange = () => {
     setShowUpload(true);
   };
 
@@ -45,7 +55,7 @@ export default function LandingPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: wire up real search; for now just log
-    console.log("Search submitted", { previews });
+    console.log('Search submitted', { previews });
   };
 
   return (
@@ -64,8 +74,8 @@ export default function LandingPage() {
             Rent The Perfect Ride. Effortless, Fast, Reliable.
           </h1>
           <p className="mt-6 text-md sm:text-xl text-white drop-shadow-md font-medium">
-            Discover high-quality cars near you. Upload a photo of a car you
-            like and we’ll find similar models available for rent.
+            Discover high-quality cars near you. Upload a photo of a car you like and we’ll find
+            similar models available for rent.
           </p>
 
           <form
@@ -93,9 +103,7 @@ export default function LandingPage() {
                   title="Upload an image"
                 >
                   <ImageIcon className="w-5 h-5" />
-                  <span className="font-semibold text-sm sm:text-base tracking-wide">
-                    Upload
-                  </span>
+                  <span className="font-semibold text-sm sm:text-base tracking-wide">Upload</span>
                 </Button>
 
                 <Button
@@ -116,7 +124,7 @@ export default function LandingPage() {
               />
             </div>
 
-            {(showUpload || previews.length > 0) && (
+            {showUpload || previews.length > 0 ? (
               <div
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
@@ -163,7 +171,7 @@ export default function LandingPage() {
                         {uploadError ? (
                           <span className="text-red-500">{uploadError}</span>
                         ) : (
-                          "No image selected"
+                          'No image selected'
                         )}
                       </div>
                     </div>
@@ -173,9 +181,11 @@ export default function LandingPage() {
                         key={p}
                         className="relative rounded-xl overflow-hidden bg-gray-50 shadow-lg border-2 border-primary/20"
                       >
-                        <img
+                        <Image
                           src={p}
                           alt={`preview-${idx}`}
+                          width={400}
+                          height={192}
                           className="w-full h-48 object-cover"
                         />
                         <div className="absolute top-2 right-2">
@@ -193,7 +203,7 @@ export default function LandingPage() {
                   )}
                 </div>
               </div>
-            )}
+            ) : null}
           </form>
         </div>
       </div>

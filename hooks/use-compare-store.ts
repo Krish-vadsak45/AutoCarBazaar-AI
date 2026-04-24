@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { toast } from "react-toastify";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { toast } from 'react-toastify';
 
 export type CompareCar = {
   id: string;
@@ -24,23 +24,21 @@ export const useCompareStore = create<CompareStore>()(
         const { selectedCars } = get();
         // Check if already exists
         if (selectedCars.some((c) => c.id === car.id)) {
-          toast.warning("Car is already in compare list");
+          toast.warning('Car is already in compare list');
           return;
         }
         // Limit to 3 cars
         if (selectedCars.length >= 3) {
-          toast.error("You can only compare up to 3 cars at once");
+          toast.error('You can only compare up to 3 cars at once');
           return;
         }
 
         set({ selectedCars: [...selectedCars, car] });
 
         if (selectedCars.length === 0) {
-          toast.success("Car added to compare. Select another car.");
+          toast.success('Car added to compare. Select another car.');
         } else {
-          toast.success(
-            `Car added. ${selectedCars.length + 1} cars ready to compare.`,
-          );
+          toast.success(`Car added. ${selectedCars.length + 1} cars ready to compare.`);
         }
       },
       removeCar: (carId) =>
@@ -50,7 +48,7 @@ export const useCompareStore = create<CompareStore>()(
       clearCars: () => set({ selectedCars: [] }),
     }),
     {
-      name: "car-compare-storage", // name of the item in the storage (must be unique)
-    },
-  ),
+      name: 'car-compare-storage', // name of the item in the storage (must be unique)
+    }
+  )
 );

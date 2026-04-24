@@ -1,17 +1,18 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import connectToDatabase from "@/lib/db";
-import User from "@/models/user.model";
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+
+import connectToDatabase from '@/lib/db';
+import User from '@/models/user.model';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log("Received signup data:", body);
+    console.log('Received signup data:', body);
     const { name, email, password } = body;
 
     // ✅ Validate input
     if (!name || !email || !password) {
-      const errorResponse = { error: "All fields are required" };
+      const errorResponse = { error: 'All fields are required' };
       return NextResponse.json(errorResponse, { status: 400 });
     }
 
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      const errorResponse = { error: "User already exists" };
+      const errorResponse = { error: 'User already exists' };
       return NextResponse.json(errorResponse, { status: 409 });
     }
 
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     });
 
     const successResponse = {
-      message: "User registered successfully",
+      message: 'User registered successfully',
       user: {
         id: newUser._id,
         name: newUser.name,
@@ -46,9 +47,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(successResponse, { status: 201 });
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error('Signup error:', error);
 
-    const errorResponse = { error: "Internal Server Error" };
+    const errorResponse = { error: 'Internal Server Error' };
     return NextResponse.json(errorResponse, { status: 500 });
   }
 }

@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
-import connectToDatabase from "@/lib/db";
-import Vendor from "@/models/vendor.model";
-import { processMonthlySubscriptionEmails } from "@/lib/subscription-emails";
+import { NextResponse } from 'next/server';
+
+import connectToDatabase from '@/lib/db';
+import Vendor from '@/models/vendor.model';
+import { processMonthlySubscriptionEmails } from '@/lib/subscription-emails';
 
 // You can protect this cron job via a secret token if needed by checking headers or query params
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   try {
     await connectToDatabase();
 
@@ -13,7 +14,8 @@ export async function GET(req: Request) {
     if (today !== 1) {
       await processMonthlySubscriptionEmails();
       return NextResponse.json({
-        message: "Scheduled emails processed. Priority evaluation skipped (not the 1st of the month)."
+        message:
+          'Scheduled emails processed. Priority evaluation skipped (not the 1st of the month).',
       });
     }
 
@@ -22,7 +24,7 @@ export async function GET(req: Request) {
 
     if (!vendors || vendors.length === 0) {
       return NextResponse.json({
-        message: "No active verified vendors found to evaluate",
+        message: 'No active verified vendors found to evaluate',
       });
     }
 
@@ -55,11 +57,17 @@ export async function GET(req: Request) {
       const percentile = ((index + 1) / totalVendors) * 100;
 
       let earnedPriority = 1;
-      if (percentile <= 10) earnedPriority = 5;
-      else if (percentile <= 30) earnedPriority = 4;
-      else if (percentile <= 60) earnedPriority = 3;
-      else if (percentile <= 80) earnedPriority = 2;
-      else earnedPriority = 1;
+      if (percentile <= 10) {
+        earnedPriority = 5;
+      } else if (percentile <= 30) {
+        earnedPriority = 4;
+      } else if (percentile <= 60) {
+        earnedPriority = 3;
+      } else if (percentile <= 80) {
+        earnedPriority = 2;
+      } else {
+        earnedPriority = 1;
+      }
 
       // Note: We might want a minimum score to earn priority > 1 so new vendors with 0 score aren't bumped up automatically if there are few vendors.
       // If score is 0, force priority 1.
@@ -67,10 +75,7 @@ export async function GET(req: Request) {
         earnedPriority = 1;
       }
 
-      await Vendor.updateOne(
-        { _id: v.vendorId },
-        { $set: { priority: earnedPriority } },
-      );
+      await Vendor.updateOne({ _id: v.vendorId }, { $set: { priority: earnedPriority } });
 
       return {
         vendorId: v.vendorId,
@@ -86,15 +91,13 @@ export async function GET(req: Request) {
     await processMonthlySubscriptionEmails();
 
     return NextResponse.json({
-      message: "Vendor dynamic priorities calculated and emails dispatched successfully",
+      message: 'Vendor dynamic priorities calculated and emails dispatched successfully',
       totalEvaluated: totalVendors,
       results,
     });
-  } catch (error: any) {
-    console.error("Evaluation Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+  } catch (error) {
+    console.error('Evaluation Error:', error);
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

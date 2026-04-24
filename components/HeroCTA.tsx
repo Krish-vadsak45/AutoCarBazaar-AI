@@ -1,6 +1,6 @@
-"use client";
-import React from "react";
-import Link from "next/link";
+'use client';
+import React from 'react';
+import Link from 'next/link';
 
 export default function HeroCTA() {
   return (
@@ -14,8 +14,8 @@ export default function HeroCTA() {
               Ready to Find Your Dream Car?
             </h1>
             <p className="mt-4 text-lg md:text-xl text-slate-700 dark:text-white/80">
-              Join thousands of satisfied customers who found their perfect
-              vehicle through our platform.
+              Join thousands of satisfied customers who found their perfect vehicle through our
+              platform.
             </p>
 
             <div className="mt-8">

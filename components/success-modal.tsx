@@ -1,14 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
-import {
-  CheckCircle,
-  X,
-  AlertCircle,
-  Calendar,
-  Clock,
-  MapPin,
-} from "lucide-react";
+import React from 'react';
+import { CheckCircle, X, AlertCircle, Calendar, Clock, MapPin } from 'lucide-react';
 
 export interface SuccessModalProps {
   details: {
@@ -60,9 +53,7 @@ export function SuccessModal({ details, onClose }: SuccessModalProps) {
                 >
                   <circle cx="12" cy="12" r="10" strokeWidth="0" />
                 </svg>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Car
-                </span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Car</span>
               </div>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {bookingDetails.car}
@@ -72,9 +63,7 @@ export function SuccessModal({ details, onClose }: SuccessModalProps) {
             <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-gray-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Starts
-                </span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Starts</span>
               </div>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {bookingDetails.start}
@@ -84,9 +73,7 @@ export function SuccessModal({ details, onClose }: SuccessModalProps) {
             <div className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-gray-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Ends
-                </span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Ends</span>
               </div>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {bookingDetails.end}
@@ -96,9 +83,7 @@ export function SuccessModal({ details, onClose }: SuccessModalProps) {
             <div className="flex items-center justify-between bg_gray-50 dark:bg-slate-800 rounded-lg p-3">
               <div className="flex items-center gap-3">
                 <MapPin className="w-5 h-5 text-gray-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Dealership
-                </span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Dealership</span>
               </div>
               <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {bookingDetails.dealership}
@@ -109,7 +94,7 @@ export function SuccessModal({ details, onClose }: SuccessModalProps) {
           <div className="mt-5 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-lg p-3 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-blue-600" />
             <p className="text-sm text-blue-800 dark:text-blue-300">
-              Please arrive 10 minutes early with your driver's license.
+              Please arrive 10 minutes early with your driver&apos;s license.
             </p>
           </div>
 

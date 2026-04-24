@@ -1,32 +1,21 @@
-"use client";
+'use client';
 
-import React, { useState, useRef, useEffect } from "react";
-import { z } from "zod";
-import {
-  Search,
-  Filter,
-  X,
-  Settings2,
-  GripVertical,
-  Calendar as CalendarIcon,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import React, { useState, useRef, useEffect } from 'react';
+import { z } from 'zod';
+import { Search, Filter, X, Settings2, GripVertical } from 'lucide-react';
+
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface ProjectFiltersProps {
   searchQuery: string;
@@ -56,8 +45,7 @@ interface ExtendedFiltersProps extends ProjectFiltersProps {
 export const SearchAndFilter = React.memo(function SearchAndFilter({
   searchQuery,
   onSearchChange,
-  selectedTool,
-  onToolChange,
+  onToolChange: _onToolChange,
   // date range removed
   // extended
   company,
@@ -79,7 +67,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
   const [yearFromError, setYearFromError] = useState<string | null>(null);
   const [yearToError, setYearToError] = useState<string | null>(null);
   const [yearRangeError, setYearRangeError] = useState<string | null>(null);
-  const [position, setPosition] = useState<"left" | "right">("right"); // Docked side
+  const [position, setPosition] = useState<'left' | 'right'>('right'); // Docked side
   const [top, setTop] = useState<number | null>(null); // Docked Y position
 
   // Dragging state
@@ -90,7 +78,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
   useEffect(() => {
     // Initial centering if top is null
     if (top === null) {
-      if (typeof window !== "undefined") {
+      if (typeof window !== 'undefined') {
         setTop(window.innerHeight / 2 - 64);
       }
     }
@@ -98,16 +86,14 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
 
   useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDragging) return;
+      if (!isDragging) {
+        return;
+      }
 
       const clientX =
-        "touches" in e
-          ? (e as TouchEvent).touches[0].clientX
-          : (e as MouseEvent).clientX;
+        'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
       const clientY =
-        "touches" in e
-          ? (e as TouchEvent).touches[0].clientY
-          : (e as MouseEvent).clientY;
+        'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
 
       const newX = clientX - (dragOffset.current?.x || 0);
       const newY = clientY - (dragOffset.current?.y || 0);
@@ -126,9 +112,9 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
         const centerX = windowWidth / 2;
 
         if (dragPos.x + 24 < centerX) {
-          setPosition("left");
+          setPosition('left');
         } else {
-          setPosition("right");
+          setPosition('right');
         }
 
         setTop(dragPos.y);
@@ -139,19 +125,19 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
     };
 
     if (isDragging) {
-      document.addEventListener("mousemove", handleMove);
-      document.addEventListener("mouseup", handleEnd);
-      document.addEventListener("touchmove", handleMove);
-      document.addEventListener("touchend", handleEnd);
-      document.body.style.userSelect = "none";
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchmove', handleMove);
+      document.addEventListener('touchend', handleEnd);
+      document.body.style.userSelect = 'none';
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMove);
-      document.removeEventListener("mouseup", handleEnd);
-      document.removeEventListener("touchmove", handleMove);
-      document.removeEventListener("touchend", handleEnd);
-      document.body.style.userSelect = "";
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleEnd);
+      document.body.style.userSelect = '';
     };
   }, [isDragging, dragPos]);
 
@@ -163,7 +149,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
     if (!val) {
       setYearFromError(null);
       setYearRangeError(null);
-      onYearFromChange("");
+      onYearFromChange('');
       return;
     }
     const n = Number(val);
@@ -176,7 +162,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
     if (yearTo) {
       const yt = Number(yearTo);
       if (!Number.isNaN(yt) && n > yt) {
-        setYearRangeError("Year From must be less than or equal to Year To");
+        setYearRangeError('Year From must be less than or equal to Year To');
         return;
       }
     }
@@ -189,7 +175,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
     if (!val) {
       setYearToError(null);
       setYearRangeError(null);
-      onYearToChange("");
+      onYearToChange('');
       return;
     }
     const n = Number(val);
@@ -201,7 +187,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
     if (yearFrom) {
       const yf = Number(yearFrom);
       if (!Number.isNaN(yf) && n < yf) {
-        setYearRangeError("Year To must be greater than or equal to Year From");
+        setYearRangeError('Year To must be greater than or equal to Year From');
         return;
       }
     }
@@ -215,8 +201,8 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
     // e.preventDefault();
 
     // Check if it's a touch event or mouse event
-    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
     // Get the visual button element (parent of the handle) to calculate precise offset
     const tabRect = e.currentTarget.parentElement?.getBoundingClientRect();
@@ -229,9 +215,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
       setDragPos({ x: tabRect.left, y: tabRect.top });
     } else {
       // Fallback to container if something is odd, though structure is static
-      const containerRect = e.currentTarget
-        .closest(".fixed")
-        ?.getBoundingClientRect();
+      const containerRect = e.currentTarget.closest('.fixed')?.getBoundingClientRect();
       if (containerRect) {
         dragOffset.current = {
           x: clientX - containerRect.left,
@@ -246,16 +230,14 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
 
   useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDragging) return;
+      if (!isDragging) {
+        return;
+      }
 
       const clientX =
-        "touches" in e
-          ? (e as TouchEvent).touches[0].clientX
-          : (e as MouseEvent).clientX;
+        'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
       const clientY =
-        "touches" in e
-          ? (e as TouchEvent).touches[0].clientY
-          : (e as MouseEvent).clientY;
+        'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
 
       const newX = clientX - dragOffset.current.x;
       const newY = clientY - dragOffset.current.y;
@@ -271,17 +253,17 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
     };
 
     if (isDragging) {
-      window.addEventListener("mousemove", handleMove);
-      window.addEventListener("mouseup", handleEnd);
-      window.addEventListener("touchmove", handleMove);
-      window.addEventListener("touchend", handleEnd);
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleMove);
+      window.addEventListener('touchend', handleEnd);
     }
 
     return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleEnd);
-      window.removeEventListener("touchmove", handleMove);
-      window.removeEventListener("touchend", handleEnd);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
     };
   }, [isDragging]);
 
@@ -291,12 +273,12 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
       ? {
           left: `${dragPos.x}px`,
           top: `${dragPos.y}px`,
-          right: "auto", // Override right-0 class
-          transform: "none", // Disable transitions/transforms during drag
-          transition: "none",
+          right: 'auto', // Override right-0 class
+          transform: 'none', // Disable transitions/transforms during drag
+          transition: 'none',
         }
       : {
-          top: top ? `${top}px` : "50%",
+          top: top ? `${top}px` : '50%',
           // When not dragging, we rely on classes for Left/Right X positioning
           // and CSS transform for Open/Close
         };
@@ -304,39 +286,31 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
   return (
     <div
       className={cn(
-        "fixed z-40 flex items-start",
+        'fixed z-40 flex items-start',
         // Position classes only apply when NOT dragging (drag uses inline styles)
-        !isDragging &&
-          (position === "right"
-            ? "right-0 flex-row"
-            : "left-0 flex-row-reverse"),
+        !isDragging && (position === 'right' ? 'right-0 flex-row' : 'left-0 flex-row-reverse'),
         !isDragging &&
           (isOpen
-            ? "translate-x-0"
-            : position === "right"
-              ? "translate-x-[calc(100%-48px)]"
-              : "-translate-x-[calc(100%-48px)]"),
-        !isDragging &&
-          "transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1)",
+            ? 'translate-x-0'
+            : position === 'right'
+              ? 'translate-x-[calc(100%-48px)]'
+              : '-translate-x-[calc(100%-48px)]'),
+        !isDragging && 'transition-transform duration-300 cubic-bezier(0.4, 0, 0.2, 1)'
       )}
       style={style}
     >
       {/* Toggle Tab Container */}
       <div
         className={cn(
-          "flex flex-col shadow-2xl relative z-10 w-12 h-32 overflow-hidden border-y border-primary/20 bg-background",
+          'flex flex-col shadow-2xl relative z-10 w-12 h-32 overflow-hidden border-y border-primary/20 bg-background',
           // Force border radius based on logical position, or just make it generic?
           // Let's stick to the side-specific look, it's nice.
           // When dragging, we keep the look of the side we started from?
           // Or update dynamically?
           // To update dynamically while dragging based on X:
-          (
-            isDragging
-              ? dragPos && dragPos.x < window.innerWidth / 2
-              : position === "left"
-          )
-            ? "rounded-r-xl border-r"
-            : "rounded-l-xl border-l",
+          (isDragging ? dragPos && dragPos.x < window.innerWidth / 2 : position === 'left')
+            ? 'rounded-r-xl border-r'
+            : 'rounded-l-xl border-l'
         )}
       >
         {/* Drag Handle Section */}
@@ -359,7 +333,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
           ) : (
             <div
               className="flex items-center gap-2 text-xs font-bold tracking-widest whitespace-nowrap py-2"
-              style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
               <Filter className="w-3 h-3 mb-1" />
               FILTERS
@@ -371,11 +345,9 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
       {/* Content Panel */}
       <div
         className={cn(
-          "bg-background/95 backdrop-blur-md border shadow-2xl w-80 h-[500px] p-6 flex flex-col gap-6",
-          position === "right"
-            ? "rounded-bl-xl border-r-0"
-            : "rounded-br-xl border-l-0",
-          isDragging && "hidden",
+          'bg-background/95 backdrop-blur-md border shadow-2xl w-80 h-[500px] p-6 flex flex-col gap-6',
+          position === 'right' ? 'rounded-bl-xl border-r-0' : 'rounded-br-xl border-l-0',
+          isDragging && 'hidden'
         )}
       >
         <div className="flex items-center justify-between pb-4 border-b">
@@ -395,7 +367,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search history..."
-                value={searchQuery || ""}
+                value={searchQuery || ''}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="pl-9 bg-muted/50 focus:bg-background transition-colors"
                 autoFocus
@@ -413,29 +385,27 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full justify-start text-left font-normal bg-muted/50 focus:bg-background transition-colors text-xs h-9 px-2",
-                    !(company && company.length) && "text-muted-foreground",
+                    'w-full justify-start text-left font-normal bg-muted/50 focus:bg-background transition-colors text-xs h-9 px-2',
+                    !(company && company.length) && 'text-muted-foreground'
                   )}
                 >
-                  {company && company.length > 0
-                    ? company.join(", ")
-                    : "Select companies"}
+                  {company && company.length > 0 ? company.join(', ') : 'Select companies'}
                 </Button>
               </PopoverTrigger>
 
               <PopoverContent className="w-64 p-3">
                 {/* Static list of common companies; replace with dynamic source if available */}
                 {[
-                  "Honda",
-                  "Toyota",
-                  "Ford",
-                  "BMW",
-                  "Audi",
-                  "Hyundai",
-                  "Kia",
-                  "Mercedes",
-                  "Volkswagen",
-                  "Nissan",
+                  'Honda',
+                  'Toyota',
+                  'Ford',
+                  'BMW',
+                  'Audi',
+                  'Hyundai',
+                  'Kia',
+                  'Mercedes',
+                  'Volkswagen',
+                  'Nissan',
                 ].map((cName) => {
                   const checked = (company || []).includes(cName);
                   return (
@@ -449,9 +419,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
                           const isChecked = Boolean(val);
                           const current = company || [];
                           if (isChecked) {
-                            onCompanyChange(
-                              Array.from(new Set([...current, cName])),
-                            );
+                            onCompanyChange(Array.from(new Set([...current, cName])));
                           } else {
                             onCompanyChange(current.filter((x) => x !== cName));
                           }
@@ -467,14 +435,12 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
           </div>
 
           {/* Selected companies chips (show & remove) */}
-          {company && company.length > 0 && (
+          {company && company.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-2">
               {company.map((cName) => (
                 <button
                   key={cName}
-                  onClick={() =>
-                    onCompanyChange((company || []).filter((x) => x !== cName))
-                  }
+                  onClick={() => onCompanyChange((company || []).filter((x) => x !== cName))}
                   className="inline-flex items-center gap-2 px-2 py-1 rounded bg-muted/40 text-xs"
                   aria-label={`Remove ${cName}`}
                 >
@@ -483,7 +449,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
                 </button>
               ))}
             </div>
-          )}
+          ) : null}
 
           {/* Year Range */}
           <div className="grid grid-cols-2 gap-2">
@@ -493,7 +459,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
               </label>
               <Input
                 placeholder="e.g. 2015"
-                value={yearFrom || ""}
+                value={yearFrom || ''}
                 onChange={(e) => validateAndSetYearFrom(e.target.value)}
                 type="number"
                 className="bg-muted/50 focus:bg-background transition-colors"
@@ -505,7 +471,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
               </label>
               <Input
                 placeholder="e.g. 2022"
-                value={yearTo || ""}
+                value={yearTo || ''}
                 onChange={(e) => validateAndSetYearTo(e.target.value)}
                 type="number"
                 className="bg-muted/50 focus:bg-background transition-colors"
@@ -513,11 +479,11 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
             </div>
           </div>
           {/* Year validation errors */}
-          {(yearFromError || yearToError || yearRangeError) && (
+          {yearFromError || yearToError || yearRangeError ? (
             <div className="text-sm text-red-500">
               {yearFromError || yearToError || yearRangeError}
             </div>
-          )}
+          ) : null}
 
           {/* Price Range */}
           <div className="grid grid-cols-2 gap-2">
@@ -527,7 +493,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
               </label>
               <Input
                 placeholder="0"
-                value={minPrice || ""}
+                value={minPrice || ''}
                 onChange={(e) => onMinPriceChange(e.target.value)}
                 type="number"
                 className="bg-muted/50 focus:bg-background transition-colors"
@@ -539,7 +505,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
               </label>
               <Input
                 placeholder="50000"
-                value={maxPrice || ""}
+                value={maxPrice || ''}
                 onChange={(e) => onMaxPriceChange(e.target.value)}
                 type="number"
                 className="bg-muted/50 focus:bg-background transition-colors"
@@ -554,10 +520,8 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
                 Transmission
               </label>
               <Select
-                value={transmission || "all"}
-                onValueChange={(val) =>
-                  onTransmissionChange(val === "all" ? "" : val)
-                }
+                value={transmission || 'all'}
+                onValueChange={(val) => onTransmissionChange(val === 'all' ? '' : val)}
               >
                 <SelectTrigger className="bg-muted/50 focus:bg-background transition-colors">
                   <SelectValue placeholder="Any" />
@@ -575,8 +539,8 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
                 Fuel
               </label>
               <Select
-                value={fuel || "all"}
-                onValueChange={(val) => onFuelChange(val === "all" ? "" : val)}
+                value={fuel || 'all'}
+                onValueChange={(val) => onFuelChange(val === 'all' ? '' : val)}
               >
                 <SelectTrigger className="bg-muted/50 focus:bg-background transition-colors">
                   <SelectValue placeholder="Any" />
@@ -598,15 +562,15 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
               variant="ghost"
               onClick={() => {
                 // reset all fields
-                onSearchChange("");
-                onToolChange("");
+                onSearchChange('');
+                _onToolChange('');
                 onCompanyChange([]);
-                onYearFromChange("");
-                onYearToChange("");
-                onMinPriceChange("");
-                onMaxPriceChange("");
-                onTransmissionChange("");
-                onFuelChange("");
+                onYearFromChange('');
+                onYearToChange('');
+                onMinPriceChange('');
+                onMaxPriceChange('');
+                onTransmissionChange('');
+                onFuelChange('');
               }}
             >
               Clear
@@ -614,9 +578,7 @@ export const SearchAndFilter = React.memo(function SearchAndFilter({
           </div>
 
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">
-              Press toggle to hide
-            </p>
+            <p className="text-xs text-muted-foreground">Press toggle to hide</p>
           </div>
         </div>
       </div>

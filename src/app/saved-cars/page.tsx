@@ -1,22 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Heart,
-  ArrowLeft,
-  Trash2,
-  ArrowUpDown,
-  Car,
-  Calendar,
-  ExternalLink,
-} from "lucide-react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import Loading from "@/components/Loading";
-import { Badge } from "@/components/ui/badge";
-import axios from "axios";
-import { toast } from "react-toastify";
+import { useState, useEffect } from 'react';
+import { Heart, ArrowLeft, Trash2, ArrowUpDown, Car, Calendar, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import Image from 'next/image';
+
+import { Badge } from '@/components/ui/badge';
+import Loading from '@/components/Loading';
+import { Button } from '@/components/ui/button';
 
 interface CarData {
   _id: string;
@@ -34,18 +28,24 @@ interface CarData {
 export default function LikedCarsPage() {
   const [likedCars, setLikedCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<"recent" | "price-low" | "price-high">(
-    "recent",
-  );
+  const [sortBy, setSortBy] = useState<'recent' | 'price-low' | 'price-high'>('recent');
+
+  const parseSortBy = (value: string): 'recent' | 'price-low' | 'price-high' => {
+    if (value === 'price-low' || value === 'price-high') {
+      return value;
+    }
+
+    return 'recent';
+  };
 
   const fetchSavedCars = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get("/api/saved-cars");
+      const { data } = await axios.get('/api/saved-cars');
       setLikedCars(data);
     } catch (error) {
-      console.error("Failed to fetch saved cars", error);
-      toast.error("Failed to load saved cars");
+      console.error('Failed to fetch saved cars', error);
+      toast.error('Failed to load saved cars');
     } finally {
       setLoading(false);
     }
@@ -58,27 +58,26 @@ export default function LikedCarsPage() {
   const getSortedCars = () => {
     const cars = [...likedCars];
     switch (sortBy) {
-      case "price-low":
+      case 'price-low':
         return cars.sort((a, b) => a.price - b.price);
-      case "price-high":
+      case 'price-high':
         return cars.sort((a, b) => b.price - a.price);
-      case "recent":
+      case 'recent':
       default:
         return cars.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
     }
   };
 
   const handleRemoveLike = async (carId: string) => {
     try {
-      await axios.post("/api/saved-cars", { carId });
+      await axios.post('/api/saved-cars', { carId });
       setLikedCars((prev) => prev.filter((car) => car._id !== carId));
-      toast.success("Removed from collection");
+      toast.success('Removed from collection');
     } catch (error) {
-      console.error("Failed to remove saved car", error);
-      toast.error("Failed to remove car");
+      console.error('Failed to remove saved car', error);
+      toast.error('Failed to remove car');
     }
   };
 
@@ -103,10 +102,8 @@ export default function LikedCarsPage() {
               Saved Collection
             </h1>
             <p className="text-gray-600 dark:text-gray-400 ml-1">
-              You have{" "}
-              <span className="font-bold text-primary dark:text-gray-200">
-                {sortedCars.length}
-              </span>{" "}
+              You have{' '}
+              <span className="font-bold text-primary dark:text-gray-200">{sortedCars.length}</span>{' '}
               vehicles saved for later
             </p>
           </div>
@@ -119,7 +116,7 @@ export default function LikedCarsPage() {
               </div>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(parseSortBy(e.target.value))}
                 className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer shadow-sm hover:border-gray-300 dark:hover:border-slate-700 transition-all"
               >
                 <option value="recent">Recently Added</option>
@@ -146,8 +143,7 @@ export default function LikedCarsPage() {
               No favorites yet
             </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
-              Start exploring our collection and tap the heart icon to save the
-              cars you love.
+              Start exploring our collection and tap the heart icon to save the cars you love.
             </p>
             <Link href="/">
               <Button
@@ -179,14 +175,13 @@ export default function LikedCarsPage() {
                     className="group relative bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-gray-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary/20 dark:hover:border-primary/20 transition-all duration-300"
                   >
                     {/* Image Section */}
-                    <Link
-                      href={`/car/${item._id}`}
-                      className="block relative h-56 overflow-hidden"
-                    >
+                    <Link href={`/car/${item._id}`} className="block relative h-56 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity" />
-                      <img
-                        src={item.image || (item.images && item.images[0])}
+                      <Image
+                        src={item.image || (item.images && item.images[0]) || '/placeholder.svg'}
                         alt={item.title}
+                        width={400}
+                        height={224}
                         className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                       />
                       <div className="absolute top-4 left-4 z-20">
@@ -257,7 +252,7 @@ export default function LikedCarsPage() {
                             size="sm"
                             className="rounded-xl border-gray-200 dark:border-slate-700 bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 group/btn"
                           >
-                            Details{" "}
+                            Details{' '}
                             <ExternalLink className="w-3.5 h-3.5 ml-2 opacity-60 group-hover/btn:opacity-100 transition-opacity" />
                           </Button>
                         </Link>

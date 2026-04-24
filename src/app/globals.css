@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -132,8 +132,8 @@
   body {
     @apply bg-background text-foreground;
   }
-  button, 
-  [role="button"],
+  button,
+  [role='button'],
   .cursor-pointer-all {
     @apply cursor-pointer;
   }
@@ -152,46 +152,91 @@
 
 /* Spinner animations */
 @keyframes spin-outer {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes spin-inner {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(-360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
 }
 
 @keyframes dash-arc {
-  0% { stroke-dashoffset: 240; }
-  50% { stroke-dashoffset: 60; }
-  100% { stroke-dashoffset: 240; }
+  0% {
+    stroke-dashoffset: 240;
+  }
+  50% {
+    stroke-dashoffset: 60;
+  }
+  100% {
+    stroke-dashoffset: 240;
+  }
 }
 
 @keyframes dash-arc-reverse {
-  0% { stroke-dashoffset: 160; }
-  50% { stroke-dashoffset: 40; }
-  100% { stroke-dashoffset: 160; }
+  0% {
+    stroke-dashoffset: 160;
+  }
+  50% {
+    stroke-dashoffset: 40;
+  }
+  100% {
+    stroke-dashoffset: 160;
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.15; transform: scale(0.92); }
-  50% { opacity: 0.4; transform: scale(1); }
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
 }
 
 @keyframes fade-text {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes orbit-dot {
-  0% { transform: rotate(0deg) translateX(58px) rotate(0deg); opacity: 0.9; }
-  50% { opacity: 0.3; }
-  100% { transform: rotate(360deg) translateX(58px) rotate(-360deg); opacity: 0.9; }
+  0% {
+    transform: rotate(0deg) translateX(58px) rotate(0deg);
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: rotate(360deg) translateX(58px) rotate(-360deg);
+    opacity: 0.9;
+  }
 }
 
 @keyframes scale-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
 }
 
 .animate-spin-outer {

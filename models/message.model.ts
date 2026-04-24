@@ -1,28 +1,28 @@
-import mongoose, { Schema, models } from "mongoose";
+import mongoose, { Schema, models } from 'mongoose';
 
 const MessageItemSchema = new Schema(
   {
     sender: {
       type: String,
-      enum: ["ADMIN", "VENDOR"],
+      enum: ['ADMIN', 'VENDOR'],
       required: true,
     },
     type: {
       type: String,
-      enum: ["TEXT", "IMAGE", "VIDEO", "FILE", "AUDIO"],
-      default: "TEXT",
+      enum: ['TEXT', 'IMAGE', 'VIDEO', 'FILE', 'AUDIO'],
+      default: 'TEXT',
     },
     content: {
       type: String,
-      default: "",
+      default: '',
     },
     fileUrl: {
       type: String,
-      default: "",
+      default: '',
     },
     fileName: {
       type: String,
-      default: "",
+      default: '',
     },
     isRead: {
       type: Boolean,
@@ -41,7 +41,7 @@ const MessageItemSchema = new Schema(
       default: Date.now,
     },
   },
-  { _id: true, minimize: false },
+  { _id: true, minimize: false }
 );
 
 // Explicitly clear the model to force Next.js to use the updated schema immediately
@@ -53,15 +53,15 @@ const ChatSchema = new Schema(
   {
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
+      ref: 'Vendor',
       required: true,
       unique: true,
     },
     messages: [MessageItemSchema],
   },
-  { timestamps: true, minimize: false },
+  { timestamps: true, minimize: false }
 );
 
-const Chat = models.Chat || mongoose.model("Chat", ChatSchema);
+const Chat = models.Chat || mongoose.model('Chat', ChatSchema);
 
 export default Chat;
