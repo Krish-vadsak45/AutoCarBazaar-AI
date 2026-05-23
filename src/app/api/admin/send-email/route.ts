@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     // Send Custom Email directly to the provided address
     const mailOptions = {
-      from: '"AutoCarBazaar Admin" <samarthgabani2005@gmail.com>', // Set appropriate sender
+      from: "samarthgabani2005@gmail.com", // Set appropriate sender
       to,
       subject,
       // Convert regular line breaks to HTML breaks for proper formatting

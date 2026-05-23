@@ -24,7 +24,7 @@ export async function sendFirstDayVipEmail(vendor: any) {
   if (!vendorEmail) return;
 
   const mailOptions = {
-    from: '"AutoCarBazaar Admin" <samarthgabani2005@gmail.com>', // Replace with appropriate sender
+    from: '"samarthgabani2005@gmail.com"', // Replace with appropriate sender
     to: vendorEmail,
     subject: `Action Required: VIP Subscription Payment for ${new Date().toLocaleString("default", { month: "long" })}`,
     html: `
@@ -68,7 +68,7 @@ export async function sendMissedPaymentWarningEmail(vendor: any) {
   if (!vendorEmail) return;
 
   const mailOptions = {
-    from: '"AutoCarBazaar Admin" <samarthgabani2005@gmail.com>',
+    from: "samarthgabani2005@gmail.com",
     to: vendorEmail,
     subject: "URGENT: Missed VIP Subscription Payment",
     html: `

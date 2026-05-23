@@ -165,7 +165,7 @@ export async function DELETE(
         if (booking.userId && booking.userId.email) {
           const mailOptions = {
             from: "samarthgabani2005@gmail.com",
-            to: "samarthpatel1011@gmail.com",
+            to: booking.userId.email || "",
             subject: "⚠️ Booking Cancelled - Vehicle Removed",
             html: `
               <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">

@@ -72,7 +72,9 @@ export async function POST(request: Request) {
       from: "samarthgabani2005@gmail.com",
 
       // populatedTestDrive.userId.email
-      to: "samarthpatel1011@gmail.com",
+      to:
+        (populatedTestDrive.userId as any).email ||
+        "samarthpatel1011@gmail.com",
 
       subject: `Test Drive Request Confirmation - ${(populatedTestDrive.carId as any).title}`,
 
