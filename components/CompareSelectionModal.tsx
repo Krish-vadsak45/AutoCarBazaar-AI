@@ -1,41 +1,54 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Input } from "./ui/input";
-import axios from "axios";
-import { Search } from "lucide-react";
-import { useCompareStore, CompareCar } from "@/hooks/use-compare-store";
-import Image from "next/image";
-import Link from "next/link";
+import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
+import { Search } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+
+import { useCompareStore, CompareCar } from '@/hooks/use-compare-store';
+
+import { Input } from './ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+interface ApiCar {
+  _id: string;
+  id?: string;
+  images?: string[];
+  image?: string;
+  title: string;
+  price: string | number;
+}
+
 export function CompareSelectionModal({ open, onOpenChange }: Props) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [allCars, setAllCars] = useState<CompareCar[]>([]);
   const [loading, setLoading] = useState(false);
   const { addCar, selectedCars } = useCompareStore();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
     const fetchCars = async () => {
       setLoading(true);
       try {
-        const { data } = await axios.get("/api/cars?limit=50");
+        const { data } = await axios.get<{ cars: ApiCar[] }>('/api/cars?limit=50');
 
-        const mapped = data.cars.map((c: any) => {
+        const mapped = data.cars.map((c: ApiCar) => {
           const firstImage = c.images?.[0] || c.image;
           const validImg =
-            typeof firstImage === "string" && firstImage.trim() !== ""
+            typeof firstImage === 'string' && firstImage.trim() !== ''
               ? firstImage
-              : "/placeholder.svg";
+              : '/placeholder.svg';
           return {
-            id: c._id || c.id,
+            id: c._id || (c.id as string),
             image: validImg,
             title: c.title,
             price: c.price,
@@ -44,7 +57,7 @@ export function CompareSelectionModal({ open, onOpenChange }: Props) {
 
         setAllCars(mapped);
       } catch (err) {
-        console.error("Error fetching cars to compare", err);
+        console.error('Error fetching cars to compare', err);
       } finally {
         setLoading(false);
       }
@@ -56,10 +69,12 @@ export function CompareSelectionModal({ open, onOpenChange }: Props) {
   const results = useMemo(() => {
     // Filter out already selected
     const filtered = allCars.filter(
-      (car: CompareCar) => !selectedCars.some((sel) => sel.id === car.id),
+      (car: CompareCar) => !selectedCars.some((sel) => sel.id === car.id)
     );
 
-    if (!query) return filtered;
+    if (!query) {
+      return filtered;
+    }
 
     const lowerQ = query.toLowerCase();
     return filtered.filter((car) => car.title.toLowerCase().includes(lowerQ));
@@ -97,7 +112,7 @@ export function CompareSelectionModal({ open, onOpenChange }: Props) {
                 <div className="flex items-center gap-4">
                   <div className="relative w-16 h-12 rounded-md overflow-hidden">
                     <Image
-                      src={car.image || "/placeholder.svg"}
+                      src={car.image || '/placeholder.svg'}
                       alt={car.title}
                       fill
                       className="object-cover"

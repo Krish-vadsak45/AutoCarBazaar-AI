@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useMemo } from "react";
-import axios from "axios";
+import { useEffect, useState, useMemo } from 'react';
+import axios from 'axios';
 import {
   format,
   startOfMonth,
@@ -16,7 +16,7 @@ import {
   subMonths,
   eachMonthOfInterval,
   isSameMonth,
-} from "date-fns";
+} from 'date-fns';
 import {
   AreaChart,
   Area,
@@ -31,20 +31,7 @@ import {
   Legend,
   Bar,
   BarChart,
-  Rectangle,
-} from "recharts";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from 'recharts';
 import {
   Car as CarIcon,
   Users,
@@ -56,11 +43,41 @@ import {
   XCircle,
   Filter,
   PieChart as PieChartIcon,
-} from "lucide-react";
-import Loading from "@/components/Loading";
+} from 'lucide-react';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Loading from '@/components/Loading';
+import { CarListItem, VendorDashboardTestDrive } from '@/src/types';
+
+type ChartTooltipEntry = {
+  color?: string;
+  name?: string;
+  value?: string | number;
+  payload?: {
+    color?: string;
+    name?: string;
+    value?: string | number;
+  };
+};
+
+type ChartTooltipProps = {
+  active?: boolean;
+  payload?: ChartTooltipEntry[];
+  label?: string;
+};
 
 // 1. IMPROVED TOOLTIP WITH TAILWIND (Handles Dark Mode Automatically)
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl shadow-xl backdrop-blur-sm min-w-[160px] animate-in fade-in zoom-in duration-200">
@@ -68,11 +85,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           {label}
         </p>
         <div className="space-y-2">
-          {payload.map((entry: any, index: number) => (
-            <div
-              key={index}
-              className="flex items-center justify-between gap-4"
-            >
+          {payload.map((entry, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <div
                   className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)]"
@@ -94,9 +108,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const PieTooltip = ({ active, payload }: any) => {
+const PieTooltip = ({ active, payload }: ChartTooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    if (!data) {
+      return null;
+    }
+
     return (
       <div className="bg-popover border border-border p-3 rounded-xl shadow-2xl backdrop-blur-md min-w-[140px] animate-in fade-in zoom-in duration-200">
         <div className="flex items-center gap-2 mb-2">
@@ -109,12 +127,8 @@ const PieTooltip = ({ active, payload }: any) => {
           </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-[12px] font-medium text-foreground">
-            Bookings
-          </span>
-          <span className="text-[12px] font-bold text-primary dark:text-primary">
-            {data.value}
-          </span>
+          <span className="text-[12px] font-medium text-foreground">Bookings</span>
+          <span className="text-[12px] font-bold text-primary dark:text-primary">{data.value}</span>
         </div>
       </div>
     );
@@ -122,59 +136,43 @@ const PieTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const CustomLegend = ({ payload }: any) => {
-  return (
-    <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 pt-8 pb-2">
-      {payload.map((entry: any, index: number) => (
+const CustomLegend = ({ payload = [] }: { payload?: ChartTooltipEntry[] }) => (
+  <div className="flex flex-wrap justify-center gap-x-6 gap-y-3 pt-8 pb-2">
+    {payload.map((entry, index: number) => (
+      <div
+        key={`item-${index}`}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-transparent hover:border-border transition-all cursor-default group"
+      >
         <div
-          key={`item-${index}`}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/30 border border-transparent hover:border-border transition-all cursor-default group"
-        >
-          <div
-            className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-125 shadow-[0_0_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0_10px_rgba(255,255,255,0.05)]"
-            style={{ backgroundColor: entry.color }}
-          />
-          <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-tight">
-            {entry.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
+          className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-125 shadow-[0_0_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0_10px_rgba(255,255,255,0.05)]"
+          style={{ backgroundColor: entry.color }}
+        />
+        <span className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-tight">
+          {entry.value}
+        </span>
+      </div>
+    ))}
+  </div>
+);
+
+const parseFilterType = (value: string): 'month' | 'month-range' | 'date-range' => {
+  if (value === 'month-range' || value === 'date-range') {
+    return value;
+  }
+
+  return 'month';
 };
 
-// Define colors that work well on dark backgrounds (lighter/pastel/white variants)
-const COLORS = [
-  "#3b82f6", // Blue
-  "#10b981", // Green
-  "#f59e0b", // Amber
-  "#ef4444", // Red
-  "#8b5cf6", // Purple
-];
-
-// Function to get color based on index, ensuring visibility
-const getBarColor = (index: number) => {
-  return COLORS[index % COLORS.length];
-};
-
-export default function DashboardPage({
-  overrideVendorId,
-}: {
-  overrideVendorId?: string;
-}) {
-  const [cars, setCars] = useState<any[]>([]);
-  const [testDrives, setTestDrives] = useState<any[]>([]);
+export default function DashboardPage({ overrideVendorId }: { overrideVendorId?: string }) {
+  const [cars, setCars] = useState<CarListItem[]>([]);
+  const [testDrives, setTestDrives] = useState<VendorDashboardTestDrive[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters for Test Drives tab
-  const [filterType, setFilterType] = useState<
-    "month" | "month-range" | "date-range"
-  >("month");
+  const [filterType, setFilterType] = useState<'month' | 'month-range' | 'date-range'>('month');
 
   // Single Month default to current
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    getMonth(new Date()),
-  );
+  const [selectedMonth, setSelectedMonth] = useState<number>(getMonth(new Date()));
   const [selectedYear, setSelectedYear] = useState<number>(getYear(new Date()));
 
   // Month Range
@@ -185,11 +183,9 @@ export default function DashboardPage({
 
   // Date Range
   const [startDate, setStartDate] = useState<string>(
-    format(startOfMonth(new Date()), "yyyy-MM-dd"),
+    format(startOfMonth(new Date()), 'yyyy-MM-dd')
   );
-  const [endDate, setEndDate] = useState<string>(
-    format(endOfMonth(new Date()), "yyyy-MM-dd"),
-  );
+  const [endDate, setEndDate] = useState<string>(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -198,19 +194,19 @@ export default function DashboardPage({
 
         const endpointCars = overrideVendorId
           ? `/api/vend-cars?vendorId=${overrideVendorId}`
-          : "/api/vend-cars";
+          : '/api/vend-cars';
         const endpointTests = overrideVendorId
           ? `/api/vendor/test-drives?vendorId=${overrideVendorId}`
-          : "/api/vendor/test-drives";
+          : '/api/vendor/test-drives';
 
         const [carsRes, testDrivesRes] = await Promise.all([
           axios.get(endpointCars),
           axios.get(endpointTests),
         ]);
-        setCars(carsRes.data.cars || []);
-        setTestDrives(testDrivesRes.data || []);
+        setCars((carsRes.data.cars || []) as CarListItem[]);
+        setTestDrives((testDrivesRes.data || []) as VendorDashboardTestDrive[]);
       } catch (error) {
-        console.error("Dashboard Fetch Error:", error);
+        console.error('Dashboard Fetch Error:', error);
       } finally {
         setLoading(false);
       }
@@ -221,32 +217,32 @@ export default function DashboardPage({
   // Overview stats use all-time data
   const overviewStats = useMemo(() => {
     const totalCars = cars.length;
-    const available = cars.filter((c) => c.status === "available").length;
-    const sold = cars.filter((c) => c.status === "unavailable").length;
+    const available = cars.filter((c) => c.status === 'available').length;
+    const sold = cars.filter((c) => c.status === 'unavailable').length;
     const totalTD = testDrives.length;
-    const convRate = totalTD > 0 ? ((sold / totalTD) * 100).toFixed(1) : "0";
+    const convRate = totalTD > 0 ? ((sold / totalTD) * 100).toFixed(1) : '0';
 
     return [
       {
-        name: "Total Cars",
+        name: 'Total Cars',
         value: totalCars,
         icon: CarIcon,
         description: `${available} available, ${sold} sold`,
       },
       {
-        name: "Test Drives",
+        name: 'Test Drives',
         value: totalTD,
         icon: Users,
-        description: "Total bookings all-time",
+        description: 'Total bookings all-time',
       },
       {
-        name: "Conversion Rate",
+        name: 'Conversion Rate',
         value: `${convRate}%`,
         icon: TrendingUp,
-        description: "Test drives to sales ratio",
+        description: 'Test drives to sales ratio',
       },
       {
-        name: "Cars Sold",
+        name: 'Cars Sold',
         value: sold,
         icon: ShoppingCart,
         description: `${totalCars > 0 ? ((sold / totalCars) * 100).toFixed(1) : 0}% of inventory sold`,
@@ -255,149 +251,134 @@ export default function DashboardPage({
   }, [cars, testDrives]);
 
   // Filtered test drives for the Test Drives tab
-  const filteredTestDrives = useMemo(() => {
-    return testDrives.filter((td) => {
-      const dateVal = td.startDate || td.createdAt;
-      if (!dateVal) return false;
-      const tdDate = new Date(dateVal);
-      if (isNaN(tdDate.getTime())) return false;
+  const filteredTestDrives = useMemo(
+    () =>
+      testDrives.filter((td) => {
+        const dateVal = td.startDate || td.createdAt;
+        if (!dateVal) {
+          return false;
+        }
+        const tdDate = new Date(dateVal);
+        if (isNaN(tdDate.getTime())) {
+          return false;
+        }
 
-      if (filterType === "month") {
-        return (
-          getMonth(tdDate) === selectedMonth && getYear(tdDate) === selectedYear
-        );
-      }
-      if (filterType === "month-range") {
-        const start = startOfMonth(
-          setYear(setMonth(new Date(), startMonth), startYear),
-        );
-        const end = endOfMonth(
-          setYear(setMonth(new Date(), endMonth), endYear),
-        );
-        return isWithinInterval(tdDate, { start, end });
-      }
-      if (filterType === "date-range") {
-        const start = startOfDay(new Date(startDate));
-        const end = endOfDay(new Date(endDate));
-        return isWithinInterval(tdDate, { start, end });
-      }
-      return true;
-    });
-  }, [
-    testDrives,
-    filterType,
-    selectedMonth,
-    selectedYear,
-    startMonth,
-    startYear,
-    endMonth,
-    endYear,
-    startDate,
-    endDate,
-  ]);
+        if (filterType === 'month') {
+          return getMonth(tdDate) === selectedMonth && getYear(tdDate) === selectedYear;
+        }
+        if (filterType === 'month-range') {
+          const start = startOfMonth(setYear(setMonth(new Date(), startMonth), startYear));
+          const end = endOfMonth(setYear(setMonth(new Date(), endMonth), endYear));
+          return isWithinInterval(tdDate, { start, end });
+        }
+        if (filterType === 'date-range') {
+          const start = startOfDay(new Date(startDate));
+          const end = endOfDay(new Date(endDate));
+          return isWithinInterval(tdDate, { start, end });
+        }
+        return true;
+      }),
+    [
+      testDrives,
+      filterType,
+      selectedMonth,
+      selectedYear,
+      startMonth,
+      startYear,
+      endMonth,
+      endYear,
+      startDate,
+      endDate,
+    ]
+  );
 
   const testDriveStatsRows = useMemo(() => {
     const total = filteredTestDrives.length;
-    const pending = filteredTestDrives.filter(
-      (td) => td.status === "PENDING",
-    ).length;
-    const confirmed = filteredTestDrives.filter(
-      (td) => td.status === "CONFIRMED",
-    ).length;
-    const completed = filteredTestDrives.filter(
-      (td) => td.status === "COMPLETED",
-    ).length;
-    const cancelled = filteredTestDrives.filter(
-      (td) => td.status === "CANCELLED",
-    ).length;
+    const pending = filteredTestDrives.filter((td) => td.status === 'PENDING').length;
+    const confirmed = filteredTestDrives.filter((td) => td.status === 'CONFIRMED').length;
+    const completed = filteredTestDrives.filter((td) => td.status === 'COMPLETED').length;
+    const cancelled = filteredTestDrives.filter((td) => td.status === 'CANCELLED').length;
 
     return [
       {
-        name: "Total Bookings",
+        name: 'Total Bookings',
         value: total,
         icon: Clock,
-        color: "bg-blue-500",
+        color: 'bg-blue-500',
       },
       {
-        name: "Pending",
+        name: 'Pending',
         value: pending,
         icon: AlertCircle,
-        color: "bg-orange-500",
+        color: 'bg-orange-500',
       },
       {
-        name: "Confirmed",
+        name: 'Confirmed',
         value: confirmed,
         icon: CheckCircle,
-        color: "bg-green-500",
+        color: 'bg-green-500',
       },
       {
-        name: "Completed",
+        name: 'Completed',
         value: completed,
         icon: CheckCircle,
-        color: "bg-blue-500",
+        color: 'bg-blue-500',
       },
       {
-        name: "Cancelled",
+        name: 'Cancelled',
         value: cancelled,
         icon: XCircle,
-        color: "bg-red-500",
+        color: 'bg-red-500',
       },
     ];
   }, [filteredTestDrives]);
 
   const dayWiseDistribution = useMemo(() => {
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const distribution = days.map((day) => ({ name: day, bookings: 0 }));
-    if (!filteredTestDrives.length) return distribution;
+    if (!filteredTestDrives.length) {
+      return distribution;
+    }
 
     filteredTestDrives.forEach((td) => {
       try {
         const dateStr = td.startDate || td.createdAt;
-        if (!dateStr) return;
+        if (!dateStr) {
+          return;
+        }
         const d = new Date(dateStr);
         if (!isNaN(d.getTime())) {
           distribution[d.getDay()].bookings++;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('Error parsing date:', e);
+      }
     });
     return distribution;
   }, [filteredTestDrives]);
 
   const allTimeStatusDistribution = useMemo(() => {
     const stats = [
-      { name: "Pending", value: 0, color: "#f97316" }, // orange-500
-      { name: "Confirmed", value: 0, color: "#22c55e" }, // green-500
-      { name: "Completed", value: 0, color: "#3b82f6" }, // blue-500
-      { name: "Cancelled", value: 0, color: "#ef4444" }, // red-500
+      { name: 'Pending', value: 0, color: '#f97316' }, // orange-500
+      { name: 'Confirmed', value: 0, color: '#22c55e' }, // green-500
+      { name: 'Completed', value: 0, color: '#3b82f6' }, // blue-500
+      { name: 'Cancelled', value: 0, color: '#ef4444' }, // red-500
     ];
 
     testDrives.forEach((td) => {
-      if (td.status === "PENDING") stats[0].value++;
-      else if (td.status === "CONFIRMED") stats[1].value++;
-      else if (td.status === "COMPLETED") stats[2].value++;
-      else if (td.status === "CANCELLED") stats[3].value++;
+      if (td.status === 'PENDING') {
+        stats[0].value++;
+      } else if (td.status === 'CONFIRMED') {
+        stats[1].value++;
+      } else if (td.status === 'COMPLETED') {
+        stats[2].value++;
+      } else if (td.status === 'CANCELLED') {
+        stats[3].value++;
+      }
     });
 
     return stats.filter((s) => s.value > 0);
   }, [testDrives]);
-
-  const statusDistribution = useMemo(() => {
-    const stats = [
-      { name: "Pending", value: 0, color: "#f97316" }, // orange-500
-      { name: "Confirmed", value: 0, color: "#22c55e" }, // green-500
-      { name: "Completed", value: 0, color: "#3b82f6" }, // blue-500
-      { name: "Cancelled", value: 0, color: "#ef4444" }, // red-500
-    ];
-
-    filteredTestDrives.forEach((td) => {
-      if (td.status === "PENDING") stats[0].value++;
-      else if (td.status === "CONFIRMED") stats[1].value++;
-      else if (td.status === "COMPLETED") stats[2].value++;
-      else if (td.status === "CANCELLED") stats[3].value++;
-    });
-
-    return stats.filter((s) => s.value > 0);
-  }, [filteredTestDrives]);
 
   const monthlyTrend = useMemo(() => {
     const last6Months = eachMonthOfInterval({
@@ -407,28 +388,34 @@ export default function DashboardPage({
 
     return last6Months.map((date) => {
       const count = testDrives.filter((td) => {
-        const tdDate = new Date(td.startDate || td.createdAt);
+        const dateValue = td.startDate || td.createdAt;
+        if (!dateValue) {
+          return false;
+        }
+
+        const tdDate = new Date(dateValue);
+        if (isNaN(tdDate.getTime())) {
+          return false;
+        }
+
         return isSameMonth(tdDate, date);
       }).length;
       return {
-        name: format(date, "MMM"),
+        name: format(date, 'MMM'),
         bookings: count,
       };
     });
   }, [testDrives]);
 
   const vehicleInterest = useMemo(() => {
-    const counts: Record<
-      string,
-      { name: string; bookings: number; image: string }
-    > = {};
+    const counts: Record<string, { name: string; bookings: number; image: string }> = {};
     filteredTestDrives.forEach((td) => {
-      const id = td.carId?._id || "unknown";
+      const id = td.carId?._id || 'unknown';
       if (!counts[id]) {
         counts[id] = {
-          name: td.carId?.title || "Unknown Car",
+          name: td.carId?.title || 'Unknown Car',
           bookings: 0,
-          image: td.carId?.image || td.carId?.images?.[0] || "",
+          image: td.carId?.image || td.carId?.images?.[0] || '',
         };
       }
       counts[id].bookings++;
@@ -439,30 +426,30 @@ export default function DashboardPage({
   }, [filteredTestDrives]);
 
   const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const years = Array.from({ length: 5 }, (_, i) => getYear(new Date()) - i);
 
-  if (loading) return <Loading />;
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20 p-2 sm:p-6 space-y-8 animate-in fade-in w-full overflow-x-hidden duration-500">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Dashboard
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
@@ -488,9 +475,7 @@ export default function DashboardPage({
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-1">
-                    <div className="text-3xl font-bold text-foreground">
-                      {item.value}
-                    </div>
+                    <div className="text-3xl font-bold text-foreground">{item.value}</div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {item.description}
                     </p>
@@ -518,13 +503,7 @@ export default function DashboardPage({
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={monthlyTrend}>
                       <defs>
-                        <linearGradient
-                          id="colorCount"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
+                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                           <stop
                             offset="5%"
                             stopColor="currentColor"
@@ -551,7 +530,7 @@ export default function DashboardPage({
                         axisLine={false}
                         tickLine={false}
                         tick={{
-                          fill: "currentColor",
+                          fill: 'currentColor',
                           fontSize: 12,
                           opacity: 0.7,
                         }}
@@ -562,7 +541,7 @@ export default function DashboardPage({
                         axisLine={false}
                         tickLine={false}
                         tick={{
-                          fill: "currentColor",
+                          fill: 'currentColor',
                           fontSize: 12,
                           opacity: 0.7,
                         }}
@@ -589,9 +568,7 @@ export default function DashboardPage({
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div>
                   <CardTitle className="text-xl">Status Share</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Distribution of all bookings
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Distribution of all bookings</p>
                 </div>
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <PieChartIcon className="w-4 h-4 text-primary" />
@@ -641,15 +618,11 @@ export default function DashboardPage({
               <div className="grid gap-8 md:grid-cols-2">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">
-                      Inventory Utilization
-                    </p>
+                    <p className="text-sm font-medium text-foreground">Inventory Utilization</p>
                     <span className="text-sm font-semibold text-green-600 dark:text-green-400">
                       {cars.length > 0
                         ? (
-                            (cars.filter((c) => c.status === "available")
-                              .length /
-                              cars.length) *
+                            (cars.filter((c) => c.status === 'available').length / cars.length) *
                             100
                           ).toFixed(0)
                         : 0}
@@ -660,26 +633,20 @@ export default function DashboardPage({
                     <div
                       className="bg-green-500 h-2 rounded-full"
                       style={{
-                        width: `${cars.length > 0 ? (cars.filter((c) => c.status === "available").length / cars.length) * 100 : 0}%`,
+                        width: `${cars.length > 0 ? (cars.filter((c) => c.status === 'available').length / cars.length) * 100 : 0}%`,
                       }}
                     ></div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Available vs Total Cars
-                  </p>
+                  <p className="text-xs text-muted-foreground">Available vs Total Cars</p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">
-                      Completion Rate
-                    </p>
+                    <p className="text-sm font-medium text-foreground">Completion Rate</p>
                     <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                       {testDrives.length > 0
                         ? (
-                            (testDrives.filter(
-                              (td) => td.status === "COMPLETED",
-                            ).length /
+                            (testDrives.filter((td) => td.status === 'COMPLETED').length /
                               testDrives.length) *
                             100
                           ).toFixed(0)
@@ -691,31 +658,24 @@ export default function DashboardPage({
                     <div
                       className="bg-blue-500 h-2 rounded-full"
                       style={{
-                        width: `${testDrives.length > 0 ? (testDrives.filter((td) => td.status === "COMPLETED").length / testDrives.length) * 100 : 0}%`,
+                        width: `${testDrives.length > 0 ? (testDrives.filter((td) => td.status === 'COMPLETED').length / testDrives.length) * 100 : 0}%`,
                       }}
                     ></div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Completed vs Total Bookings
-                  </p>
+                  <p className="text-xs text-muted-foreground">Completed vs Total Bookings</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent
-          value="test-drives"
-          className="space-y-8 w-full max-w-full"
-        >
+        <TabsContent value="test-drives" className="space-y-8 w-full max-w-full">
           {/* Advanced Filter UI */}
           <Card className="border-primary/20 bg-primary/5 w-full">
             <CardHeader className="pb-3 pt-4 px-4 sm:px-6">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-primary" />
-                <CardTitle className="text-sm font-semibold">
-                  Test Drive Period Selection
-                </CardTitle>
+                <CardTitle className="text-sm font-semibold">Test Drive Period Selection</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="px-4 sm:px-6">
@@ -724,10 +684,7 @@ export default function DashboardPage({
                   <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                     Filter Method
                   </Label>
-                  <Select
-                    value={filterType}
-                    onValueChange={(v: any) => setFilterType(v)}
-                  >
+                  <Select value={filterType} onValueChange={(v) => setFilterType(parseFilterType(v))}>
                     <SelectTrigger className="w-full sm:w-[160px] h-9 bg-background">
                       <SelectValue />
                     </SelectTrigger>
@@ -739,7 +696,7 @@ export default function DashboardPage({
                   </Select>
                 </div>
 
-                {filterType === "month" && (
+                {filterType === 'month' && (
                   <div className="flex gap-4 w-full sm:w-auto">
                     <div className="space-y-1.5 flex-1 sm:flex-none">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
@@ -784,7 +741,7 @@ export default function DashboardPage({
                   </div>
                 )}
 
-                {filterType === "month-range" && (
+                {filterType === 'month-range' && (
                   <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2 flex-wrap sm:flex-nowrap">
                     <div className="space-y-1.5 w-full sm:w-auto">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
@@ -823,9 +780,7 @@ export default function DashboardPage({
                         </Select>
                       </div>
                     </div>
-                    <div className="hidden sm:flex h-9 items-center text-muted-foreground">
-                      —
-                    </div>
+                    <div className="hidden sm:flex h-9 items-center text-muted-foreground">—</div>
                     <div className="space-y-1.5 w-full sm:w-auto">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                         Ending Period
@@ -866,7 +821,7 @@ export default function DashboardPage({
                   </div>
                 )}
 
-                {filterType === "date-range" && (
+                {filterType === 'date-range' && (
                   <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                     <div className="space-y-1.5 w-full sm:w-auto">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
@@ -910,15 +865,10 @@ export default function DashboardPage({
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold text-foreground">
-                      {item.value}
-                    </div>
+                    <div className="text-3xl font-bold text-foreground">{item.value}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {testDriveStatsRows[0].value > 0
-                        ? (
-                            (item.value / testDriveStatsRows[0].value) *
-                            100
-                          ).toFixed(0)
+                        ? ((item.value / testDriveStatsRows[0].value) * 100).toFixed(0)
                         : 0}
                       % of period total
                     </p>
@@ -934,9 +884,9 @@ export default function DashboardPage({
                 <div>
                   <CardTitle className="text-xl">Busiest Days</CardTitle>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {filterType === "month"
-                      ? "Booking distribution for selected month"
-                      : "Booking distribution for selected range"}
+                    {filterType === 'month'
+                      ? 'Booking distribution for selected month'
+                      : 'Booking distribution for selected range'}
                   </p>
                 </div>
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -958,7 +908,7 @@ export default function DashboardPage({
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fill: "currentColor",
+                            fill: 'currentColor',
                             fontSize: 12,
                           }}
                           className="text-muted-foreground fill-muted-foreground"
@@ -968,7 +918,7 @@ export default function DashboardPage({
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fill: "currentColor",
+                            fill: 'currentColor',
                             fontSize: 12,
                           }}
                           className="text-muted-foreground fill-muted-foreground"
@@ -976,9 +926,9 @@ export default function DashboardPage({
                         <Tooltip
                           content={<CustomTooltip />}
                           cursor={{
-                            fill: "currentColor",
+                            fill: 'currentColor',
                             opacity: 0.1,
-                            className: "text-muted-foreground",
+                            className: 'text-muted-foreground',
                             radius: 4,
                           }}
                         />
@@ -1042,7 +992,7 @@ export default function DashboardPage({
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fill: "currentColor",
+                            fill: 'currentColor',
                             fontSize: 11,
                           }}
                           className="text-foreground fill-foreground font-medium"
@@ -1050,9 +1000,9 @@ export default function DashboardPage({
                         <Tooltip
                           content={<CustomTooltip />}
                           cursor={{
-                            fill: "currentColor",
+                            fill: 'currentColor',
                             opacity: 0.05,
-                            className: "text-muted-foreground",
+                            className: 'text-muted-foreground',
                             radius: 4,
                           }}
                         />
@@ -1092,76 +1042,51 @@ export default function DashboardPage({
                 <div className="p-4 rounded-lg bg-muted/30 border border-border transition-colors hover:bg-muted/50">
                   <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {testDriveStatsRows[0].value > 0
-                      ? (
-                          (testDriveStatsRows[3].value /
-                            testDriveStatsRows[0].value) *
-                          100
-                        ).toFixed(0)
+                      ? ((testDriveStatsRows[3].value / testDriveStatsRows[0].value) * 100).toFixed(
+                          0
+                        )
                       : 0}
                     %
                   </p>
-                  <p className="text-sm font-medium text-foreground mt-1">
-                    Completion Rate
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Bookings completed in this period
-                  </p>
+                  <p className="text-sm font-medium text-foreground mt-1">Completion Rate</p>
+                  <p className="text-xs text-muted-foreground">Bookings completed in this period</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/30 border border-border transition-colors hover:bg-muted/50">
                   <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {testDriveStatsRows[0].value > 0
-                      ? (
-                          (testDriveStatsRows[1].value /
-                            testDriveStatsRows[0].value) *
-                          100
-                        ).toFixed(0)
+                      ? ((testDriveStatsRows[1].value / testDriveStatsRows[0].value) * 100).toFixed(
+                          0
+                        )
                       : 0}
                     %
                   </p>
-                  <p className="text-sm font-medium text-foreground mt-1">
-                    Pending Rate
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Bookings awaiting action
-                  </p>
+                  <p className="text-sm font-medium text-foreground mt-1">Pending Rate</p>
+                  <p className="text-xs text-muted-foreground">Bookings awaiting action</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/30 border border-border transition-colors hover:bg-muted/50">
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {testDriveStatsRows[0].value > 0
-                      ? (
-                          (testDriveStatsRows[2].value /
-                            testDriveStatsRows[0].value) *
-                          100
-                        ).toFixed(0)
+                      ? ((testDriveStatsRows[2].value / testDriveStatsRows[0].value) * 100).toFixed(
+                          0
+                        )
                       : 0}
                     %
                   </p>
-                  <p className="text-sm font-medium text-foreground mt-1">
-                    Confirmation Rate
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Bookings confirmed for period
-                  </p>
+                  <p className="text-sm font-medium text-foreground mt-1">Confirmation Rate</p>
+                  <p className="text-xs text-muted-foreground">Bookings confirmed for period</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-semibold text-foreground">
-                  Status Breakdown
-                </h4>
+                <h4 className="font-semibold text-foreground">Status Breakdown</h4>
                 <div className="space-y-4">
                   {testDriveStatsRows.slice(1).map((item, index) => (
                     <div key={index}>
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-foreground font-medium">
-                          {item.name}
-                        </span>
+                        <span className="text-foreground font-medium">{item.name}</span>
                         <span className="text-muted-foreground">
                           {testDriveStatsRows[0].value > 0
-                            ? (
-                                (item.value / testDriveStatsRows[0].value) *
-                                100
-                              ).toFixed(0)
+                            ? ((item.value / testDriveStatsRows[0].value) * 100).toFixed(0)
                             : 0}
                           %
                         </span>

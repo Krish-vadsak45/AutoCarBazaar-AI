@@ -1,26 +1,29 @@
-"use client";
+'use client';
 
-import React, { useState, useRef } from "react";
-import axios from "axios";
+import React, { useState, useRef } from 'react';
+import axios from 'axios';
+import { Loader2, FileText, Download } from 'lucide-react';
+import { toast } from 'sonner';
+
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Loader2, FileText, Download, AlertCircle } from "lucide-react";
-import { VendorMonthlyReport } from "./VendorMonthlyReport";
-import { useGeneratePDF } from "@/hooks/use-generate-pdf";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { useGeneratePDF } from '@/hooks/use-generate-pdf';
+
+import { VendorMonthlyReportData } from './VendorMonthlyReport';
+import { VendorMonthlyReport } from './VendorMonthlyReport';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -36,8 +39,8 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
   vendorName,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [reportData, setReportData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<VendorMonthlyReportData | null>(null);
+  const [, setReportError] = useState<string | null>(null);
 
   // Date Selection
   const now = new Date();
@@ -45,9 +48,7 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Default values
-  const defaultMonth = (
-    now.getMonth() === 0 ? 11 : now.getMonth() - 1
-  ).toString();
+  const defaultMonth = (now.getMonth() === 0 ? 11 : now.getMonth() - 1).toString();
   const defaultYear = now.getFullYear().toString();
 
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
@@ -57,7 +58,7 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       setReportData(null);
-      setError(null);
+      setReportError(null);
       setSelectedMonth(defaultMonth);
       setSelectedYear(defaultYear);
     }
@@ -67,9 +68,9 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
 
   const handleFetchReport = async () => {
     setLoading(true);
-    setError(null);
+    setReportError(null);
     try {
-      const res = await axios.get(`/api/admin/reports/vendor-monthly`, {
+      const res = await axios.get<VendorMonthlyReportData>(`/api/admin/reports/vendor-monthly`, {
         params: {
           vendorId,
           month: selectedMonth,
@@ -77,27 +78,33 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
         },
       });
       setReportData(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.response?.data?.error || "Failed to load report data");
-      toast.error("Could not fetch analytics for this period");
+      let errorMessage = 'Failed to load report data';
+      if (axios.isAxiosError(err) && err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
+      setReportError(errorMessage);
+      toast.error('Could not fetch analytics for this period');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDownload = async () => {
-    if (!reportData || !reportRef.current) return;
+    if (!reportData || !reportRef.current) {
+      return;
+    }
 
     setIsGenerating(true);
     try {
-      const fileName = `Monthly_Report_${vendorName.replaceAll(/\s+/g, "_")}_${selectedMonth}_${selectedYear}.pdf`;
+      const fileName = `Monthly_Report_${vendorName.replaceAll(/\s+/g, '_')}_${selectedMonth}_${selectedYear}.pdf`;
       // Use original element for high quality capture
       await generatePDF(reportRef.current, fileName);
-      toast.success("Report downloaded successfully");
+      toast.success('Report downloaded successfully');
     } catch (err) {
       console.error(err);
-      toast.error("Failed to generate PDF");
+      toast.error('Failed to generate PDF');
     } finally {
       setIsGenerating(false);
     }
@@ -105,27 +112,25 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
 
   const reset = () => {
     setReportData(null);
-    setError(null);
+    setReportError(null);
   };
 
   const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
-  const years = Array.from({ length: 3 }, (_, i) =>
-    (now.getFullYear() - i).toString(),
-  );
+  const years = Array.from({ length: 3 }, (_, i) => (now.getFullYear() - i).toString());
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -136,8 +141,7 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
             Vendor Performance Analysis
           </DialogTitle>
           <DialogDescription>
-            Generate and export a comprehensive document for{" "}
-            <strong>{vendorName}</strong>.
+            Generate and export a comprehensive document for <strong>{vendorName}</strong>.
           </DialogDescription>
         </DialogHeader>
 
@@ -153,11 +157,7 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
             </div>
 
             <div className="p-4 border-t bg-background flex justify-between items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={reset}
-                className="hover:bg-muted font-medium"
-              >
+              <Button variant="ghost" onClick={reset} className="hover:bg-muted font-medium">
                 Change Filter
               </Button>
               <Button
@@ -193,10 +193,7 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
 
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-3">
-                <label
-                  htmlFor="month-select"
-                  className="text-sm font-semibold tracking-tight"
-                >
+                <label htmlFor="month-select" className="text-sm font-semibold tracking-tight">
                   Analysis Month
                 </label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -213,10 +210,7 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
                 </Select>
               </div>
               <div className="space-y-3">
-                <label
-                  htmlFor="year-select"
-                  className="text-sm font-semibold tracking-tight"
-                >
+                <label htmlFor="year-select" className="text-sm font-semibold tracking-tight">
                   Analysis Year
                 </label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
@@ -245,7 +239,7 @@ export const VendorReportModal: React.FC<ReportModalProps> = ({
                   Processing Metrics...
                 </>
               ) : (
-                "Show Analytics Preview"
+                'Show Analytics Preview'
               )}
             </Button>
           </div>

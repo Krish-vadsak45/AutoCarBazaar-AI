@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IReview extends Document {
   carId: mongoose.Types.ObjectId;
@@ -20,11 +20,11 @@ export interface IReview extends Document {
 
 const ReviewSchema = new Schema<IReview>(
   {
-    carId: { type: Schema.Types.ObjectId, ref: "Car", required: true },
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    carId: { type: Schema.Types.ObjectId, ref: 'Car', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     testDriveId: {
       type: Schema.Types.ObjectId,
-      ref: "TestDrive",
+      ref: 'TestDrive',
       required: true,
       unique: true,
     },
@@ -32,22 +32,21 @@ const ReviewSchema = new Schema<IReview>(
     comment: { type: String, required: true },
     isVerified: { type: Boolean, default: true },
     helpfulCount: { type: Number, default: 0 },
-    helpfulUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    helpfulUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     replies: [
       {
-        userId: { type: Schema.Types.ObjectId, ref: "User" },
+        userId: { type: Schema.Types.ObjectId, ref: 'User' },
         text: { type: String, required: true },
         createdAt: { type: Date, default: Date.now },
       },
     ],
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 // Force bypass cache
 delete mongoose.models.Review;
 
-const Review =
-  mongoose.models.Review || mongoose.model<IReview>("Review", ReviewSchema);
+const Review = mongoose.models.Review || mongoose.model<IReview>('Review', ReviewSchema);
 
 export default Review;

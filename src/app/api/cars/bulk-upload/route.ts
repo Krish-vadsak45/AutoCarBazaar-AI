@@ -1,31 +1,29 @@
-import { NextResponse } from "next/server";
-import connectToDatabase from "@/lib/db";
-import Car from "@/models/car.model";
-import Vendor from "@/models/vendor.model";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
-import { carSchema } from "@/lib/validations/car";
-import { canUseBulkUpload } from "@/lib/vip";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+
+import connectToDatabase from '@/lib/db';
+import { getErrorMessage } from '@/lib/errors';
+import Car from '@/models/car.model';
+import Vendor from '@/models/vendor.model';
+import { carSchema } from '@/lib/validations/car';
+import type { CarFormValues } from '@/lib/validations/car';
+import { canUseBulkUpload } from '@/lib/vip';
+
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (
-      !session ||
-      (session.user.role !== "vendor" && session.user.role !== "admin")
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session || (session.user.role !== 'vendor' && session.user.role !== 'admin')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { cars } = body;
 
     if (!Array.isArray(cars) || cars.length === 0) {
-      return NextResponse.json(
-        { error: "Invalid data format" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Invalid data format' }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -35,32 +33,28 @@ export async function POST(request: Request) {
       userId: session.user._id,
     });
 
-    if (!vendor && session.user.role === "vendor") {
-      return NextResponse.json(
-        { error: "Vendor profile not found" },
-        { status: 404 },
-      );
+    if (!vendor && session.user.role === 'vendor') {
+      return NextResponse.json({ error: 'Vendor profile not found' }, { status: 404 });
     }
 
-    if (session.user.role === "vendor" && vendor) {
+    if (session.user.role === 'vendor' && vendor) {
       if (!canUseBulkUpload(vendor.priority)) {
         return NextResponse.json(
           {
-            error:
-              "Bulk CSV upload requires VIP level 5 (priority > 4).",
+            error: 'Bulk CSV upload requires VIP level 5 (priority > 4).',
           },
-          { status: 403 },
+          { status: 403 }
         );
       }
     }
 
     // Prepare data and validate
-    const validatedCars = cars.map((carData: any) => {
+    const validatedCars = cars.map((carData: Partial<CarFormValues>) => {
       // Set the vendor ID and default status
       const processedData = {
         ...carData,
         vendorId: vendor?._id || session.user.vendorId || session.user._id,
-        status: "available",
+        status: 'available',
       };
 
       // Basic validation check - we use parse to ensure it matches schema
@@ -69,7 +63,7 @@ export async function POST(request: Request) {
         // Use z.format() or format the error manually
         const firstError = result.error.issues[0];
         throw new Error(
-          `Validation failed for one or more records: ${firstError.path.join(".")} - ${firstError.message}`,
+          `Validation failed for one or more records: ${firstError.path.join('.')} - ${firstError.message}`
         );
       }
 
@@ -92,13 +86,13 @@ export async function POST(request: Request) {
         message: `${createdCars.length} vehicles uploaded successfully`,
         count: createdCars.length,
       },
-      { status: 201 },
+      { status: 201 }
     );
-  } catch (error: any) {
-    console.error("Bulk upload error:", error);
+  } catch (error: unknown) {
+    console.error('Bulk upload error:', error);
     return NextResponse.json(
-      { error: error.message || "Failed to process bulk upload" },
-      { status: 500 },
+      { error: getErrorMessage(error, 'Failed to process bulk upload') },
+      { status: 500 }
     );
   }
 }

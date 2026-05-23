@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import connectToDatabase from "@/lib/db";
-import User from "@/models/user.model";
-import bcrypt from "bcryptjs";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import bcrypt from 'bcryptjs';
+
+import connectToDatabase from '@/lib/db';
+import User from '@/models/user.model';
+
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // GET: Fetch logged-in user
 export async function GET() {
@@ -11,7 +13,7 @@ export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectToDatabase();
@@ -19,22 +21,16 @@ export async function GET() {
     const user = await User.findOne({ email: session.user.email }).lean();
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { password, ...userWithoutPassword } = user as any;
+    const { password, ...userWithoutPassword } = user as { password?: string };
     const hasPassword = !!password;
 
-    return NextResponse.json(
-      { user: { ...userWithoutPassword, hasPassword } },
-      { status: 200 },
-    );
+    return NextResponse.json({ user: { ...userWithoutPassword, hasPassword } }, { status: 200 });
   } catch (error) {
-    console.error("Error fetching user:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    console.error('Error fetching user:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -44,7 +40,7 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -55,17 +51,23 @@ export async function POST(request: Request) {
     const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Update basic fields
-    if (name) user.name = name;
-    if (image)
-      (user as any).image =
-        image ||
-        "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
-    if (phone) (user as any).phone = phone || 1234567890;
-    if (address !== undefined) (user as any).address = address;
+    if (name) {
+      user.name = name;
+    }
+    if (image) {
+      user.image =
+        image || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+    }
+    if (phone) {
+      user.phone = phone || 1234567890;
+    }
+    if (address !== undefined) {
+      user.address = address;
+    }
 
     // Handle password update
     if (newPassword) {
@@ -73,16 +75,13 @@ export async function POST(request: Request) {
         // User has a password, verify current password
         if (!currentPassword) {
           return NextResponse.json(
-            { error: "Current password is required to change password" },
-            { status: 400 },
+            { error: 'Current password is required to change password' },
+            { status: 400 }
           );
         }
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
-          return NextResponse.json(
-            { error: "Incorrect current password" },
-            { status: 400 },
-          );
+          return NextResponse.json({ error: 'Incorrect current password' }, { status: 400 });
         }
       }
       // Set new password (either no existing password or verified current)
@@ -95,13 +94,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { user: { ...userWithoutPassword, hasPassword: !!user.password } },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
-    console.error("Error upserting user:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    console.error('Error upserting user:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

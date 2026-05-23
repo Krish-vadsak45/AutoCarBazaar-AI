@@ -1,19 +1,20 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import AllCars from "@/components/AllCars";
-import { SearchAndFilter } from "@/components/SearchAndFilter";
+import React, { useState } from 'react';
+
+import AllCars from '@/components/AllCars';
+import { SearchAndFilter } from '@/components/SearchAndFilter';
 
 const Page = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [toolFilter, setToolFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toolFilter, setToolFilter] = useState('');
   const [company, setCompany] = useState<string[]>([]);
-  const [yearFrom, setYearFrom] = useState("");
-  const [yearTo, setYearTo] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [transmission, setTransmission] = useState("");
-  const [fuel, setFuel] = useState("");
+  const [yearFrom, setYearFrom] = useState('');
+  const [yearTo, setYearTo] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [transmission, setTransmission] = useState('');
+  const [fuel, setFuel] = useState('');
   return (
     <>
       <AllCars

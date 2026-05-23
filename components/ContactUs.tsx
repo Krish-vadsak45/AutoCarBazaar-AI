@@ -1,8 +1,6 @@
-"use client";
-import React from "react";
+'use client';
+import React from 'react';
 
-const ContactUs = () => {
-  return <div>ContactUs</div>;
-};
+const ContactUs = () => <div>ContactUs</div>;
 
 export default ContactUs;

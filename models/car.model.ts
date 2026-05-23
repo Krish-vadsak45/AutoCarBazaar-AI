@@ -1,4 +1,4 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Document, Model } from 'mongoose';
 export interface ISpecs {
   make?: string;
   model?: string;
@@ -6,14 +6,14 @@ export interface ISpecs {
   fuelType?: string;
   mileage?: string;
   color?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface ICar extends Document {
   images?: string[];
   image?: string; // legacy single image field
   title: string;
-  status: "available" | "unavailable";
+  status: 'available' | 'unavailable';
   price: number;
   pricePerHour?: number;
   transmission?: string;
@@ -28,6 +28,8 @@ export interface ICar extends Document {
   averageRating?: number;
   reviewCount?: number;
   totalBookedCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const SpecsSchema = new mongoose.Schema<ISpecs>(
@@ -39,7 +41,7 @@ const SpecsSchema = new mongoose.Schema<ISpecs>(
     mileage: { type: String },
     color: { type: String },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const CarSchema = new mongoose.Schema<ICar>(
@@ -51,8 +53,8 @@ const CarSchema = new mongoose.Schema<ICar>(
     pricePerHour: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["available", "unavailable"],
-      default: "available",
+      enum: ['available', 'unavailable'],
+      default: 'available',
     },
     transmission: { type: String },
     bodyType: { type: String },
@@ -63,21 +65,20 @@ const CarSchema = new mongoose.Schema<ICar>(
     carAddress: { type: String },
     vendorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Vendor",
+      ref: 'Vendor',
     },
     videoUrl: { type: String },
     averageRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     totalBookedCount: { type: Number, default: 0 },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 // Force bypass cache
 delete mongoose.models.Car;
 
 const Car: Model<ICar> =
-  (mongoose.models.Car as Model<ICar>) ||
-  mongoose.model<ICar>("Car", CarSchema);
+  (mongoose.models.Car as Model<ICar>) || mongoose.model<ICar>('Car', CarSchema);
 
 export default Car;

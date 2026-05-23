@@ -1,15 +1,11 @@
-const CarSpinner = ({
-  message = "Finding your perfect ride...",
-}: {
-  message?: string;
-}) => {
+const CarSpinner = ({ message = 'Finding your perfect ride...' }: { message?: string }) => {
   const spinnerVars = {
-    "--spinner-track": "220 14% 88%",
-    "--spinner-glow": "38 92% 50%",
-    "--spinner-icon": "220 25% 20%",
-    "--spinner-bg": "220 20% 95%",
-    "--spinner-dot": "38 92% 50%",
-    "--spinner-text": "220 10% 46%",
+    '--spinner-track': '220 14% 88%',
+    '--spinner-glow': '38 92% 50%',
+    '--spinner-icon': '220 25% 20%',
+    '--spinner-bg': '220 20% 95%',
+    '--spinner-dot': '38 92% 50%',
+    '--spinner-text': '220 10% 46%',
   } as React.CSSProperties;
 
   return (
@@ -24,10 +20,7 @@ const CarSpinner = ({
         <div className="absolute inset-[-4px] rounded-full bg-[hsl(var(--spinner-glow))] opacity-5 blur-lg animate-pulse-glow" />
 
         {/* Outer spinning arc */}
-        <svg
-          className="absolute inset-0 w-full h-full animate-spin-outer"
-          viewBox="0 0 128 128"
-        >
+        <svg className="absolute inset-0 w-full h-full animate-spin-outer" viewBox="0 0 128 128">
           {/* Track ring */}
           <circle
             cx="64"

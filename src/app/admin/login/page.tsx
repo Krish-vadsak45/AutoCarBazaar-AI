@@ -1,30 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
-import * as z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
+import * as z from 'zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import {
   ShieldCheck,
   Mail,
@@ -38,16 +21,28 @@ import {
   FileBadge,
   ArrowRight,
   ArrowLeft,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useSession, signIn } from "next-auth/react";
+} from 'lucide-react';
+import { signIn } from 'next-auth/react';
+
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getAxiosErrorMessage, getErrorMessage } from '@/lib/errors';
+import { cn } from '@/lib/utils';
 
 // --- Schemas ---
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(3, { message: "Min 3 chars" }),
-  role: z.enum(["admin", "vendor"]),
+  password: z.string().min(3, { message: 'Min 3 chars' }),
+  role: z.enum(['admin', 'vendor']),
 });
 
 const vendorSchema = z.object({
@@ -55,16 +50,14 @@ const vendorSchema = z.object({
   businessName: z.string().min(2),
   ownerName: z.string().min(2),
   email: z.string().email(),
-  password: z
-    .string()
-    .min(3, { message: "Password must be at least 3 characters" }),
+  password: z.string().min(3, { message: 'Password must be at least 3 characters' }),
   phone: z.string().min(10),
-  website: z.union([z.string().url(), z.literal("")]).optional(),
+  website: z.union([z.string().url(), z.literal('')]).optional(),
   description: z.string().optional(),
 
   // Step 2: Address & Legal
-  businessType: z.enum(["INDIVIDUAL", "COMPANY", "AGENCY"]),
-  vendorType: z.enum(["SINGLE_OWNER", "FLEET_OWNER"]),
+  businessType: z.enum(['INDIVIDUAL', 'COMPANY', 'AGENCY']),
+  vendorType: z.enum(['SINGLE_OWNER', 'FLEET_OWNER']),
   gstNumber: z.string().optional(),
 
   street: z.string().min(5),
@@ -73,7 +66,7 @@ const vendorSchema = z.object({
   pincode: z.string().regex(/^\d{6}$/),
 
   // Step 3: Identity & Bank
-  idType: z.enum(["AADHAAR", "PAN", "PASSPORT", "DRIVING_LICENSE"]),
+  idType: z.enum(['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE']),
   idNumber: z.string().min(5),
   documentUrl: z.string().url(),
 
@@ -93,46 +86,46 @@ export default function AdminAuthPage() {
   const totalSteps = 3; // Increased to 3
   const [isLoading, setIsLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState('');
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { role: "admin", email: "", password: "" },
+    defaultValues: { role: 'admin', email: '', password: '' },
   });
 
   const vendorForm = useForm<VendorData>({
     resolver: zodResolver(vendorSchema),
     defaultValues: {
-      businessName: "",
-      ownerName: "",
-      email: "",
-      password: "",
-      phone: "",
-      website: "",
-      description: "",
-      gstNumber: "",
-      street: "",
-      city: "",
-      state: "",
-      pincode: "",
-      idNumber: "",
-      documentUrl: "",
-      bankName: "",
-      accountHolderName: "",
-      accountNumber: "",
-      ifscCode: "",
-      businessType: "INDIVIDUAL",
-      vendorType: "SINGLE_OWNER",
-      idType: "AADHAAR",
+      businessName: '',
+      ownerName: '',
+      email: '',
+      password: '',
+      phone: '',
+      website: '',
+      description: '',
+      gstNumber: '',
+      street: '',
+      city: '',
+      state: '',
+      pincode: '',
+      idNumber: '',
+      documentUrl: '',
+      bankName: '',
+      accountHolderName: '',
+      accountNumber: '',
+      ifscCode: '',
+      businessType: 'INDIVIDUAL',
+      vendorType: 'SINGLE_OWNER',
+      idType: 'AADHAAR',
     },
   });
 
   // Login Handler
   const handleLogin = async (data: LoginData) => {
     setIsLoading(true);
-    setErrorMsg("");
+    setErrorMsg('');
     try {
-      const result = await signIn("credentials", {
+      const result = await signIn('credentials', {
         redirect: false,
         email: data.email,
         password: data.password,
@@ -146,45 +139,41 @@ export default function AdminAuthPage() {
       }
 
       if (result?.ok) {
-        toast.success("Welcome back!");
+        toast.success('Welcome back!');
         // We call the custom login API to get the user's data (role, vendorId) for redirection
-        const res = await axios.post("/api/auth/admin/login", data);
+        const res = await axios.post('/api/auth/admin/login', data);
         if (res.status === 200) {
           const { role, vendorId, id } = res.data.user;
           const { message, verificationStatus } = res.data;
 
-          const targetId = role === "admin" ? id : vendorId;
+          const targetId = role === 'admin' ? id : vendorId;
 
           if (!targetId) {
-            console.error("No target ID found for redirection", res.data.user);
-            router.push("/");
+            console.error('No target ID found for redirection', res.data.user);
+            router.push('/');
             return;
           }
 
-          if (verificationStatus === "PENDING") {
+          if (verificationStatus === 'PENDING') {
             toast.info(
-              message ||
-                "Login successful, but your vendor application is still pending approval.",
+              message || 'Login successful, but your vendor application is still pending approval.'
             );
-            router.push("/profile");
-          } else if (verificationStatus === "REJECTED") {
+            router.push('/profile');
+          } else if (verificationStatus === 'REJECTED') {
             toast.warning(
-              message ||
-                "Login successful, but your vendor application has been rejected.",
+              message || 'Login successful, but your vendor application has been rejected.'
             );
-            router.push("/profile");
+            router.push('/profile');
           } else {
             // console.log("Redirecting to:", `/${role}/${targetId}/dashboard`);
             globalThis.window.location.href =
-              role === "admin"
-                ? `/admin/${targetId}/dashboard`
-                : `/vendor/${targetId}/dashboard`;
+              role === 'admin' ? `/admin/${targetId}/dashboard` : `/vendor/${targetId}/dashboard`;
           }
         }
       }
-    } catch (e: any) {
-      setErrorMsg("An unexpected error occurred");
-      console.error(e);
+    } catch (e: unknown) {
+      setErrorMsg('An unexpected error occurred');
+      console.error(getErrorMessage(e));
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +182,7 @@ export default function AdminAuthPage() {
   // Updated handler
   const handleVendorReg = async (data: VendorData) => {
     setIsLoading(true);
-    setErrorMsg("");
+    setErrorMsg('');
 
     const payload = {
       businessName: data.businessName,
@@ -235,21 +224,20 @@ export default function AdminAuthPage() {
     };
 
     try {
-      const res = await axios.post("/api/auth/vendor", payload);
+      const res = await axios.post('/api/auth/vendor', payload);
       if (res.status === 201 || res.status === 200) {
         const message =
-          res.data.message ||
-          "Vendor registration successful. Please wait for admin approval.";
+          res.data.message || 'Vendor registration successful. Please wait for admin approval.';
         toast.success(message);
 
         // Redirect to home or profile since approval is pending
         // Do not auto-login as vendor because role is not yet updated
         setTimeout(() => {
-          router.push("/");
+          router.push('/');
         }, 2000);
       }
-    } catch (e: any) {
-      setErrorMsg(e.response?.data?.error || "Registration failed");
+    } catch (e: unknown) {
+      setErrorMsg(getAxiosErrorMessage(e, 'Registration failed'));
     } finally {
       setIsLoading(false);
     }
@@ -259,32 +247,20 @@ export default function AdminAuthPage() {
     let fieldsToValidate: (keyof VendorData)[] = [];
 
     if (step === 1) {
-      fieldsToValidate = [
-        "businessName",
-        "ownerName",
-        "email",
-        "password",
-        "phone",
-        "website",
-      ];
+      fieldsToValidate = ['businessName', 'ownerName', 'email', 'password', 'phone', 'website'];
     } else if (step === 2) {
-      fieldsToValidate = [
-        "street",
-        "city",
-        "state",
-        "pincode",
-        "businessType",
-        "vendorType",
-      ];
+      fieldsToValidate = ['street', 'city', 'state', 'pincode', 'businessType', 'vendorType'];
       // Access values via getValues() or similar if needed,
       // but simplistic array is safer for now.
       // Ideally we check if businessType != INDIVIDUAL to require GST,
       // but Zod schema handles optionality. Use explicit trigger.
-      fieldsToValidate.push("gstNumber");
+      fieldsToValidate.push('gstNumber');
     }
 
     const isValid = await vendorForm.trigger(fieldsToValidate);
-    if (isValid) setStep((s) => s + 1);
+    if (isValid) {
+      setStep((s) => s + 1);
+    }
   };
 
   const prevStep = () => setStep((s) => s - 1);
@@ -304,10 +280,10 @@ export default function AdminAuthPage() {
             <motion.div
               layout
               className={cn(
-                "inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg mb-4 text-white",
+                'inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg mb-4 text-white',
                 isLoginMode
-                  ? "bg-gradient-to-br from-blue-600 to-indigo-600"
-                  : "bg-gradient-to-br from-emerald-500 to-teal-500",
+                  ? 'bg-gradient-to-br from-blue-600 to-indigo-600'
+                  : 'bg-gradient-to-br from-emerald-500 to-teal-500'
               )}
             >
               {isLoginMode ? (
@@ -317,12 +293,10 @@ export default function AdminAuthPage() {
               )}
             </motion.div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-              {isLoginMode ? "Admin Portal" : "Partners Program"}
+              {isLoginMode ? 'Admin Portal' : 'Partners Program'}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-              {isLoginMode
-                ? "Secure access for staff"
-                : "Join our vendor network"}
+              {isLoginMode ? 'Secure access for staff' : 'Join our vendor network'}
             </p>
           </div>
 
@@ -331,19 +305,17 @@ export default function AdminAuthPage() {
             <div className="bg-zinc-100 dark:bg-slate-800 p-1 rounded-xl flex relative">
               <motion.div
                 className="absolute top-1 bottom-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm w-[48%]"
-                animate={{ x: isLoginMode ? "2%" : "106%" }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                animate={{ x: isLoginMode ? '2%' : '106%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               />
               <button
                 onClick={() => {
                   setIsLoginMode(true);
-                  setErrorMsg("");
+                  setErrorMsg('');
                 }}
                 className={cn(
-                  "flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors",
-                  isLoginMode
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-500",
+                  'flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors',
+                  isLoginMode ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'
                 )}
               >
                 Login
@@ -351,13 +323,11 @@ export default function AdminAuthPage() {
               <button
                 onClick={() => {
                   setIsLoginMode(false);
-                  setErrorMsg("");
+                  setErrorMsg('');
                 }}
                 className={cn(
-                  "flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors",
-                  !isLoginMode
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-gray-500",
+                  'flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors',
+                  !isLoginMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500'
                 )}
               >
                 Register Vendor
@@ -367,7 +337,7 @@ export default function AdminAuthPage() {
 
           <div className="px-8 pb-8">
             <AnimatePresence mode="popLayout">
-              {errorMsg && (
+              {errorMsg ? (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -377,7 +347,7 @@ export default function AdminAuthPage() {
                   <AlertCircle className="w-4 h-4" />
                   {errorMsg}
                 </motion.div>
-              )}
+              ) : null}
             </AnimatePresence>
 
             {isLoginMode ? (
@@ -399,19 +369,19 @@ export default function AdminAuthPage() {
                         <FormItem className="col-span-2">
                           <FormControl>
                             <div className="flex w-full gap-2">
-                              {["admin", "vendor"].map((r) => (
+                              {['admin', 'vendor'].map((r) => (
                                 <button
                                   key={r}
                                   type="button"
                                   onClick={() => field.onChange(r)}
                                   className={cn(
-                                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2",
+                                    'flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2',
                                     field.value === r
-                                      ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm border border-zinc-200 dark:border-slate-600"
-                                      : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
+                                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm border border-zinc-200 dark:border-slate-600'
+                                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                                   )}
                                 >
-                                  {r === "admin" ? (
+                                  {r === 'admin' ? (
                                     <ShieldCheck className="w-3.5 h-3.5" />
                                   ) : (
                                     <UserCog className="w-3.5 h-3.5" />
@@ -457,7 +427,7 @@ export default function AdminAuthPage() {
                             <div className="relative group">
                               <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors z-10" />
                               <Input
-                                type={showPass ? "text" : "password"}
+                                type={showPass ? 'text' : 'password'}
                                 {...field}
                                 placeholder="Password"
                                 className="pl-10 pr-10 py-5 bg-zinc-50 dark:bg-slate-800/50 border-zinc-200 dark:border-slate-700 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:border-blue-500 transition-all text-sm"
@@ -486,11 +456,7 @@ export default function AdminAuthPage() {
                     disabled={isLoading}
                     className="w-full py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-70 flex justify-center text-md"
                   >
-                    {isLoading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      "Sign In"
-                    )}
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
                   </Button>
                 </motion.form>
               </Form>
@@ -508,22 +474,19 @@ export default function AdminAuthPage() {
                   {/* Step Indicator */}
                   <div className="flex justify-between mb-6 px-2 relative">
                     {[1, 2, 3].map((s) => (
-                      <div
-                        key={s}
-                        className="flex flex-col items-center gap-1 z-10"
-                      >
+                      <div key={s} className="flex flex-col items-center gap-1 z-10">
                         <div
                           className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                            'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors',
                             step >= s
-                              ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                              : "bg-zinc-100 dark:bg-slate-800 text-gray-400",
+                              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                              : 'bg-zinc-100 dark:bg-slate-800 text-gray-400'
                           )}
                         >
                           {s}
                         </div>
                         <span className="text-[10px] uppercase font-bold text-gray-400">
-                          {s === 1 ? "Info" : s === 2 ? "Legal" : "Bank"}
+                          {s === 1 ? 'Info' : s === 2 ? 'Legal' : 'Bank'}
                         </span>
                       </div>
                     ))}
@@ -606,7 +569,7 @@ export default function AdminAuthPage() {
                                   <div className="relative">
                                     <Input
                                       {...field}
-                                      type={showPass ? "text" : "password"}
+                                      type={showPass ? 'text' : 'password'}
                                       placeholder="Password"
                                       className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border rounded-xl text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500"
                                     />
@@ -677,25 +640,16 @@ export default function AdminAuthPage() {
                             name="businessType"
                             render={({ field }) => (
                               <FormItem>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
                                       <SelectValue placeholder="Business Type" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="INDIVIDUAL">
-                                      Individual
-                                    </SelectItem>
-                                    <SelectItem value="COMPANY">
-                                      Company
-                                    </SelectItem>
-                                    <SelectItem value="AGENCY">
-                                      Agency
-                                    </SelectItem>
+                                    <SelectItem value="INDIVIDUAL">Individual</SelectItem>
+                                    <SelectItem value="COMPANY">Company</SelectItem>
+                                    <SelectItem value="AGENCY">Agency</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <FormMessage className="text-xs px-1" />
@@ -708,22 +662,15 @@ export default function AdminAuthPage() {
                             name="vendorType"
                             render={({ field }) => (
                               <FormItem>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger className="w-full px-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
                                       <SelectValue placeholder="Vendor Type" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="SINGLE_OWNER">
-                                      Single Owner
-                                    </SelectItem>
-                                    <SelectItem value="FLEET_OWNER">
-                                      Fleet Owner
-                                    </SelectItem>
+                                    <SelectItem value="SINGLE_OWNER">Single Owner</SelectItem>
+                                    <SelectItem value="FLEET_OWNER">Fleet Owner</SelectItem>
                                   </SelectContent>
                                 </Select>
                                 <FormMessage className="text-xs px-1" />
@@ -835,28 +782,17 @@ export default function AdminAuthPage() {
                             <FormItem>
                               <div className="relative">
                                 <FileBadge className="absolute left-3 top-5 w-5 h-5 text-gray-400 z-10" />
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <FormControl>
                                     <SelectTrigger className="w-full pl-10 pr-4 py-5 bg-zinc-50 dark:bg-slate-800 border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
                                       <SelectValue placeholder="ID Type" />
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="AADHAAR">
-                                      Aadhaar Card
-                                    </SelectItem>
-                                    <SelectItem value="PAN">
-                                      PAN Card
-                                    </SelectItem>
-                                    <SelectItem value="PASSPORT">
-                                      Passport
-                                    </SelectItem>
-                                    <SelectItem value="DRIVING_LICENSE">
-                                      Driving License
-                                    </SelectItem>
+                                    <SelectItem value="AADHAAR">Aadhaar Card</SelectItem>
+                                    <SelectItem value="PAN">PAN Card</SelectItem>
+                                    <SelectItem value="PASSPORT">Passport</SelectItem>
+                                    <SelectItem value="DRIVING_LICENSE">Driving License</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1009,7 +945,7 @@ export default function AdminAuthPage() {
                         {isLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          "Complete Registration"
+                          'Complete Registration'
                         )}
                       </Button>
                     )}

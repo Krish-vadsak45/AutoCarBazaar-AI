@@ -1,38 +1,31 @@
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { EmiCalculatorModal } from "./emi-calculator-modal"; // Import the modal
-import { PDFButton } from "./pdf-button";
-import { PDFModal } from "./pdf-modal";
-import Image from "next/image";
+'use client';
+import React, { useEffect, useMemo, useState } from 'react';
+import axios, { AxiosError } from 'axios';
+import { toast } from 'react-toastify';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
-  Car as CarIcon,
-  Fuel,
-  Gauge,
-  Settings,
-  Palette,
   Calendar,
   MapPin,
   Phone,
   Mail,
-  Calculator,
   Heart,
   Share2,
   ChevronLeft,
   ChevronRight,
   Check,
-  X,
-  CalendarCheck,
-  CarFront,
-  Clock,
   ArrowLeftRight,
-} from "lucide-react";
-import { Badge } from "./ui/badge";
-import { ReviewsSection } from "./ReviewsSection";
-import { useCompareStore } from "@/hooks/use-compare-store";
+} from 'lucide-react';
+
+import { useCompareStore } from '@/hooks/use-compare-store';
+import { ICar } from '@/models/car.model';
+
+import { EmiCalculatorModal } from './emi-calculator-modal'; // Import the modal
+import { PDFButton } from './pdf-button';
+import { PDFModal } from './pdf-modal';
+import { Badge } from './ui/badge';
+import { ReviewsSection } from './ReviewsSection';
 
 export type CarVendorPublic = {
   businessName: string;
@@ -48,60 +41,56 @@ export type CarVendorPublic = {
 };
 
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
     maximumFractionDigits: 0,
   }).format(amount);
 }
 
 const workingHours = [
-  { day: "Monday", hours: "Closed" },
-  { day: "Tuesday", hours: "09:00 - 18:00" },
-  { day: "Wednesday", hours: "09:00 - 18:00" },
-  { day: "Thursday", hours: "09:00 - 18:00" },
-  { day: "Friday", hours: "09:00 - 18:00" },
-  { day: "Saturday", hours: "10:00 - 17:00" },
-  { day: "Sunday", hours: "Closed" },
+  { day: 'Monday', hours: 'Closed' },
+  { day: 'Tuesday', hours: '09:00 - 18:00' },
+  { day: 'Wednesday', hours: '09:00 - 18:00' },
+  { day: 'Thursday', hours: '09:00 - 18:00' },
+  { day: 'Friday', hours: '09:00 - 18:00' },
+  { day: 'Saturday', hours: '10:00 - 17:00' },
+  { day: 'Sunday', hours: 'Closed' },
 ];
 
 export default function CarDetailClient({
   car,
   vendorPublic = null,
 }: {
-  car: any;
+  car: ICar;
   vendorPublic?: CarVendorPublic | null;
 }) {
   const images = (
-    car.images && car.images.length > 0
-      ? car.images
-      : car.image
-        ? [car.image]
-        : []
-  ).filter((img: any) => typeof img === "string" && img.trim() !== "");
+    car.images && car.images.length > 0 ? car.images : car.image ? [car.image] : []
+  ).filter((img: string) => typeof img === 'string' && img.trim() !== '');
 
   const [isEmiModalOpen, setIsEmiModalOpen] = useState(false); // State for EMI modal
   const [isPDFModalOpen, setIsPDFModalOpen] = useState(false); // State for PDF modal
-  const [mainImage, setMainImage] = useState(images[0] || "/placeholder.svg");
+  const [mainImage, setMainImage] = useState(images[0] || '/placeholder.svg');
   const [isSaved, setIsSaved] = useState(false);
   const router = useRouter();
-  const [shareStatus, setShareStatus] = useState<
-    "idle" | "shared" | "copied" | "error"
-  >("idle");
+  const [_shareStatus, setShareStatus] = useState<'idle' | 'shared' | 'copied' | 'error'>('idle');
 
   const { data: session } = useSession();
 
   const addCar = useCompareStore((state) => state.addCar);
   const selectedCars = useCompareStore((state) => state.selectedCars);
 
-  const currentCarId = (car.id || car._id)?.toString() || "";
-  const isCompared = selectedCars.some((c) => c.id === currentCarId);
+  const currentCarId = car._id?.toString() || '';
+  const _isCompared = selectedCars.some((c) => c.id === currentCarId);
 
   const handleAddCompare = () => {
-    if (!currentCarId) return;
+    if (!currentCarId) {
+      return;
+    }
     addCar({
       id: currentCarId,
-      image: images[0] || "/placeholder.svg",
+      image: images[0] || '/placeholder.svg',
       title: car.title,
       price: car.price,
     });
@@ -113,10 +102,10 @@ export default function CarDetailClient({
       return wh.map((h) => ({
         day: h.day,
         hours: !h.isOpen
-          ? "Closed"
+          ? 'Closed'
           : h.openTime && h.closeTime
             ? `${h.openTime} - ${h.closeTime}`
-            : "Open",
+            : 'Open',
       }));
     }
     return workingHours;
@@ -125,77 +114,82 @@ export default function CarDetailClient({
   // Check if car is already saved
   useEffect(() => {
     const checkSavedStatus = async () => {
-      if (!session) return;
+      if (!session) {
+        return;
+      }
       try {
-        const { data } = await axios.get("/api/saved-cars");
-        const currentCarId = (car.id || car._id)?.toString();
+        const { data } = await axios.get('/api/saved-cars');
+        const currentCarId = car._id?.toString();
         const isCurrentlySaved =
           Array.isArray(data) &&
-          data.some(
-            (savedCar: any) => savedCar?._id?.toString() === currentCarId,
-          );
-        setIsSaved(isCurrentlySaved);
+          data.some((savedCar: { _id?: string }) => savedCar?._id?.toString() === currentCarId);
+        setIsSaved(isCurrentlySaved || false);
       } catch (error) {
-        console.error("Error checking saved status:", error);
+        console.error('Error checking saved status:', error);
       }
     };
     checkSavedStatus();
-  }, [session, car.id, car._id]);
+  }, [session, car._id]);
 
   useEffect(() => {
+    if (images.length === 0) {
+      return;
+    }
     const interval = setInterval(() => {
       setMainImage((prev: string) => {
         const currentIndex = images.indexOf(prev);
-        return images[(currentIndex + 1) % images.length];
+        return images[(currentIndex + 1) % images.length] || images[0];
       });
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [images]);
 
   const handleToggleSave = async () => {
     if (!session) {
-      toast.error("Please login to save cars");
-      router.push("/sign-in");
+      toast.error('Please login to save cars');
+      router.push('/sign-in');
       return;
     }
 
     try {
-      const carId = (car.id || car._id)?.toString();
-      const { data } = await axios.post("/api/saved-cars", { carId });
-      setIsSaved(data.action === "saved");
+      const carId = car._id?.toString();
+      const { data } = await axios.post<{ action: string; message: string }>('/api/saved-cars', {
+        carId,
+      });
+      setIsSaved(data.action === 'saved');
       toast.success(data.message);
     } catch (error) {
-      console.error("Error saving car:", error);
-      toast.error("Failed to save car");
+      const axiosError = error as AxiosError<{ message: string }>;
+      console.error('Error saving car:', axiosError);
+      toast.error(axiosError.response?.data?.message || 'Failed to save car');
     }
   };
 
   const handleShare = async () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') {
+      return;
+    }
     const shareUrl = window.location.href;
     try {
-      if (typeof navigator !== "undefined" && (navigator as any).share) {
-        await (navigator as any).share({
-          title: car.title || "Car listing",
+      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+        await navigator.share({
+          title: car.title || 'Car listing',
           text: `Check out this vehicle: ${car.title}`,
           url: shareUrl,
         });
-        setShareStatus("shared");
-      } else if (
-        typeof navigator !== "undefined" &&
-        (navigator as any).clipboard
-      ) {
-        await (navigator as any).clipboard.writeText(shareUrl);
-        setShareStatus("copied");
+        setShareStatus('shared');
+      } else if (typeof navigator !== 'undefined' && (navigator as Navigator).clipboard) {
+        await (navigator as Navigator).clipboard.writeText(shareUrl);
+        setShareStatus('copied');
       } else {
         // Last resort: fallback to selecting the URL (very old browsers)
-        setShareStatus("error");
+        setShareStatus('error');
       }
     } catch (err) {
-      console.error("Share failed", err);
-      setShareStatus("error");
+      console.error('Share failed', err);
+      setShareStatus('error');
     }
-    setTimeout(() => setShareStatus("idle"), 3000);
+    setTimeout(() => setShareStatus('idle'), 3000);
   };
 
   const nextImage = () => {
@@ -210,28 +204,28 @@ export default function CarDetailClient({
 
   const carSpecs = [
     {
-      label: "Make",
-      value: car.specs?.make || "N/A",
-      value2: "Model",
-      value2Content: car.specs?.model || "N/A",
+      label: 'Make',
+      value: car.specs?.make || 'N/A',
+      value2: 'Model',
+      value2Content: car.specs?.model || 'N/A',
     },
     {
-      label: "Year",
-      value: car.specs?.year || car.year || "N/A",
-      value2: "Body Type",
-      value2Content: car.bodyType || "N/A",
+      label: 'Year',
+      value: car.specs?.year || 'N/A',
+      value2: 'Body Type',
+      value2Content: car.bodyType || 'N/A',
     },
     {
-      label: "Fuel Type",
-      value: car.specs?.fuelType || car.fuelType || "N/A",
-      value2: "Transmission",
-      value2Content: car.transmission || "N/A",
+      label: 'Fuel Type',
+      value: car.specs?.fuelType || 'N/A',
+      value2: 'Transmission',
+      value2Content: car.transmission || 'N/A',
     },
     {
-      label: "Mileage",
-      value: car.specs?.mileage || car.mileage || "N/A",
-      value2: "Color",
-      value2Content: car.specs?.color || car.color || "N/A",
+      label: 'Mileage',
+      value: car.specs?.mileage || 'N/A',
+      value2: 'Color',
+      value2Content: car.specs?.color || 'N/A',
     },
   ];
 
@@ -266,8 +260,8 @@ export default function CarDetailClient({
             >
               <div className="relative h-96 bg-gray-100 group">
                 <Image
-                  src={mainImage || "/placeholder.svg"}
-                  alt={car.title || "Car main view"}
+                  src={mainImage || '/placeholder.svg'}
+                  alt={car.title || 'Car main view'}
                   width={800}
                   height={600}
                   className="w-full h-full object-cover"
@@ -302,12 +296,12 @@ export default function CarDetailClient({
                     onClick={() => setMainImage(img)}
                     className={`relative w-20 h-16 rounded-lg overflow-hidden border-2 transition-all hover:border-blue-600 ${
                       mainImage === img
-                        ? "border-blue-600 ring-2 ring-blue-300"
-                        : "dark:border-slate-700 border-gray-200"
+                        ? 'border-blue-600 ring-2 ring-blue-300'
+                        : 'dark:border-slate-700 border-gray-200'
                     }`}
                   >
                     <Image
-                      src={img || "/placeholder.svg"}
+                      src={img || '/placeholder.svg'}
                       alt={`Thumbnail ${idx + 1}`}
                       fill
                       className="object-cover"
@@ -343,10 +337,8 @@ export default function CarDetailClient({
                 </span>
               </div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-                  {car.title}
-                </h1>
-                {car.status === "unavailable" && (
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">{car.title}</h1>
+                {car.status === 'unavailable' && (
                   <Badge variant="destructive" className="h-fit">
                     Unavailable
                   </Badge>
@@ -374,7 +366,7 @@ export default function CarDetailClient({
                   />
                 </svg>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {car.specs?.mileage || car.mileage || "N/A"}
+                  {car.specs?.mileage || 'N/A'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -392,7 +384,7 @@ export default function CarDetailClient({
                   />
                 </svg>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {car.specs?.fuelType || car.fuelType || "N/A"}
+                  {car.specs?.fuelType || 'N/A'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -410,7 +402,7 @@ export default function CarDetailClient({
                   />
                 </svg>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {car.transmission || "N/A"}
+                  {car.transmission || 'N/A'}
                 </span>
               </div>
             </div>
@@ -422,23 +414,17 @@ export default function CarDetailClient({
             >
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-blue-600 dark:bg-blue-500 rounded text-white shrink-0">
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                    EMI Calculator
-                  </h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">EMI Calculator</h3>
                   <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Estimated Monthly Payment:{" "}
+                    Estimated Monthly Payment:{' '}
                     <span className="font-bold text-gray-900 dark:text-gray-100">
                       {formatCurrency(Math.round(car.price / 60))}
-                    </span>{" "}
+                    </span>{' '}
                     for 60 months
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
@@ -452,11 +438,7 @@ export default function CarDetailClient({
             <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded text-blue-600 dark:text-blue-400 shrink-0">
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
                   </svg>
                 </div>
@@ -465,8 +447,7 @@ export default function CarDetailClient({
                     Have Questions?
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Our representatives are available to answer all your queries
-                    about this vehicle.
+                    Our representatives are available to answer all your queries about this vehicle.
                   </p>
                   <button className="mt-3 w-full text-center py-2 px-4 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded hover:bg-gray-50 dark:hover:bg-slate-700 font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     Request Info
@@ -481,54 +462,52 @@ export default function CarDetailClient({
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-12">
           <button
             onClick={() => {
-              if (isCompared) {
-                router.push("/compare");
+              if (_isCompared) {
+                router.push('/compare');
               } else {
                 handleAddCompare();
               }
             }}
             className={`py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg flex items-center justify-center gap-2 ${
-              isCompared
-                ? "bg-blue-50 text-blue-600 border border-blue-200"
-                : "bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600"
+              _isCompared
+                ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                : 'bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600'
             }`}
           >
-            <ArrowLeftRight
-              className={`w-5 h-5 ${isCompared ? "text-blue-600" : ""}`}
-            />
-            {isCompared ? "Compared" : "Compare"}
+            <ArrowLeftRight className={`w-5 h-5 ${_isCompared ? 'text-blue-600' : ''}`} />
+            {_isCompared ? 'Compared' : 'Compare'}
           </button>
           <button
             onClick={handleToggleSave}
             className={`py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg flex items-center justify-center gap-2 ${
               isSaved
-                ? "bg-red-50 text-red-600 border border-red-200"
-                : "bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600"
+                ? 'bg-red-50 text-red-600 border border-red-200'
+                : 'bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600'
             }`}
           >
-            <Heart className={`w-5 h-5 ${isSaved ? "fill-red-600" : ""}`} />
-            {isSaved ? "Saved" : "Save"}
+            <Heart className={`w-5 h-5 ${isSaved ? 'fill-red-600' : ''}`} />
+            {isSaved ? 'Saved' : 'Save'}
           </button>
           <button
             onClick={handleShare}
             className="py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-600 flex items-center justify-center gap-2"
           >
-            {shareStatus === "shared" ? (
+            {_shareStatus === 'shared' ? (
               <Check className="w-5 h-5 text-green-600" />
             ) : (
               <Share2 className="w-5 h-5" />
             )}
-            {shareStatus === "copied"
-              ? "Link copied"
-              : shareStatus === "shared"
-                ? "Shared"
-                : shareStatus === "error"
-                  ? "Unable to share"
-                  : "Share"}
+            {_shareStatus === 'copied'
+              ? 'Copied!'
+              : _shareStatus === 'shared'
+                ? 'Shared!'
+                : _shareStatus === 'error'
+                  ? 'Unable to share'
+                  : 'Share'}
           </button>
           <PDFButton onClick={() => setIsPDFModalOpen(true)} />
           <button
-            onClick={() => router.push(`/test-drive/${car.id}`)}
+            onClick={() => router.push(`/test-drive/${car._id}`)}
             className="py-3 px-6 rounded-lg font-medium transition-all hover:shadow-lg bg-gray-900 dark:bg-slate-800 text-white hover:bg-gray-800 dark:hover:bg-slate-700 flex items-center justify-center gap-2"
           >
             <Calendar className="w-5 h-5" />
@@ -543,27 +522,22 @@ export default function CarDetailClient({
               Description
             </h2>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
-              {car.description || "No description available for this vehicle."}
+              {car.description || 'No description available for this vehicle.'}
             </p>
           </div>
 
           <div className="bg-white dark:bg-slate-900 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-slate-800">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Features
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Features</h2>
             <ul className="space-y-3">
               {(car.features && car.features.length > 0
                 ? car.features
                 : [
-                    "Transmission: " + car.transmission,
-                    "Fuel: " + (car.specs?.fuelType || car.fuelType || "N/A"),
-                    "Body: " + (car.bodyType || "N/A"),
+                    'Transmission: ' + car.transmission,
+                    'Fuel: ' + (car.specs?.fuelType || 'N/A'),
+                    'Body: ' + (car.bodyType || 'N/A'),
                   ]
               ).map((feature: string, idx: number) => (
-                <li
-                  key={idx}
-                  className="flex items-center gap-3 text-gray-700 dark:text-gray-300"
-                >
+                <li key={idx} className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                   <span className="shrink-0">
                     <Check className="w-5 h-5 text-blue-600" />
                   </span>
@@ -586,17 +560,13 @@ export default function CarDetailClient({
                 className="flex justify-between items-start py-4 border-b border-gray-100 dark:border-slate-800 last:border-b-0"
               >
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    {spec.label}
-                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{spec.label}</p>
                   <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {spec.value}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    {spec.value2}
-                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{spec.value2}</p>
                   <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {spec.value2Content}
                   </p>
@@ -621,7 +591,7 @@ export default function CarDetailClient({
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900 dark:text-gray-100">
-                        {vendorPublic.businessName || "Seller"}
+                        {vendorPublic.businessName || 'Seller'}
                       </h3>
                       {vendorPublic.address ? (
                         <p className="text-gray-700 dark:text-gray-300 text-sm mt-1">
@@ -663,20 +633,14 @@ export default function CarDetailClient({
               </div>
 
               <div>
-                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Working hours
-                </h3>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">Working hours</h3>
                 <div className="grid grid-cols-1 gap-4">
                   {hoursRows.map((hour, idx) => (
                     <div key={idx} className="flex justify-between">
-                      <p className="text-gray-700 dark:text-gray-300 text-sm">
-                        {hour.day}
-                      </p>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm">{hour.day}</p>
                       <p
                         className={`font-medium text-sm text-gray-900 dark:text-gray-100 ${
-                          hour.hours === "Closed"
-                            ? "text-gray-500 dark:text-gray-600"
-                            : ""
+                          hour.hours === 'Closed' ? 'text-gray-500 dark:text-gray-600' : ''
                         }`}
                       >
                         {hour.hours}
@@ -694,18 +658,18 @@ export default function CarDetailClient({
         </div>
 
         {/* Reviews Section */}
-        <ReviewsSection carId={car.id || car._id} />
+        <ReviewsSection carId={currentCarId} />
       </div>
 
       {/* EMI Calculator Modal - Conditionally render based on state */}
-      {isEmiModalOpen && (
+      {isEmiModalOpen ? (
         <EmiCalculatorModal
           isOpen={isEmiModalOpen}
           setIsEmiModalOpen={setIsEmiModalOpen}
           onClose={handleCloseEmiModal}
           carPrice={car.price}
         />
-      )}
+      ) : null}
     </div>
   );
 }

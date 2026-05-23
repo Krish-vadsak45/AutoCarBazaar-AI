@@ -1,8 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Calendar,
   Clock,
@@ -11,19 +10,20 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  ExternalLink,
   ChevronRight,
   FilterX,
-  Loader2,
   FileText,
-  User,
-} from "lucide-react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import Loading from "@/components/Loading";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { ReviewModal } from "@/components/ReviewModal";
+  type LucideIcon,
+} from 'lucide-react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import Image from 'next/image';
+
+import Loading from '@/components/Loading';
+import { Badge } from '@/components/ui/badge';
+import { ReviewModal } from '@/components/ReviewModal';
+import { Button } from '@/components/ui/button';
 
 // --- Types based on API Response ---
 interface IReservation {
@@ -64,7 +64,7 @@ interface IReservation {
 export default function MyReservationsPage() {
   const [reservations, setReservations] = useState<IReservation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -80,18 +80,18 @@ export default function MyReservationsPage() {
     const fetchReservations = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get("/api/my-reservation", {
+        const { data } = await axios.get('/api/my-reservation', {
           params: {
             page,
             limit: 5,
-            status: filter === "all" ? undefined : filter,
+            status: filter === 'all' ? undefined : filter,
           },
         });
         setReservations(data.data);
         setTotalPages(data.pagination.totalPages);
         setTotalCount(data.pagination.total);
       } catch (error) {
-        console.error("Failed to load reservations", error);
+        console.error('Failed to load reservations', error);
       } finally {
         setLoading(false);
       }
@@ -107,35 +107,32 @@ export default function MyReservationsPage() {
 
   // Status Badge Logic
   const getStatusBadge = (status: string) => {
-    const normalizedStatus = status?.toUpperCase() || "";
-    const statusConfig: Record<
-      string,
-      { bg: string; icon: any; label: string }
-    > = {
+    const normalizedStatus = status?.toUpperCase() || '';
+    const statusConfig: Record<string, { bg: string; icon: LucideIcon; label: string }> = {
       CONFIRMED: {
-        bg: "bg-emerald-500 hover:bg-emerald-600",
+        bg: 'bg-emerald-500 hover:bg-emerald-600',
         icon: CheckCircle2,
-        label: "Confirmed",
+        label: 'Confirmed',
       },
       PENDING: {
-        bg: "bg-amber-500 hover:bg-amber-600",
+        bg: 'bg-amber-500 hover:bg-amber-600',
         icon: Clock,
-        label: "Pending",
+        label: 'Pending',
       },
       CANCELLED: {
-        bg: "bg-rose-500 hover:bg-rose-600",
+        bg: 'bg-rose-500 hover:bg-rose-600',
         icon: XCircle,
-        label: "Cancelled",
+        label: 'Cancelled',
       },
       COMPLETED: {
-        bg: "bg-blue-500 hover:bg-blue-600",
+        bg: 'bg-blue-500 hover:bg-blue-600',
         icon: CheckCircle2,
-        label: "Completed",
+        label: 'Completed',
       },
     };
 
     const config = statusConfig[normalizedStatus] || {
-      bg: "bg-gray-500",
+      bg: 'bg-gray-500',
       icon: AlertCircle,
       label: status,
     };
@@ -152,12 +149,9 @@ export default function MyReservationsPage() {
   const renderDateRange = (start: string, end?: string) => {
     try {
       if (end && end !== start) {
-        return `${format(new Date(start), "MMM dd")} - ${format(
-          new Date(end),
-          "MMM dd, yyyy",
-        )}`;
+        return `${format(new Date(start), 'MMM dd')} - ${format(new Date(end), 'MMM dd, yyyy')}`;
       }
-      return format(new Date(start), "eeee, MMM dd, yyyy");
+      return format(new Date(start), 'eeee, MMM dd, yyyy');
     } catch {
       return start;
     }
@@ -192,21 +186,19 @@ export default function MyReservationsPage() {
 
           {/* Filters */}
           <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-x-auto">
-            {["all", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"].map(
-              (f) => (
-                <button
-                  key={f}
-                  onClick={() => handleFilterChange(f)}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
-                    filter === f
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {f === "all" ? "All" : f}
-                </button>
-              ),
-            )}
+            {['all', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].map((f) => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap ${
+                  filter === f
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {f === 'all' ? 'All' : f}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -224,19 +216,17 @@ export default function MyReservationsPage() {
             </div>
             <div className="space-y-2">
               <h3 className="text-2xl font-bold text-foreground">
-                {filter === "all"
-                  ? "No reservations found"
-                  : `No ${filter} bookings`}
+                {filter === 'all' ? 'No reservations found' : `No ${filter} bookings`}
               </h3>
               <p className="text-muted-foreground max-w-sm mx-auto">
-                {filter === "all"
+                {filter === 'all'
                   ? "You currently don't have any bookings."
                   : `You don't have any ${filter} reservations at the moment.`}
               </p>
             </div>
-            {filter !== "all" && (
+            {filter !== 'all' && (
               <Button
-                onClick={() => handleFilterChange("all")}
+                onClick={() => handleFilterChange('all')}
                 variant="outline"
                 className="rounded-full px-8"
               >
@@ -268,7 +258,7 @@ export default function MyReservationsPage() {
                     <div className="relative w-full md:w-72 h-56 md:h-auto shrink-0">
                       {res.carId?.image || res.carId?.images?.[0] ? (
                         <div className="w-full h-full relative overflow-hidden">
-                          <img
+                          <Image
                             src={res.carId.image || res.carId.images![0]}
                             alt={res.carId.title}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -289,7 +279,7 @@ export default function MyReservationsPage() {
                       {/* Mobile Price Overlay */}
                       <div className="absolute bottom-3 left-3 md:hidden text-white">
                         <p className="font-bold text-lg">
-                          ${res.carId?.price?.toLocaleString() || "N/A"}
+                          ${res.carId?.price?.toLocaleString() || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -300,20 +290,20 @@ export default function MyReservationsPage() {
                         <div>
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white line-clamp-1">
-                              {res.carId?.title || "Unknown Vehicle"}
+                              {res.carId?.title || 'Unknown Vehicle'}
                             </h3>
                             <Badge
                               variant="outline"
                               className="hidden md:inline-flex text-xs font-normal"
                             >
-                              {res.carId?.bodyType || "Sedan"}
+                              {res.carId?.bodyType || 'Sedan'}
                             </Badge>
-                            {res.isDelivery && (
+                            {res.isDelivery ? (
                               <Badge className="bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-none text-xs gap-1">
                                 <MapPin className="w-3 h-3" />
                                 Delivery
                               </Badge>
-                            )}
+                            ) : null}
                           </div>
 
                           {res.isDelivery && res.userLocation?.city ? (
@@ -321,21 +311,16 @@ export default function MyReservationsPage() {
                               <MapPin className="w-3.5 h-3.5" />
                               <span className="font-medium">
                                 Your location: {res.userLocation.city}
-                                {res.userLocation.state &&
-                                  `, ${res.userLocation.state}`}
+                                {res.userLocation.state ? `, ${res.userLocation.state}` : null}
                               </span>
                             </div>
                           ) : res.vendorId ? (
                             <div className="flex items-center text-sm text-muted-foreground gap-1.5">
                               <MapPin className="w-3.5 h-3.5" />
-                              <span className="font-medium">
-                                {res.vendorId.businessName}
-                              </span>
-                              {res.vendorId.address?.city && (
-                                <span className="text-gray-400">
-                                  • {res.vendorId.address.city}
-                                </span>
-                              )}
+                              <span className="font-medium">{res.vendorId.businessName}</span>
+                              {res.vendorId.address?.city ? (
+                                <span className="text-gray-400">• {res.vendorId.address.city}</span>
+                              ) : null}
                             </div>
                           ) : null}
                         </div>
@@ -343,11 +328,9 @@ export default function MyReservationsPage() {
                         <div className="hidden md:flex flex-col items-end gap-2">
                           <div className="text-right">
                             <p className="text-2xl font-bold text-primary">
-                              ${res.carId?.price?.toLocaleString() || "0"}
+                              ${res.carId?.price?.toLocaleString() || '0'}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              Est. price
-                            </p>
+                            <p className="text-xs text-muted-foreground">Est. price</p>
                           </div>
                           {getStatusBadge(res.status)}
                         </div>
@@ -371,24 +354,24 @@ export default function MyReservationsPage() {
                             Time
                           </span>
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                            {res.startTime} {res.endTime && `- ${res.endTime}`}
+                            {res.startTime} {res.endTime ? `- ${res.endTime}` : null}
                           </p>
                         </div>
                       </div>
 
                       {/* Notes Section - if exists */}
-                      {res.notes && (
+                      {res.notes ? (
                         <div className="mb-5 bg-gray-50 dark:bg-slate-800/50 p-3 rounded-lg text-sm text-gray-600 dark:text-gray-300">
                           <span className="font-medium text-xs text-gray-500 uppercase block mb-1">
                             Notes
                           </span>
-                          "{res.notes}"
+                          &quot;{res.notes}&quot;
                         </div>
-                      )}
+                      ) : null}
 
                       {/* Actions */}
                       <div className="mt-auto flex flex-col sm:flex-row gap-3 justify-end pt-2">
-                        {res.status === "COMPLETED" && (
+                        {res.status === 'COMPLETED' && (
                           <Button
                             size="sm"
                             variant="secondary"
@@ -411,9 +394,7 @@ export default function MyReservationsPage() {
                           size="sm"
                           className="text-muted-foreground hover:text-primary"
                         >
-                          <Link href={`/car/${res.carId?._id}`}>
-                            View Vehicle Details
-                          </Link>
+                          <Link href={`/car/${res.carId?._id}`}>View Vehicle Details</Link>
                         </Button>
                         <Button size="sm" className="rounded-lg shadow-sm">
                           Manage Booking
@@ -445,8 +426,8 @@ export default function MyReservationsPage() {
                       onClick={() => setPage(i + 1)}
                       className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
                         page === i + 1
-                          ? "bg-primary text-primary-foreground shadow-lg"
-                          : "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:border-primary/50"
+                          ? 'bg-primary text-primary-foreground shadow-lg'
+                          : 'bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:border-primary/50'
                       }`}
                     >
                       {i + 1}
@@ -468,14 +449,14 @@ export default function MyReservationsPage() {
         )}
       </div>
 
-      {selectedBooking && (
+      {selectedBooking ? (
         <ReviewModal
           isOpen={isReviewModalOpen}
           onClose={() => setIsReviewModalOpen(false)}
           carId={selectedBooking.carId}
           testDriveId={selectedBooking.testDriveId}
         />
-      )}
+      ) : null}
     </div>
   );
 }

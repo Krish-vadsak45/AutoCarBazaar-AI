@@ -1,18 +1,14 @@
-"use client";
+'use client';
 
-import { AdminSidebar } from "@/components/admin-sidebar";
-import ThemeToggle from "@/components/ThemeToggle";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from 'next/navigation';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+import { AdminSidebar } from '@/components/admin-sidebar';
+import ThemeToggle from '@/components/ThemeToggle';
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const isLoginPage = pathname === "/admin/login";
+  const isLoginPage = pathname === '/admin/login';
 
   if (isLoginPage) {
     return <>{children}</>;

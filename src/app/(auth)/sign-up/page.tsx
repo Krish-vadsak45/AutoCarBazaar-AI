@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import axios from "axios";
-import { toast } from "sonner";
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'sonner';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
+    name: '',
+    email: '',
+    password: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,34 +26,38 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth/sign-up", formData);
+      const response = await axios.post('/api/auth/sign-up', formData);
 
       const { message } = response.data;
 
       if (response.status === 201) {
-        toast.success(message || "Account created successfully");
+        toast.success(message || 'Account created successfully');
 
         // ✅ Delay redirect for better UX
         setTimeout(() => {
-          router.push("/sign-in");
+          router.push('/sign-in');
         }, 1000);
       } else {
-        toast.error("Unexpected response from server.");
+        toast.error('Unexpected response from server.');
       }
-    } catch (error: any) {
-      const statusCode = error.response?.status;
-      const errorMessage =
-        error.response?.data?.message || "Something went wrong. Try again.";
+    } catch (error: unknown) {
+      let errorMessage = 'Something went wrong. Try again.';
+      let statusCode: number | undefined;
+
+      if (axios.isAxiosError(error) && error.response) {
+        statusCode = error.response.status;
+        errorMessage = error.response.data?.message || errorMessage;
+      }
 
       // ✅ Handle specific errors
       if (statusCode === 409) {
-        toast.error("User already exists.");
+        toast.error('User already exists.');
       } else if (statusCode === 400) {
-        toast.error("Invalid input data.");
+        toast.error('Invalid input data.');
       } else {
         toast.error(errorMessage);
       }
@@ -77,11 +81,11 @@ export default function RegisterPage() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
+          {error ? (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-500 dark:bg-red-900/20">
               {error}
             </div>
-          )}
+          ) : null}
 
           <div className="space-y-4">
             <div>
@@ -131,7 +135,7 @@ export default function RegisterPage() {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   required
                   onChange={handleChange}
                   className="block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
@@ -156,16 +160,12 @@ export default function RegisterPage() {
             disabled={loading}
             className="group relative flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-800"
           >
-            {loading ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              "Create Account"
-            )}
+            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Create Account'}
           </button>
         </form>
 
         <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Already have an account?{" "}
+          Already have an account?{' '}
           <Link
             href="/sign-in"
             className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"

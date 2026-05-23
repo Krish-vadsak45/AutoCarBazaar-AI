@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
-import * as z from "zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import React, { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
+import * as z from 'zod';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import {
   ShieldCheck,
   Mail,
@@ -18,40 +18,39 @@ import {
   Eye,
   EyeOff,
   Building2,
-  MapPin,
   FileBadge,
   ArrowRight,
   ArrowLeft,
-  Briefcase,
-  User,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useSession, signIn } from "next-auth/react";
+} from 'lucide-react';
+import { useSession, signIn } from 'next-auth/react';
+
+import { cn } from '@/lib/utils';
+import { getAxiosErrorMessage, getErrorMessage } from '@/lib/errors';
 
 // --- Schemas ---
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
+  email: z.string().email('Invalid email'),
   password: z.string(),
-  role: z.enum(["admin", "vendor"]),
+  role: z.enum(['admin', 'vendor']),
 });
 
 const vendorSchema = z.object({
   // Step 1: Business Info
-  businessName: z.string().min(2, "Business name required"),
-  businessType: z.enum(["INDIVIDUAL", "COMPANY", "AGENCY"]),
-  vendorType: z.enum(["SINGLE_OWNER", "FLEET_OWNER"]),
+  businessName: z.string().min(2, 'Business name required'),
+  businessType: z.enum(['INDIVIDUAL', 'COMPANY', 'AGENCY']),
+  vendorType: z.enum(['SINGLE_OWNER', 'FLEET_OWNER']),
 
   // Step 2: Address
-  city: z.string().min(2, "City required"),
-  state: z.string().min(2, "State required"),
-  pincode: z.string().regex(/^\d{6}$/, "Invalid pincode"),
+  city: z.string().min(2, 'City required'),
+  state: z.string().min(2, 'State required'),
+  pincode: z.string().regex(/^\d{6}$/, 'Invalid pincode'),
 
   // Step 3: Identity
-  idType: z.enum(["AADHAAR", "PAN", "PASSPORT", "DRIVING_LICENSE"]),
-  idNumber: z.string().min(5, "ID Number required"),
+  idType: z.enum(['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE']),
+  idNumber: z.string().min(5, 'ID Number required'),
   // Simulating document upload with a URL field for now
-  documentUrl: z.string().url("Valid URL required (e.g. cloud link)"),
+  documentUrl: z.string().url('Valid URL required (e.g. cloud link)'),
 });
 
 type LoginData = z.infer<typeof loginSchema>;
@@ -65,7 +64,7 @@ export default function AdminAuthPage() {
   const totalSteps = 2; // Reduced from 3
   const [isLoading, setIsLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState('');
 
   const {
     register: regLogin,
@@ -73,33 +72,31 @@ export default function AdminAuthPage() {
     handleSubmit: subLogin,
   } = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { role: "admin" },
+    defaultValues: { role: 'admin' },
   });
 
   const {
     register: regVendor,
     trigger: triggerVendor,
     handleSubmit: subVendor,
-    control: ctrlVendor,
-    formState: { errors: venErrors },
   } = useForm<VendorData>({
     resolver: zodResolver(vendorSchema),
     defaultValues: {
-      businessType: "INDIVIDUAL",
-      vendorType: "SINGLE_OWNER",
-      idType: "AADHAAR",
+      businessType: 'INDIVIDUAL',
+      vendorType: 'SINGLE_OWNER',
+      idType: 'AADHAAR',
     },
   });
 
   // Login Handler
   const handleLogin = async (data: LoginData) => {
     window.alert(
-      `Login attempt:\nEmail: ${data.email}\nRole: ${data.role}\n\n(Note: This is a demo. No actual login will occur.)`,
+      `Login attempt:\nEmail: ${data.email}\nRole: ${data.role}\n\n(Note: This is a demo. No actual login will occur.)`
     );
     setIsLoading(true);
-    setErrorMsg("");
+    setErrorMsg('');
     try {
-      const result = await signIn("credentials", {
+      const result = await signIn('credentials', {
         redirect: false,
         email: data.email,
         password: data.password,
@@ -113,20 +110,21 @@ export default function AdminAuthPage() {
       }
 
       if (result?.ok) {
-        toast.success("Welcome back!");
-        const res = await axios.post("/api/auth/admin/login", data);
+        toast.success('Welcome back!');
+        const res = await axios.post('/api/auth/admin/login', data);
         if (res.status === 200) {
           const { role, vendorId, id } = res.data.user;
-          const targetId = role === "admin" ? id : vendorId;
+          const targetId = role === 'admin' ? id : vendorId;
           if (!targetId) {
-            window.location.href = "/";
+            window.location.href = '/';
             return;
           }
           window.location.href = `/vendor/${targetId}/dashboard`;
         }
       }
-    } catch (e: any) {
-      setErrorMsg("An unexpected error occurred");
+    } catch (e: unknown) {
+      console.error(getErrorMessage(e));
+      setErrorMsg('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -135,7 +133,7 @@ export default function AdminAuthPage() {
   // Updated handler
   const handleVendorReg = async (data: VendorData) => {
     setIsLoading(true);
-    setErrorMsg("");
+    setErrorMsg('');
 
     // Only send business details (User details are inferred from session)
     const payload = {
@@ -155,37 +153,33 @@ export default function AdminAuthPage() {
     };
 
     try {
-      const res = await axios.post("/api/auth/vendor", payload);
+      const res = await axios.post('/api/auth/vendor', payload);
       if (res.status === 201 || res.status === 200) {
-        const message = res.data.message || "Vendor registration successful.";
+        const message = res.data.message || 'Vendor registration successful.';
         toast.success(message);
         const { vendorId } = res.data;
         // Force refresh session to pick up new role
-        router.push(`/admin/${vendorId || "dashboard"}/dashboard`);
+        router.push(`/admin/${vendorId || 'dashboard'}/dashboard`);
       }
-    } catch (e: any) {
-      setErrorMsg(e.response?.data?.error || "Registration failed");
+    } catch (e: unknown) {
+      setErrorMsg(getAxiosErrorMessage(e, 'Registration failed'));
     } finally {
       setIsLoading(false);
     }
   };
 
   const nextStep = async () => {
-    let fieldsToValidate: any[] = [];
+    let fieldsToValidate: Array<keyof VendorData> = [];
 
     // Step 1 is screen 1 (Business Info), Step 2 is screen 2 (Verification)
-    if (step === 1)
-      fieldsToValidate = [
-        "businessName",
-        "businessType",
-        "vendorType",
-        "city",
-        "state",
-        "pincode",
-      ];
+    if (step === 1) {
+      fieldsToValidate = ['businessName', 'businessType', 'vendorType', 'city', 'state', 'pincode'];
+    }
 
     const isValid = await triggerVendor(fieldsToValidate);
-    if (isValid) setStep((s) => s + 1);
+    if (isValid) {
+      setStep((s) => s + 1);
+    }
   };
 
   const prevStep = () => setStep((s) => s - 1);
@@ -205,10 +199,10 @@ export default function AdminAuthPage() {
             <motion.div
               layout
               className={cn(
-                "inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg mb-4 text-white",
+                'inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg mb-4 text-white',
                 isLoginMode
-                  ? "bg-gradient-to-br from-blue-600 to-indigo-600"
-                  : "bg-gradient-to-br from-emerald-500 to-teal-500",
+                  ? 'bg-gradient-to-br from-blue-600 to-indigo-600'
+                  : 'bg-gradient-to-br from-emerald-500 to-teal-500'
               )}
             >
               {isLoginMode ? (
@@ -218,12 +212,10 @@ export default function AdminAuthPage() {
               )}
             </motion.div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-              {isLoginMode ? "Admin Portal" : "Partners Program"}
+              {isLoginMode ? 'Admin Portal' : 'Partners Program'}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">
-              {isLoginMode
-                ? "Secure access for staff"
-                : "Join our vendor network"}
+              {isLoginMode ? 'Secure access for staff' : 'Join our vendor network'}
             </p>
           </div>
 
@@ -232,19 +224,17 @@ export default function AdminAuthPage() {
             <div className="bg-zinc-100 dark:bg-slate-800 p-1 rounded-xl flex relative">
               <motion.div
                 className="absolute top-1 bottom-1 bg-white dark:bg-slate-700 rounded-lg shadow-sm w-[48%]"
-                animate={{ x: isLoginMode ? "2%" : "106%" }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                animate={{ x: isLoginMode ? '2%' : '106%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               />
               <button
                 onClick={() => {
                   setIsLoginMode(true);
-                  setErrorMsg("");
+                  setErrorMsg('');
                 }}
                 className={cn(
-                  "flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors",
-                  isLoginMode
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-500",
+                  'flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors',
+                  isLoginMode ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'
                 )}
               >
                 Login
@@ -252,13 +242,11 @@ export default function AdminAuthPage() {
               <button
                 onClick={() => {
                   setIsLoginMode(false);
-                  setErrorMsg("");
+                  setErrorMsg('');
                 }}
                 className={cn(
-                  "flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors",
-                  !isLoginMode
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-gray-500",
+                  'flex-1 py-2 text-sm font-semibold rounded-lg z-10 relative transition-colors',
+                  !isLoginMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500'
                 )}
               >
                 Register Vendor
@@ -268,7 +256,7 @@ export default function AdminAuthPage() {
 
           <div className="px-8 pb-8">
             <AnimatePresence mode="popLayout">
-              {errorMsg && (
+              {errorMsg ? (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -278,7 +266,7 @@ export default function AdminAuthPage() {
                   <AlertCircle className="w-4 h-4" />
                   {errorMsg}
                 </motion.div>
-              )}
+              ) : null}
             </AnimatePresence>
 
             {isLoginMode ? (
@@ -297,19 +285,19 @@ export default function AdminAuthPage() {
                     control={ctrlLogin}
                     render={({ field }) => (
                       <>
-                        {["admin", "vendor"].map((r) => (
+                        {['admin', 'vendor'].map((r) => (
                           <button
                             key={r}
                             type="button"
                             onClick={() => field.onChange(r)}
                             className={cn(
-                              "py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2",
+                              'py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-2',
                               field.value === r
-                                ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm border border-zinc-200 dark:border-slate-600"
-                                : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
+                                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm border border-zinc-200 dark:border-slate-600'
+                                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                             )}
                           >
-                            {r === "admin" ? (
+                            {r === 'admin' ? (
                               <ShieldCheck className="w-3.5 h-3.5" />
                             ) : (
                               <UserCog className="w-3.5 h-3.5" />
@@ -326,7 +314,7 @@ export default function AdminAuthPage() {
                   <div className="relative group">
                     <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                     <input
-                      {...regLogin("email")}
+                      {...regLogin('email')}
                       placeholder="Email Address"
                       className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-slate-800/50 border border-zinc-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                     />
@@ -334,8 +322,8 @@ export default function AdminAuthPage() {
                   <div className="relative group">
                     <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                     <input
-                      type={showPass ? "text" : "password"}
-                      {...regLogin("password")}
+                      type={showPass ? 'text' : 'password'}
+                      {...regLogin('password')}
                       placeholder="Password"
                       className="w-full pl-10 pr-10 py-3 bg-zinc-50 dark:bg-slate-800/50 border border-zinc-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                     />
@@ -344,11 +332,7 @@ export default function AdminAuthPage() {
                       onClick={() => setShowPass(!showPass)}
                       className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
                     >
-                      {showPass ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
+                      {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
@@ -357,11 +341,7 @@ export default function AdminAuthPage() {
                   disabled={isLoading}
                   className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-70 flex justify-center"
                 >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    "Sign In"
-                  )}
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
                 </button>
               </motion.form>
             ) : (
@@ -380,16 +360,16 @@ export default function AdminAuthPage() {
                     <div key={s} className="flex flex-col items-center gap-1">
                       <div
                         className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                          'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors',
                           step >= s
-                            ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                            : "bg-zinc-100 dark:bg-slate-800 text-gray-400",
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                            : 'bg-zinc-100 dark:bg-slate-800 text-gray-400'
                         )}
                       >
                         {s}
                       </div>
                       <span className="text-[10px] uppercase font-bold text-gray-400">
-                        {s === 1 ? "Biz" : "Verify"}
+                        {s === 1 ? 'Biz' : 'Verify'}
                       </span>
                     </div>
                   ))}
@@ -398,7 +378,7 @@ export default function AdminAuthPage() {
                     <motion.div
                       className="h-full bg-emerald-500"
                       animate={{
-                        width: step === 1 ? "0%" : "100%",
+                        width: step === 1 ? '0%' : '100%',
                       }}
                     />
                   </div>
@@ -412,18 +392,17 @@ export default function AdminAuthPage() {
                       className="space-y-3 p-1"
                     >
                       <p className="text-sm font-medium text-blue-600 mb-2">
-                        Registering as:{" "}
-                        {session.data?.user?.name || "CurrentUser"}
+                        Registering as: {session.data?.user?.name || 'CurrentUser'}
                       </p>
                       <input
-                        {...regVendor("businessName")}
+                        {...regVendor('businessName')}
                         placeholder="Company Name"
                         className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-sm focus:border-emerald-500 outline-none"
                       />
 
                       <div className="grid grid-cols-2 gap-2">
                         <select
-                          {...regVendor("businessType")}
+                          {...regVendor('businessType')}
                           className="px-3 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-emerald-500 cursor-pointer"
                         >
                           <option value="INDIVIDUAL">Individual</option>
@@ -431,7 +410,7 @@ export default function AdminAuthPage() {
                           <option value="AGENCY">Agency</option>
                         </select>
                         <select
-                          {...regVendor("vendorType")}
+                          {...regVendor('vendorType')}
                           className="px-3 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-emerald-500 cursor-pointer"
                         >
                           <option value="SINGLE_OWNER">Single Owner</option>
@@ -444,18 +423,18 @@ export default function AdminAuthPage() {
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <input
-                          {...regVendor("city")}
+                          {...regVendor('city')}
                           placeholder="City"
                           className="px-4 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500"
                         />
                         <input
-                          {...regVendor("state")}
+                          {...regVendor('state')}
                           placeholder="State"
                           className="px-4 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500"
                         />
                       </div>
                       <input
-                        {...regVendor("pincode")}
+                        {...regVendor('pincode')}
                         placeholder="Pincode (6 digits)"
                         maxLength={6}
                         className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500"
@@ -476,30 +455,26 @@ export default function AdminAuthPage() {
                       <div className="relative">
                         <FileBadge className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                         <select
-                          {...regVendor("idType")}
+                          {...regVendor('idType')}
                           className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-emerald-500 cursor-pointer appearance-none"
                         >
                           <option value="AADHAAR">Aadhaar Card</option>
                           <option value="PAN">PAN Card</option>
                           <option value="PASSPORT">Passport</option>
-                          <option value="DRIVING_LICENSE">
-                            Driving License
-                          </option>
+                          <option value="DRIVING_LICENSE">Driving License</option>
                         </select>
                       </div>
 
                       <input
-                        {...regVendor("idNumber")}
+                        {...regVendor('idNumber')}
                         placeholder="Enter ID Number"
                         className="w-full px-4 py-3 bg-zinc-50 dark:bg-slate-800 border border-zinc-200 dark:border-slate-700 rounded-xl text-sm focus:border-emerald-500 outline-none"
                       />
 
                       <div className="p-4 border-2 border-dashed border-zinc-300 dark:border-slate-700 rounded-xl text-center bg-zinc-50/50 dark:bg-slate-800/50">
-                        <p className="text-xs text-gray-500 mb-2">
-                          Upload Document (Simulated)
-                        </p>
+                        <p className="text-xs text-gray-500 mb-2">Upload Document (Simulated)</p>
                         <input
-                          {...regVendor("documentUrl")}
+                          {...regVendor('documentUrl')}
                           placeholder="Paste Document URL here..."
                           className="w-full text-center text-xs bg-transparent border-b border-gray-300 dark:border-gray-600 outline-none pb-1 text-emerald-600"
                         />
@@ -539,7 +514,7 @@ export default function AdminAuthPage() {
                       {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        "Complete Registration"
+                        'Complete Registration'
                       )}
                     </button>
                   )}

@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Eye, EyeOff, Github, Chrome, Loader2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Eye, EyeOff, Github, Chrome, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function LoginPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      const user = session.user as any;
-      if (user.role === "admin") {
+    if (status === 'authenticated' && session?.user) {
+      const user = session.user;
+      if (user.role === 'admin') {
         router.push(`/admin/${user._id}/dashboard`);
-      } else if (user.role === "vendor" && user.vendorId) {
+      } else if (user.role === 'vendor' && user.vendorId) {
         router.push(`/admin/${user.vendorId}/dashboard`);
       } else {
-        router.push("/");
+        router.push('/');
       }
     }
   }, [status, session, router]);
@@ -31,7 +31,7 @@ export default function LoginPage() {
     e.preventDefault();
 
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
       const form = e.currentTarget;
@@ -40,12 +40,12 @@ export default function LoginPage() {
       const password = form.password.value;
 
       if (!email || !password) {
-        toast.error("Email and password are required");
+        toast.error('Email and password are required');
         setLoading(false);
         return;
       }
 
-      const result = await signIn("credentials", {
+      const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
@@ -55,22 +55,22 @@ export default function LoginPage() {
       const isSuccess = result?.ok;
 
       if (isError) {
-        toast.error("Invalid email or password ");
-        setError("Invalid email or password");
+        toast.error('Invalid email or password ');
+        setError('Invalid email or password');
       } else if (isSuccess) {
-        console.log("Login successful:", isSuccess);
-        toast.success("Login successfully");
+        console.log('Login successful:', isSuccess);
+        toast.success('Login successfully');
 
         setTimeout(() => {
-          router.push("/");
+          router.push('/');
         }, 800);
       } else {
-        toast.error("Something went wrong. Try again.");
+        toast.error('Something went wrong. Try again.');
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Server error. Please try again later.");
-      setError("Server error");
+      console.error('Login error:', error);
+      toast.error('Server error. Please try again later.');
+      setError('Server error');
     } finally {
       setLoading(false);
     }
@@ -92,14 +92,14 @@ export default function LoginPage() {
         {/* OAuth Buttons */}
         <div className="grid grid-cols-2 gap-4">
           <button
-            onClick={() => signIn("google")}
+            onClick={() => signIn('google')}
             className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
           >
             <Chrome className="h-5 w-5 text-red-500" />
             Google
           </button>
           <button
-            onClick={() => signIn("github")}
+            onClick={() => signIn('github')}
             className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50 hover:shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
           >
             <Github className="h-5 w-5 text-gray-900 dark:text-white" />
@@ -120,11 +120,11 @@ export default function LoginPage() {
 
         {/* Credentials Form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
+          {error ? (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-500 dark:bg-red-900/20">
               {error}
             </div>
-          )}
+          ) : null}
 
           <div className="space-y-4">
             <div>
@@ -156,7 +156,7 @@ export default function LoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
                   className="block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
@@ -204,16 +204,12 @@ export default function LoginPage() {
             disabled={loading}
             className="group relative flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-800"
           >
-            {loading ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              "Sign In"
-            )}
+            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{' '}
           <Link
             href="/sign-up"
             className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"

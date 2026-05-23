@@ -1,86 +1,95 @@
-import { NextResponse } from "next/server";
-import connectToDatabase from "@/lib/db";
-import Car from "@/models/car.model";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
-import Vendor from "@/models/vendor.model";
-import { carSchema } from "@/lib/validations/car";
-import { canAddListingVideo } from "@/lib/vip";
-import type { PipelineStage } from "mongoose";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import type { PipelineStage } from 'mongoose';
+
+import connectToDatabase from '@/lib/db';
+import Car from '@/models/car.model';
+import Vendor from '@/models/vendor.model';
+import { carSchema } from '@/lib/validations/car';
+import { canAddListingVideo } from '@/lib/vip';
+import { ICar } from '@/models/car.model';
+
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function GET(request: Request) {
   try {
     await connectToDatabase();
-    console.log("Connected to database for GET /api/cars");
+    console.log('Connected to database for GET /api/cars');
 
     const url = new URL(request.url);
     const qp = url.searchParams;
 
     // Build Mongo filter
-    const andFilters: any[] = [];
+    type MongoFilter = Record<string, unknown>;
+    const andFilters: MongoFilter[] = [];
 
     // Search query across multiple fields
-    const q = qp.get("searchQuery")?.trim();
+    const q = qp.get('searchQuery')?.trim();
     if (q) {
-      const regex = new RegExp(q, "i");
+      const regex = new RegExp(q, 'i');
       andFilters.push({
         $or: [
           { title: regex },
           { transmission: regex },
-          { "specs.fuelType": regex },
-          { "specs.year": isNaN(Number(q)) ? undefined : Number(q) },
+          { 'specs.fuelType': regex },
+          { 'specs.year': isNaN(Number(q)) ? undefined : Number(q) },
           { description: regex },
           { tags: { $in: [regex] } },
-        ].filter(Boolean),
+        ].filter(Boolean) as MongoFilter[],
       });
     }
 
     // Company filter: multiple companies OR'd
-    const companies = qp.getAll("company");
+    const companies = qp.getAll('company');
     if (companies && companies.length > 0) {
       const companyOr = companies.map((c) => {
-        const r = new RegExp(c.trim(), "i");
+        const r = new RegExp(c.trim(), 'i');
         return {
-          $or: [{ title: r }, { "specs.make": r }, { tags: { $in: [r] } }],
+          $or: [{ title: r }, { 'specs.make': r }, { tags: { $in: [r] } }],
         };
       });
       andFilters.push({ $or: companyOr });
     }
 
     // Transmission & fuel
-    const transmission = qp.get("transmission");
+    const transmission = qp.get('transmission');
     if (transmission) {
       andFilters.push({
-        transmission: { $regex: transmission, $options: "i" },
+        transmission: { $regex: transmission, $options: 'i' },
       });
     }
-    const fuel = qp.get("fuel");
+    const fuel = qp.get('fuel');
     if (fuel) {
-      andFilters.push({ "specs.fuelType": { $regex: fuel, $options: "i" } });
+      andFilters.push({ 'specs.fuelType': { $regex: fuel, $options: 'i' } });
     }
 
     // Year range
-    const yearFrom = qp.get("yearFrom");
-    const yearTo = qp.get("yearTo");
+    const yearFrom = qp.get('yearFrom');
+    const yearTo = qp.get('yearTo');
     if (yearFrom || yearTo) {
-      const yearCond: any = {};
-      if (yearFrom && !isNaN(Number(yearFrom)))
+      const yearCond: Record<string, number> = {};
+      if (yearFrom && !isNaN(Number(yearFrom))) {
         yearCond.$gte = Number(yearFrom);
-      if (yearTo && !isNaN(Number(yearTo))) yearCond.$lte = Number(yearTo);
+      }
+      if (yearTo && !isNaN(Number(yearTo))) {
+        yearCond.$lte = Number(yearTo);
+      }
       if (Object.keys(yearCond).length) {
-        andFilters.push({ "specs.year": yearCond });
+        andFilters.push({ 'specs.year': yearCond });
       }
     }
 
     // Price range
-    const minPrice = qp.get("minPrice");
-    const maxPrice = qp.get("maxPrice");
+    const minPrice = qp.get('minPrice');
+    const maxPrice = qp.get('maxPrice');
     if (minPrice || maxPrice) {
-      const priceCond: any = {};
-      if (minPrice && !isNaN(Number(minPrice)))
+      const priceCond: Record<string, number> = {};
+      if (minPrice && !isNaN(Number(minPrice))) {
         priceCond.$gte = Number(minPrice);
-      if (maxPrice && !isNaN(Number(maxPrice)))
+      }
+      if (maxPrice && !isNaN(Number(maxPrice))) {
         priceCond.$lte = Number(maxPrice);
+      }
       if (Object.keys(priceCond).length) {
         andFilters.push({ price: priceCond });
       }
@@ -90,19 +99,12 @@ export async function GET(request: Request) {
     const filter = andFilters.length > 0 ? { $and: andFilters } : {};
 
     // Pagination
-    const page = parseInt(qp.get("page") || "1", 10);
-    const limit = parseInt(qp.get("limit") || "12", 10);
+    const page = parseInt(qp.get('page') || '1', 10);
+    const limit = parseInt(qp.get('limit') || '12', 10);
     const skip = (page - 1) * limit;
 
     // Log final filter for diagnostics
-    console.log(
-      "Final cars filter:",
-      JSON.stringify(filter),
-      "Page:",
-      page,
-      "Limit:",
-      limit,
-    );
+    console.log('Final cars filter:', JSON.stringify(filter), 'Page:', page, 'Limit:', limit);
     // console.log("Final cars filter:", JSON.stringify(filter));
 
     let carsRaw;
@@ -114,15 +116,15 @@ export async function GET(request: Request) {
         {
           $lookup: {
             from: vendorCollection,
-            localField: "vendorId",
-            foreignField: "_id",
-            as: "_vipVendor",
+            localField: 'vendorId',
+            foreignField: '_id',
+            as: '_vipVendor',
           },
         },
         {
           $addFields: {
             vendorPriority: {
-              $ifNull: [{ $arrayElemAt: ["$_vipVendor.priority", 0] }, 1],
+              $ifNull: [{ $arrayElemAt: ['$_vipVendor.priority', 0] }, 1],
             },
           },
         },
@@ -141,15 +143,15 @@ export async function GET(request: Request) {
         Car.aggregate(listPipeline),
         Car.countDocuments(filter),
       ]);
-      console.log("Found", carsRaw.length, "cars (Total:", totalCars, ")");
+      console.log('Found', carsRaw.length, 'cars (Total:', totalCars, ')');
 
-      const cars = carsRaw.map((c: any) => ({
+      const cars = (carsRaw as ICar[]).map((c) => ({
         ...c,
-        id: c._id?.toString() || "",
-        image: c.images?.[0] || c.image || "",
-        year: c.specs?.year || c.year,
-        fuel: c.specs?.fuelType || c.fuel,
-        make: c.specs?.make || c.make,
+        id: c._id?.toString() || '',
+        image: c.images?.[0] || c.image || '',
+        year: c.specs?.year || (c as unknown as { year?: string | number }).year,
+        fuel: c.specs?.fuelType || (c as unknown as { fuel?: string }).fuel,
+        make: c.specs?.make || (c as unknown as { make?: string }).make,
       }));
 
       return NextResponse.json({
@@ -157,19 +159,15 @@ export async function GET(request: Request) {
         hasMore: totalCars > skip + cars.length,
       });
     } catch (err) {
-      console.error("Error running Car.find with filter:", filter, err);
-      return NextResponse.json(
-        { error: (err as any)?.message ?? "Query failed" },
-        { status: 500 }
-      );
+      console.error('Error running Car.find with filter:', filter, err);
+      const message = err instanceof Error ? err.message : 'Query failed';
+      return NextResponse.json({ error: message }, { status: 500 });
     }
 
     // return NextResponse.json({ cars });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message ?? "Unknown" },
-      { status: 500 }
-    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -193,7 +191,7 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = session.user;
@@ -204,7 +202,7 @@ export async function POST(request: Request) {
     const vendor = await Vendor.findOne({ userId: userId });
     if (!vendor) {
       return NextResponse.json(
-        { error: "Vendor profile not found. Please register as a vendor." },
+        { error: 'Vendor profile not found. Please register as a vendor.' },
         { status: 403 }
       );
     }
@@ -215,8 +213,8 @@ export async function POST(request: Request) {
     const validation = carSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: validation.error.format() },
-        { status: 400 },
+        { error: 'Validation failed', details: validation.error.format() },
+        { status: 400 }
       );
     }
 
@@ -227,10 +225,9 @@ export async function POST(request: Request) {
       if (!canAddListingVideo(vendor.priority)) {
         return NextResponse.json(
           {
-            error:
-              "Listing video requires VIP level 3 or higher (priority > 2).",
+            error: 'Listing video requires VIP level 3 or higher (priority > 2).',
           },
-          { status: 403 },
+          { status: 403 }
         );
       }
     }
@@ -239,8 +236,11 @@ export async function POST(request: Request) {
       ...validatedData,
       vendorId: vendor._id,
     } as Record<string, unknown>;
-    if (video) createPayload.videoUrl = video;
-    else delete createPayload.videoUrl;
+    if (video) {
+      createPayload.videoUrl = video;
+    } else {
+      delete createPayload.videoUrl;
+    }
 
     const newCar = await Car.create(createPayload);
 
@@ -251,15 +251,10 @@ export async function POST(request: Request) {
       { runValidators: false }
     );
 
-    return NextResponse.json(
-      { message: "Car created successfully", car: newCar },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error("Create Car Error:", error);
-    return NextResponse.json(
-      { error: error?.message ?? "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Car created successfully', car: newCar }, { status: 201 });
+  } catch (error) {
+    console.error('Create Car Error:', error);
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

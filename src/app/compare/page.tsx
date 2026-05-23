@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useCompareStore } from "@/hooks/use-compare-store";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   ArrowLeft,
   Check,
@@ -14,23 +13,31 @@ import {
   ShieldCheck,
   Gauge,
   Fuel,
-  Car,
   Info,
-  Play,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+
+import { useCompareStore } from '@/hooks/use-compare-store';
+import { Button } from '@/components/ui/button';
+import { CarListItem } from '@/src/types';
+
+type CompareCar = CarListItem & {
+  _id: string;
+  title: string;
+  price: number | string;
+  features?: string[];
+};
 
 export default function ComparePage() {
   const router = useRouter();
   const { selectedCars, removeCar } = useCompareStore();
-  const [fullCars, setFullCars] = useState<any[]>([]);
+  const [fullCars, setFullCars] = useState<CompareCar[]>([]);
   const [loading, setLoading] = useState(true);
   const [aiConclusion, setAiConclusion] = useState<string | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [isAiExpanded, setIsAiExpanded] = useState(false);
   useEffect(() => {
     if (selectedCars.length === 0) {
-      router.push("/");
+      router.push('/');
       return;
     }
 
@@ -39,10 +46,8 @@ export default function ComparePage() {
       try {
         const carDetails = await Promise.all(
           selectedCars.map((c) =>
-            axios
-              .get(`/api/cars/${c.id}`)
-              .then((res) => res.data.car || res.data),
-          ),
+            axios.get(`/api/cars/${c.id}`).then((res) => res.data.car || res.data)
+          )
         );
         const fetchedCars = carDetails.filter(Boolean);
         setFullCars(fetchedCars);
@@ -51,7 +56,7 @@ export default function ComparePage() {
           fetchAiConclusion(fetchedCars);
         }
       } catch (error) {
-        console.error("Failed to fetch full car details", error);
+        console.error('Failed to fetch full car details', error);
       } finally {
         setLoading(false);
       }
@@ -60,15 +65,15 @@ export default function ComparePage() {
     fetchFullDetails();
   }, [selectedCars, router]);
 
-  const fetchAiConclusion = async (cars: any[]) => {
+  const fetchAiConclusion = async (cars: CompareCar[]) => {
     setLoadingAi(true);
     setAiConclusion(null);
     try {
-      const res = await axios.post("/api/compare-ai", { cars });
+      const res = await axios.post('/api/compare-ai', { cars });
       setAiConclusion(res.data.conclusion);
     } catch (error) {
-      console.error("AI Conclusion error", error);
-      setAiConclusion("Unable to generate AI conclusion at this time.");
+      console.error('AI Conclusion error', error);
+      setAiConclusion('Unable to generate AI conclusion at this time.');
     } finally {
       setLoadingAi(false);
     }
@@ -90,44 +95,40 @@ export default function ComparePage() {
           <h2 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400 animate-pulse">
             Analyzing Vehicle DNA...
           </h2>
-          <p className="text-slate-400 font-medium tracking-wide">
-            Gathering comparative datasets
-          </p>
+          <p className="text-slate-400 font-medium tracking-wide">Gathering comparative datasets</p>
         </div>
       </div>
     );
   }
 
-  const allFeatures = Array.from(
-    new Set(fullCars.flatMap((car) => car.features || [])),
-  ).sort();
+  const allFeatures = Array.from(new Set(fullCars.flatMap((car) => car.features || []))).sort();
 
   const specificationGroups = [
     {
-      title: "General Details",
+      title: 'General Details',
       icon: <Info className="w-5 h-5 text-indigo-400" />,
       items: [
-        { label: "Make", key: "specs.make" },
-        { label: "Model", key: "specs.model" },
-        { label: "Year", key: "specs.year" },
-        { label: "Color", key: "specs.color" },
-        { label: "Status", key: "status" },
+        { label: 'Make', key: 'specs.make' },
+        { label: 'Model', key: 'specs.model' },
+        { label: 'Year', key: 'specs.year' },
+        { label: 'Color', key: 'specs.color' },
+        { label: 'Status', key: 'status' },
       ],
     },
     {
-      title: "Performance & Build",
+      title: 'Performance & Build',
       icon: <Gauge className="w-5 h-5 text-indigo-400" />,
       items: [
-        { label: "Body Type", key: "bodyType" },
-        { label: "Transmission", key: "transmission" },
+        { label: 'Body Type', key: 'bodyType' },
+        { label: 'Transmission', key: 'transmission' },
       ],
     },
     {
-      title: "Efficiency",
+      title: 'Efficiency',
       icon: <Fuel className="w-5 h-5 text-indigo-400" />,
       items: [
-        { label: "Fuel Type", key: "specs.fuelType" },
-        { label: "Mileage", key: "specs.mileage" },
+        { label: 'Fuel Type', key: 'specs.fuelType' },
+        { label: 'Mileage', key: 'specs.mileage' },
       ],
     },
   ];
@@ -153,7 +154,7 @@ export default function ComparePage() {
               Back to Showroom
             </button>
             <h1 className="text-3xl md:text-4xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white">
-              Compare{" "}
+              Compare{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300">
                 Models
               </span>
@@ -186,8 +187,7 @@ export default function ComparePage() {
                     Intelligent Verdict
                   </h2>
                   <p className="text-blue-100/80 text-sm font-medium">
-                    Our multimodal AI analyzes specs, market data, and value to
-                    help you decide.
+                    Our multimodal AI analyzes specs, market data, and value to help you decide.
                   </p>
                 </div>
               </div>
@@ -197,11 +197,9 @@ export default function ComparePage() {
                 onClick={() => setIsAiExpanded(!isAiExpanded)}
                 className="md:hidden flex w-full justify-between items-center px-6 py-4 bg-white/5 border-t border-white/10 text-blue-100 font-semibold"
               >
-                <span>
-                  {isAiExpanded ? "Hide AI Conclusion" : "Read AI Conclusion"}
-                </span>
+                <span>{isAiExpanded ? 'Hide AI Conclusion' : 'Read AI Conclusion'}</span>
                 <svg
-                  className={`w-5 h-5 transition-transform duration-300 ${isAiExpanded ? "rotate-180" : ""}`}
+                  className={`w-5 h-5 transition-transform duration-300 ${isAiExpanded ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -217,7 +215,7 @@ export default function ComparePage() {
 
               {/* Content Panel */}
               <div
-                className={`p-6 lg:p-8 md:w-2/3 items-center bg-transparent ${isAiExpanded ? "flex" : "hidden md:flex"}`}
+                className={`p-6 lg:p-8 md:w-2/3 items-center bg-transparent ${isAiExpanded ? 'flex' : 'hidden md:flex'}`}
               >
                 {loadingAi ? (
                   <div className="flex flex-col gap-4 w-full h-full justify-center">
@@ -275,10 +273,9 @@ export default function ComparePage() {
                   </button>
                   <Image
                     src={
-                      typeof car.images?.[0] === "string" &&
-                      car.images[0].trim() !== ""
+                      typeof car.images?.[0] === 'string' && car.images[0].trim() !== ''
                         ? car.images[0]
-                        : "/placeholder.svg"
+                        : '/placeholder.svg'
                     }
                     alt={car.title}
                     fill
@@ -293,10 +290,7 @@ export default function ComparePage() {
                 </div>
                 <div className="flex-1 flex flex-col justify-between px-2 pb-2">
                   <p className="text-2xl font-black text-slate-900 dark:text-blue-400 drop-shadow-md mb-2">
-                    $
-                    {typeof car.price === "number"
-                      ? car.price.toLocaleString()
-                      : car.price}
+                    ${typeof car.price === 'number' ? car.price.toLocaleString() : car.price}
                   </p>
                   <Button
                     className="w-full h-12 rounded-xl text-md font-bold bg-slate-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all border-none shadow-md"
@@ -309,33 +303,26 @@ export default function ComparePage() {
             ))}
 
             {/* Empty Slots */}
-            {Array.from({ length: Math.max(0, 3 - fullCars.length) }).map(
-              (_, idx) => (
-                <div
-                  key={`empty-head-${idx}`}
-                  className="flex flex-col items-center justify-center bg-gray-100/50 dark:bg-slate-800/20 backdrop-blur-sm border-2 border-dashed border-gray-300 dark:border-slate-700/50 rounded-3xl p-4 lg:p-6 h-[380px]"
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-gray-200/50 dark:bg-slate-800 flex items-center justify-center text-gray-400 dark:text-slate-500 mb-4">
-                    <svg
-                      className="w-8 h-8"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">
-                    Available Slot
-                  </p>
+            {Array.from({ length: Math.max(0, 3 - fullCars.length) }).map((_, idx) => (
+              <div
+                key={`empty-head-${idx}`}
+                className="flex flex-col items-center justify-center bg-gray-100/50 dark:bg-slate-800/20 backdrop-blur-sm border-2 border-dashed border-gray-300 dark:border-slate-700/50 rounded-3xl p-4 lg:p-6 h-[380px]"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-gray-200/50 dark:bg-slate-800 flex items-center justify-center text-gray-400 dark:text-slate-500 mb-4">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
                 </div>
-              ),
-            )}
+                <p className="text-sm font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">
+                  Available Slot
+                </p>
+              </div>
+            ))}
           </div>
 
           {/* Comparison Sections */}
@@ -364,10 +351,15 @@ export default function ComparePage() {
                           {spec.label}
                         </span>
                       </div>
-                      {fullCars.map((car, idx) => {
-                        const keys = spec.key.split(".");
-                        let val = car;
-                        for (const k of keys) val = val?.[k];
+                      {fullCars.map((car) => {
+                        const keys = spec.key.split('.');
+                        let val: unknown = car;
+                        for (const k of keys) {
+                          val =
+                            val && typeof val === 'object'
+                              ? (val as Record<string, unknown>)[k]
+                              : undefined;
+                        }
                         return (
                           <div
                             key={`${car._id}-${spec.label}`}
@@ -376,9 +368,7 @@ export default function ComparePage() {
                             {val ? (
                               String(val)
                             ) : (
-                              <span className="text-gray-300 dark:text-slate-700">
-                                —
-                              </span>
+                              <span className="text-gray-300 dark:text-slate-700">—</span>
                             )}
                           </div>
                         );
@@ -409,7 +399,7 @@ export default function ComparePage() {
                   </h3>
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-white/5">
-                  {allFeatures.map((feature: any) => (
+                  {allFeatures.map((feature) => (
                     <div
                       key={feature}
                       className="grid grid-cols-4 hover:bg-white dark:hover:bg-slate-800/40 transition-colors group"

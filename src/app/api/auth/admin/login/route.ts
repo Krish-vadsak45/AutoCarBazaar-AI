@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import connectToDatabase from "@/lib/db";
-import User from "@/models/user.model";
-import Vendor from "@/models/vendor.model";
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+
+import connectToDatabase from '@/lib/db';
+import { getErrorMessage } from '@/lib/errors';
+import User from '@/models/user.model';
+import Vendor from '@/models/vendor.model';
 
 export async function POST(request: Request) {
   try {
@@ -12,8 +14,8 @@ export async function POST(request: Request) {
     // 1. Basic Validation
     if (!email || !password || !role) {
       return NextResponse.json(
-        { error: "Email/Username, Password, and Role are required." },
-        { status: 400 },
+        { error: 'Email/Username, Password, and Role are required.' },
+        { status: 400 }
       );
     }
 
@@ -27,20 +29,14 @@ export async function POST(request: Request) {
     }); // Ideally 'username' field exists in your schema
 
     if (!user || !user.password) {
-      return NextResponse.json(
-        { error: "Invalid credentials." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
     }
 
     // 4. Check Password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: "Invalid credentials." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
     }
 
     // 5. Verify Role Authorization
@@ -48,7 +44,7 @@ export async function POST(request: Request) {
     if (user.role !== role) {
       return NextResponse.json(
         { error: `Access Denied: You are not authorized as a ${role}.` },
-        { status: 403 },
+        { status: 403 }
       );
     }
     //i want different message for the different verificationStatus
@@ -76,25 +72,24 @@ export async function POST(request: Request) {
 
     // 6. Success Response
     let vendorId = null;
-    let responseMessage = "";
-    let verificationStatus = "";
-    if (user.role === "vendor") {
+    let responseMessage = '';
+    let verificationStatus = '';
+    if (user.role === 'vendor') {
       const vendor = await Vendor.findOne({
         userId: user._id.toString(),
       });
       if (vendor) {
         vendorId = vendor._id.toString();
-        if (vendor.verificationStatus === "PENDING") {
+        if (vendor.verificationStatus === 'PENDING') {
           responseMessage =
-            "Login successful, but your vendor application is still pending approval.";
-          verificationStatus = "PENDING";
-        } else if (vendor.verificationStatus === "REJECTED") {
-          responseMessage =
-            "Login successful, but your vendor application has been rejected.";
-          verificationStatus = "REJECTED";
+            'Login successful, but your vendor application is still pending approval.';
+          verificationStatus = 'PENDING';
+        } else if (vendor.verificationStatus === 'REJECTED') {
+          responseMessage = 'Login successful, but your vendor application has been rejected.';
+          verificationStatus = 'REJECTED';
         } else {
-          responseMessage = "Login successful";
-          verificationStatus = "APPROVED";
+          responseMessage = 'Login successful';
+          verificationStatus = 'APPROVED';
         }
       }
     }
@@ -111,13 +106,10 @@ export async function POST(request: Request) {
           vendorId,
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
-  } catch (error: any) {
-    console.error("Admin Login Error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+  } catch (error: unknown) {
+    console.error('Admin Login Error:', error);
+    return NextResponse.json({ error: getErrorMessage(error, 'Internal Server Error') }, { status: 500 });
   }
 }

@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Loader2 } from "lucide-react";
-import { toast } from "react-toastify";
-import axios from "axios";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+
+import { getAxiosErrorMessage } from '@/lib/errors';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -18,12 +18,12 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth/forgot-password", { email });
+      await axios.post('/api/auth/forgot-password', { email });
 
       setSuccess(true);
-      toast.success("Check your email for instructions");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+      toast.success('Check your email for instructions');
+    } catch (error: unknown) {
+      toast.error(getAxiosErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,8 @@ export default function ForgotPasswordPage() {
         {success ? (
           <div className="text-center space-y-4">
             <div className="p-4 rounded-md bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-200">
-              Check your email for a link to reset your password. If it doesn't
-              appear within a few minutes, check your spam folder.
+              Check your email for a link to reset your password. If it doesn&apos;t appear within a
+              few minutes, check your spam folder.
             </div>
             <Link
               href="/sign-in"
@@ -81,11 +81,7 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="group relative flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-800"
             >
-              {loading ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              ) : (
-                "Send Reset Link"
-              )}
+              {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Send Reset Link'}
             </button>
 
             <div className="text-center text-sm">

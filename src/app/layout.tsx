@@ -1,15 +1,17 @@
-"use client";
-import { Inter } from "next/font/google";
-import "@/src/app/globals.css";
-import Header from "@/components/Header";
-import ThemeProvider from "@/components/ThemeProvider";
-import Footer from "@/components/Footer";
-import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from "react-toastify";
-import AuthProvider from "./providers";
-import { usePathname } from "next/navigation";
-import { CompareBanner } from "@/components/CompareBanner";
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+'use client';
+
+import { usePathname } from 'next/navigation';
+import { ToastContainer } from 'react-toastify';
+
+import '@/src/app/globals.css';
+import 'react-toastify/dist/ReactToastify.css';
+
+import { CompareBanner } from '@/components/CompareBanner';
+import Footer from '@/components/Footer';
+import Header from '@/components/Header';
+import ThemeProvider from '@/components/ThemeProvider';
+
+import AuthProvider from './providers';
 
 export default function RootLayout({
   children,
@@ -18,11 +20,10 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
 
-  const isAdminTab =
-    pathname.includes("/admin") || pathname.includes("/vendor");
+  const isAdminTab = pathname.includes('/admin') || pathname.includes('/vendor');
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className}`}>
+      <body className="antialiased">
         <AuthProvider>
           <ThemeProvider>
             {!isAdminTab && <Header />}
@@ -40,7 +41,7 @@ export default function RootLayout({
               theme="dark"
             />
             {!isAdminTab && <CompareBanner />}
-            {!isAdminTab && <Footer />}{" "}
+            {!isAdminTab && <Footer />}
           </ThemeProvider>
         </AuthProvider>
       </body>

@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { X, Send, Mail, Loader2, FileText, Type } from "lucide-react";
-import axios from "axios";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from 'react';
+import { X, Send, Mail, Loader2, FileText, Type } from 'lucide-react';
+import axios from 'axios';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 interface AdminEmailModalProps {
   isOpen: boolean;
@@ -14,36 +15,42 @@ interface AdminEmailModalProps {
 }
 
 export function AdminEmailModal({ isOpen, onClose }: AdminEmailModalProps) {
-  const [to, setTo] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [to, setTo] = useState('');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   const handleSend = async () => {
     if (!to || !subject || !body) {
-      toast.error("Please fill in all fields (To, Subject, and Body).");
+      toast.error('Please fill in all fields (To, Subject, and Body).');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(to)) {
-      toast.error("Please enter a valid email address.");
+      toast.error('Please enter a valid email address.');
       return;
     }
 
     setIsLoading(true);
     try {
-      await axios.post("/api/admin/send-email", { to, subject, body });
-      toast.success("Email sent successfully!");
-      setTo("");
-      setSubject("");
-      setBody("");
+      await axios.post('/api/admin/send-email', { to, subject, body });
+      toast.success('Email sent successfully!');
+      setTo('');
+      setSubject('');
+      setBody('');
       onClose();
-    } catch (error: any) {
-      console.error("Email send error:", error);
-      toast.error(error.response?.data?.error || "Failed to send email. Please try again.");
+    } catch (error: unknown) {
+      console.error('Email send error:', error);
+      let errorMessage = 'Failed to send email. Please try again.';
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +59,6 @@ export function AdminEmailModal({ isOpen, onClose }: AdminEmailModalProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-background border border-border w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300">
-        
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-primary/10 to-transparent">
           <div className="flex items-center gap-3">
@@ -61,7 +67,9 @@ export function AdminEmailModal({ isOpen, onClose }: AdminEmailModalProps) {
             </div>
             <div>
               <h2 className="text-xl font-bold text-foreground">Send Custom Email</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Write a direct message to a specific vendor/email.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Write a direct message to a specific vendor/email.
+              </p>
             </div>
           </div>
           <button

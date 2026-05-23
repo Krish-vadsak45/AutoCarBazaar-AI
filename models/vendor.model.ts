@@ -1,5 +1,4 @@
-import mongoose, { Model, Schema } from "mongoose";
-import User from "./user.model";
+import mongoose, { Model, Schema } from 'mongoose';
 
 interface workingHours extends mongoose.Document {
   day: string;
@@ -14,8 +13,8 @@ export interface IVendor extends mongoose.Document {
   isVerified: boolean;
   cars: string[];
   businessName: string;
-  businessType: "INDIVIDUAL" | "COMPANY" | "AGENCY";
-  vendorType: "SINGLE_OWNER" | "FLEET_OWNER";
+  businessType: 'INDIVIDUAL' | 'COMPANY' | 'AGENCY';
+  vendorType: 'SINGLE_OWNER' | 'FLEET_OWNER';
 
   // New Interface Fields
   ownerName: string;
@@ -30,7 +29,7 @@ export interface IVendor extends mongoose.Document {
   description?: string;
 
   identityProof: {
-    type: "AADHAAR" | "PAN" | "PASSPORT" | "DRIVING_LICENSE";
+    type: 'AADHAAR' | 'PAN' | 'PASSPORT' | 'DRIVING_LICENSE';
     number: string;
     documentUrl: string;
   };
@@ -40,38 +39,40 @@ export interface IVendor extends mongoose.Document {
     accountNumber: string;
     ifscCode: string;
   };
-  verificationStatus: "PENDING" | "APPROVED" | "REJECTED";
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   workingHours?: workingHours[];
 
   totalTestDrivesBooked: number;
   totalRevenue: number;
 
   priority: number;
-  subscriptionStatus: "NONE" | "ACTIVE" | "PENDING_PENALTY";
+  subscriptionStatus: 'NONE' | 'ACTIVE' | 'PENDING_PENALTY';
   hasUnreadMessages?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const VendorProfileSchema = new mongoose.Schema({
   userId: {
     type: Schema.Types.ObjectId,
-    ref: "User",
+    ref: 'User',
     required: true,
     unique: true,
   },
   isActive: { type: Boolean, default: false },
   isVerified: { type: Boolean, default: false },
-  cars: [{ type: Schema.Types.ObjectId, ref: "Car" }],
+  cars: [{ type: Schema.Types.ObjectId, ref: 'Car' }],
 
   businessName: { type: String, required: true },
   businessType: {
     type: String,
-    enum: ["INDIVIDUAL", "COMPANY", "AGENCY"],
+    enum: ['INDIVIDUAL', 'COMPANY', 'AGENCY'],
     required: true,
   },
   vendorType: {
     type: String,
-    enum: ["SINGLE_OWNER", "FLEET_OWNER"],
-    default: "SINGLE_OWNER",
+    enum: ['SINGLE_OWNER', 'FLEET_OWNER'],
+    default: 'SINGLE_OWNER',
   },
 
   address: {
@@ -93,7 +94,7 @@ const VendorProfileSchema = new mongoose.Schema({
   identityProof: {
     type: {
       type: String,
-      enum: ["AADHAAR", "PAN", "PASSPORT", "DRIVING_LICENSE"],
+      enum: ['AADHAAR', 'PAN', 'PASSPORT', 'DRIVING_LICENSE'],
       required: true,
     },
     number: { type: String, required: true },
@@ -111,8 +112,8 @@ const VendorProfileSchema = new mongoose.Schema({
   // ✅ Verification Status
   verificationStatus: {
     type: String,
-    enum: ["PENDING", "APPROVED", "REJECTED"],
-    default: "PENDING",
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING',
   },
   // "workingHours": [
   //   { "day": "MONDAY", "isOpen": true, "openTime": "09:00", "closeTime": "18:00" },
@@ -122,15 +123,7 @@ const VendorProfileSchema = new mongoose.Schema({
     {
       day: {
         type: String,
-        enum: [
-          "MONDAY",
-          "TUESDAY",
-          "WEDNESDAY",
-          "THURSDAY",
-          "FRIDAY",
-          "SATURDAY",
-          "SUNDAY",
-        ],
+        enum: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
         required: true,
       },
       isOpen: { type: Boolean, required: true },
@@ -147,17 +140,14 @@ const VendorProfileSchema = new mongoose.Schema({
   priority: { type: Number, default: 1 },
   subscriptionStatus: {
     type: String,
-    enum: ["NONE", "ACTIVE", "PENDING_PENALTY"],
-    default: "NONE",
+    enum: ['NONE', 'ACTIVE', 'PENDING_PENALTY'],
+    default: 'NONE',
   },
 });
 
 // Force reload model to pick up schema changes
 delete mongoose.models.Vendor;
 
-const Vendor: Model<IVendor> = mongoose.model<IVendor>(
-  "Vendor",
-  VendorProfileSchema,
-);
+const Vendor: Model<IVendor> = mongoose.model<IVendor>('Vendor', VendorProfileSchema);
 
 export default Vendor;

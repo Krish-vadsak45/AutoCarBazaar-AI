@@ -1,47 +1,48 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
-import { Loader2, Eye, EyeOff } from "lucide-react";
-import { toast } from "react-toastify";
-import axios from "axios";
+import { useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+
+import { getAxiosErrorMessage } from '@/lib/errors';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const params = useParams();
   const token = params.token as string;
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
 
     try {
-      await axios.post("/api/auth/reset-password", {
+      await axios.post('/api/auth/reset-password', {
         token,
         password,
       });
 
-      toast.success("Password verified successfully");
-      router.push("/sign-in");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+      toast.success('Password verified successfully');
+      router.push('/sign-in');
+    } catch (error: unknown) {
+      toast.error(getAxiosErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export default function ResetPasswordPage() {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -114,11 +115,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="group relative flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-800"
           >
-            {loading ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              "Reset Password"
-            )}
+            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Reset Password'}
           </button>
         </form>
       </div>

@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../[...nextauth]/route";
-import connectToDatabase from "@/lib/db";
-import User from "@/models/user.model";
-import Vendor from "@/models/vendor.model";
-import bcrypt from "bcryptjs";
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import bcrypt from 'bcryptjs';
+
+import connectToDatabase from '@/lib/db';
+import { getErrorMessage } from '@/lib/errors';
+import User from '@/models/user.model';
+import Vendor from '@/models/vendor.model';
+
+import { authOptions } from '../[...nextauth]/route';
 
 export async function POST(request: Request) {
   try {
@@ -13,8 +16,8 @@ export async function POST(request: Request) {
 
     if (!session || !session.user?.email) {
       return NextResponse.json(
-        { error: "You must be logged in to register as a vendor." },
-        { status: 401 },
+        { error: 'You must be logged in to register as a vendor.' },
+        { status: 401 }
       );
     }
 
@@ -40,17 +43,14 @@ export async function POST(request: Request) {
     const currentUser = await User.findOne({ email: session.user.email });
 
     if (!currentUser) {
-      return NextResponse.json(
-        { error: "User account not found." },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: 'User account not found.' }, { status: 404 });
     }
 
     // Check if user is already a vendor
-    if (currentUser.role === "vendor") {
+    if (currentUser.role === 'vendor') {
       return NextResponse.json(
-        { error: "You are already registered as a vendor." },
-        { status: 400 },
+        { error: 'You are already registered as a vendor.' },
+        { status: 400 }
       );
     }
 
@@ -58,27 +58,23 @@ export async function POST(request: Request) {
     if (!currentUser.password) {
       return NextResponse.json(
         {
-          error:
-            "Please set a password in your profile settings before registering.",
-          redirect: "/profile",
+          error: 'Please set a password in your profile settings before registering.',
+          redirect: '/profile',
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
     if (!password) {
       return NextResponse.json(
-        { error: "Password is required to confirm your identity." },
-        { status: 400 },
+        { error: 'Password is required to confirm your identity.' },
+        { status: 400 }
       );
     }
 
     const isMatch = await bcrypt.compare(password, currentUser.password);
     if (!isMatch) {
-      return NextResponse.json(
-        { error: "Invalid password provided." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: 'Invalid password provided.' }, { status: 401 });
     }
     // ----------------------------
 
@@ -86,37 +82,32 @@ export async function POST(request: Request) {
     const existingVendor = await Vendor.findOne({
       userId: currentUser._id.toString(),
       $or: [
-        { verificationStatus: "PENDING" },
+        { verificationStatus: 'PENDING' },
         // verificationStatus: "APPROVED" and isActive and isVerified true then prevent to create new vendor profile
         {
-          $and: [
-            { verificationStatus: "APPROVED" },
-            { isActive: true },
-            { isVerified: true },
-          ],
+          $and: [{ verificationStatus: 'APPROVED' }, { isActive: true }, { isVerified: true }],
         },
       ],
     });
     if (existingVendor) {
-      if (existingVendor.verificationStatus === "PENDING") {
+      if (existingVendor.verificationStatus === 'PENDING') {
         return NextResponse.json(
           {
-            error:
-              "You already have a pending vendor application. Please wait for admin approval.",
+            error: 'You already have a pending vendor application. Please wait for admin approval.',
           },
-          { status: 409 },
+          { status: 409 }
         );
       }
       if (
-        existingVendor.verificationStatus === "APPROVED" &&
+        existingVendor.verificationStatus === 'APPROVED' &&
         existingVendor.isActive &&
         existingVendor.isVerified
       ) {
         return NextResponse.json(
           {
-            error: "You are already registered as an approved vendor.",
+            error: 'You are already registered as an approved vendor.',
           },
-          { status: 409 },
+          { status: 409 }
         );
       }
     }
@@ -133,12 +124,12 @@ export async function POST(request: Request) {
       vendorType,
       gstNumber,
       address:
-        typeof address === "object"
+        typeof address === 'object'
           ? `${address.city}, ${address.state}, ${address.pincode}`
           : address,
       identityProof,
       bankDetails,
-      verificationStatus: "PENDING",
+      verificationStatus: 'PENDING',
     });
 
     await newVendor.save();
@@ -149,17 +140,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        message:
-          "Vendor application submitted successfully. Please wait for admin approval.",
+        message: 'Vendor application submitted successfully. Please wait for admin approval.',
         vendorId: newVendor._id,
       },
-      { status: 201 },
+      { status: 201 }
     );
-  } catch (error: any) {
-    console.error("Vendor Registration Error:", error);
+  } catch (error: unknown) {
+    console.error('Vendor Registration Error:', error);
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
+      { error: getErrorMessage(error, 'Internal Server Error') },
+      { status: 500 }
     );
   }
 }

@@ -1,30 +1,22 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card"; // Reduced imports to keep cards clean
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { Clock, Save, Loader2, CalendarDays, Moon, Sun, MapPin, Check } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent } from '@/components/ui/card'; // Reduced imports to keep cards clean
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Clock,
-  Save,
-  Loader2,
-  CalendarDays,
-  Moon,
-  Sun,
-  MapPin,
-  Check,
-} from "lucide-react";
-import Loading from "@/components/Loading";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/select';
+import Loading from '@/components/Loading';
+import { Badge } from '@/components/ui/badge';
 
 type DaySchedule = {
   day: string;
@@ -36,8 +28,8 @@ type DaySchedule = {
 // Times for dropdown (00:00 to 23:30)
 const timeOptions = Array.from({ length: 48 }).map((_, i) => {
   const hour = Math.floor(i / 2);
-  const minute = i % 2 === 0 ? "00" : "30";
-  const formattedHour = hour.toString().padStart(2, "0");
+  const minute = i % 2 === 0 ? '00' : '30';
+  const formattedHour = hour.toString().padStart(2, '0');
   return `${formattedHour}:${minute}`;
 });
 
@@ -55,8 +47,8 @@ export default function WorkingHoursPage() {
   }>({
     lat: null,
     lng: null,
-    city: "",
-    state: "",
+    city: '',
+    state: '',
   });
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationSaving, setLocationSaving] = useState(false);
@@ -65,17 +57,18 @@ export default function WorkingHoursPage() {
   useEffect(() => {
     const fetchHours = async () => {
       try {
-        const { data } = await axios.get("/api/working-hours");
+        const { data } = await axios.get('/api/working-hours');
         setSchedule(data.workingHours);
       } catch (error) {
-        toast.error("Failed to load schedule");
+        console.error('Failed to load schedule', error);
+        toast.error('Failed to load schedule');
       } finally {
         setLoading(false);
       }
     };
     const fetchLocation = async () => {
       try {
-        const { data } = await axios.get("/api/vendor-location");
+        const { data } = await axios.get('/api/vendor-location');
         setVendorLocation({
           lat: data.lat,
           lng: data.lng,
@@ -92,25 +85,19 @@ export default function WorkingHoursPage() {
 
   const handleToggle = (index: number) => {
     setSchedule((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, isOpen: !item.isOpen } : item,
-      ),
+      prev.map((item, i) => (i === index ? { ...item, isOpen: !item.isOpen } : item))
     );
   };
 
-  const handleTimeChange = (
-    index: number,
-    field: "openTime" | "closeTime",
-    value: string,
-  ) => {
+  const handleTimeChange = (index: number, field: 'openTime' | 'closeTime', value: string) => {
     setSchedule((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
   };
 
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
+      toast.error('Geolocation is not supported by your browser');
       return;
     }
     setLocationLoading(true);
@@ -119,7 +106,7 @@ export default function WorkingHoursPage() {
         const { latitude, longitude } = position.coords;
         try {
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
           );
           const data = await res.json();
           const city =
@@ -127,8 +114,8 @@ export default function WorkingHoursPage() {
             data.address?.town ||
             data.address?.village ||
             data.address?.county ||
-            "";
-          const state = data.address?.state || "";
+            '';
+          const state = data.address?.state || '';
           setVendorLocation({ lat: latitude, lng: longitude, city, state });
           toast.success(`Location detected: ${city}, ${state}`);
         } catch {
@@ -137,32 +124,32 @@ export default function WorkingHoursPage() {
             lat: latitude,
             lng: longitude,
           }));
-          toast.success("GPS coordinates captured");
+          toast.success('GPS coordinates captured');
         } finally {
           setLocationLoading(false);
         }
       },
       () => {
         setLocationLoading(false);
-        toast.error("Could not detect location. Please try again.");
-      },
+        toast.error('Could not detect location. Please try again.');
+      }
     );
   };
 
   const handleSaveLocation = async () => {
     if (vendorLocation.lat === null || vendorLocation.lng === null) {
-      toast.error("Please detect your location first");
+      toast.error('Please detect your location first');
       return;
     }
     setLocationSaving(true);
     try {
-      await axios.patch("/api/vendor-location", {
+      await axios.patch('/api/vendor-location', {
         lat: vendorLocation.lat,
         lng: vendorLocation.lng,
       });
-      toast.success("Delivery location saved");
+      toast.success('Delivery location saved');
     } catch {
-      toast.error("Failed to save location");
+      toast.error('Failed to save location');
     } finally {
       setLocationSaving(false);
     }
@@ -171,10 +158,11 @@ export default function WorkingHoursPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.patch("/api/working-hours", { workingHours: schedule });
-      toast.success("Schedule updated successfully");
+      await axios.patch('/api/working-hours', { workingHours: schedule });
+      toast.success('Schedule updated successfully');
     } catch (error) {
-      toast.error("Failed to update schedule");
+      console.error('Failed to update schedule', error);
+      toast.error('Failed to update schedule');
     } finally {
       setSaving(false);
     }
@@ -221,8 +209,7 @@ export default function WorkingHoursPage() {
               Delivery Location
             </h2>
             <p className="text-muted-foreground text-sm mt-1">
-              Set your location so customers can see the distance for delivery
-              requests.
+              Set your location so customers can see the distance for delivery requests.
             </p>
           </div>
           <Button
@@ -252,7 +239,7 @@ export default function WorkingHoursPage() {
             ) : (
               <MapPin className="w-4 h-4" />
             )}
-            {locationLoading ? "Detecting..." : "Use My Current Location"}
+            {locationLoading ? 'Detecting...' : 'Use My Current Location'}
           </button>
 
           {vendorLocation.lat !== null && (
@@ -275,8 +262,8 @@ export default function WorkingHoursPage() {
             key={day.day}
             className={`transition-all duration-300 border-2 overflow-hidden ${
               day.isOpen
-                ? "bg-card border-border shadow-sm hover:shadow-md"
-                : "bg-muted/30 border-dashed border-border opacity-70"
+                ? 'bg-card border-border shadow-sm hover:shadow-md'
+                : 'bg-muted/30 border-dashed border-border opacity-70'
             }`}
           >
             <CardContent className="p-6 space-y-6">
@@ -285,36 +272,28 @@ export default function WorkingHoursPage() {
                 <div className="flex items-center gap-3">
                   <div
                     className={`p-2 rounded-lg ${
-                      day.isOpen
-                        ? "bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground"
+                      day.isOpen ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                     }`}
                   >
                     <CalendarDays className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base capitalize">
-                      {day.day}
-                    </h3>
+                    <h3 className="font-bold text-base capitalize">{day.day}</h3>
                     <Badge
-                      variant={day.isOpen ? "default" : "secondary"}
+                      variant={day.isOpen ? 'default' : 'secondary'}
                       className="text-[10px] h-5 px-2 mt-0.5"
                     >
-                      {day.isOpen ? "Open" : "Closed"}
+                      {day.isOpen ? 'Open' : 'Closed'}
                     </Badge>
                   </div>
                 </div>
-                <Switch
-                  checked={day.isOpen}
-                  onCheckedChange={() => handleToggle(index)}
-                />
+                <Switch checked={day.isOpen} onCheckedChange={() => handleToggle(index)} />
               </div>
 
               {/* Time Selection */}
               <div
                 className={`space-y-4 pt-2 ${
-                  !day.isOpen &&
-                  "opacity-50 pointer-events-none filter grayscale"
+                  !day.isOpen && 'opacity-50 pointer-events-none filter grayscale'
                 }`}
               >
                 <div className="grid grid-cols-2 gap-4">
@@ -325,9 +304,7 @@ export default function WorkingHoursPage() {
                     </div>
                     <Select
                       value={day.openTime}
-                      onValueChange={(val) =>
-                        handleTimeChange(index, "openTime", val)
-                      }
+                      onValueChange={(val) => handleTimeChange(index, 'openTime', val)}
                       disabled={!day.isOpen}
                     >
                       <SelectTrigger className="w-full bg-background">
@@ -350,9 +327,7 @@ export default function WorkingHoursPage() {
                     </div>
                     <Select
                       value={day.closeTime}
-                      onValueChange={(val) =>
-                        handleTimeChange(index, "closeTime", val)
-                      }
+                      onValueChange={(val) => handleTimeChange(index, 'closeTime', val)}
                       disabled={!day.isOpen}
                     >
                       <SelectTrigger className="w-full bg-background">

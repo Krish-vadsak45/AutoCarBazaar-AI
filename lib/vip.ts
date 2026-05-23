@@ -5,7 +5,9 @@ export const VIP_MAX = 5;
 
 export function normalizeVendorPriority(priority: unknown): number {
   const n = Number(priority);
-  if (!Number.isFinite(n)) return 1;
+  if (!Number.isFinite(n)) {
+    return 1;
+  }
   return Math.min(VIP_MAX, Math.max(VIP_MIN, Math.floor(n)));
 }
 

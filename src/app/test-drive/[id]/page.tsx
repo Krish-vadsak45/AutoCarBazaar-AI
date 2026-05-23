@@ -1,37 +1,44 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { ChevronLeft, Check, CalendarIcon, MapPin } from "lucide-react";
-import Image from "next/image";
-import { loadStripe } from "@stripe/stripe-js";
-import { toast } from "react-toastify";
-import { format } from "date-fns";
-import { Skeleton } from "@/components/ui/skeleton";
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { ChevronLeft, Check, CalendarIcon, MapPin } from 'lucide-react';
+import Image from 'next/image';
+import { toast } from 'react-toastify';
+import { format } from 'date-fns';
+
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { SuccessModal } from "@/components/success-modal";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { SuccessModal } from '@/components/success-modal';
+import { Switch } from '@/components/ui/switch';
+import { getAxiosErrorMessage } from '@/lib/errors';
+import { BookingConfirmationDetails } from '@/src/types';
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
-);
+type TestDriveCarDetails = {
+  name: string;
+  price: string;
+  pricePerHour: number;
+  mileage: string;
+  fuelType: string;
+  transmission: string;
+  bodyType: string;
+  color: string;
+  image?: string;
+  carAddress?: string;
+  vendorAddress?: string;
+};
 
 export default function TestDrivePage() {
   const { data: session } = useSession();
@@ -39,41 +46,35 @@ export default function TestDrivePage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const carId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
-  const success = searchParams.get("success") === "true";
-  const canceled = searchParams.get("canceled") === "true";
-  const sessionId = searchParams.get("session_id");
+  const success = searchParams.get('success') === 'true';
+  const canceled = searchParams.get('canceled') === 'true';
+  const sessionId = searchParams.get('session_id');
 
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [notes, setNotes] = useState("");
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [notes, setNotes] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [bookingDetails, setBookingDetails] = useState<BookingConfirmationDetails | null>(null);
   const [totalPrice, setTotalPrice] = useState(0);
 
-  const [carDetails, setCarDetails] = useState<any>(null);
+  const [carDetails, setCarDetails] = useState<TestDriveCarDetails | null>(null);
 
   // Delivery state
   const [isDelivery, setIsDelivery] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     address?: string;
   } | null>(null);
-  const [manualAddress, setManualAddress] = useState("");
-  const [userSavedAddress, setUserSavedAddress] = useState("");
+  const [manualAddress, setManualAddress] = useState('');
+  const [userSavedAddress, setUserSavedAddress] = useState('');
   const [basePrice, setBasePrice] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(0);
 
   useEffect(() => {
-    if (
-      startDate &&
-      endDate &&
-      startTime !== "" &&
-      endTime !== "" &&
-      carDetails != null
-    ) {
+    if (startDate && endDate && startTime !== '' && endTime !== '' && carDetails !== null) {
       const startDateTime = new Date(startDate);
       startDateTime.setHours(Number.parseInt(startTime), 0, 0, 0);
 
@@ -97,13 +98,13 @@ export default function TestDrivePage() {
     if (session?.user) {
       const fetchUser = async () => {
         try {
-          const axios = (await import("axios")).default;
-          const res = await axios.get("/api/users");
+          const axios = (await import('axios')).default;
+          const res = await axios.get('/api/users');
           if (res.data?.user?.address) {
             setUserSavedAddress(res.data.user.address);
           }
         } catch (err) {
-          console.error("Failed to fetch user address", err);
+          console.error('Failed to fetch user address', err);
         }
       };
       fetchUser();
@@ -112,44 +113,41 @@ export default function TestDrivePage() {
 
   const handleManualLocationSubmit = async () => {
     if (!manualAddress.trim()) {
-      toast.error("Please enter a valid address");
+      toast.error('Please enter a valid address');
       return;
     }
 
     const startAddress = carDetails?.carAddress || carDetails?.vendorAddress;
 
     if (!startAddress) {
-      toast.error(
-        "Could not find start location for this car. Vendor/Car address missing.",
-      );
+      toast.error('Could not find start location for this car. Vendor/Car address missing.');
       return;
     }
 
-    toast.info("Calculating distance...");
+    toast.info('Calculating distance...');
     try {
       const res = await fetch(
-        `/api/calculate-distance?origins=${encodeURIComponent(startAddress)}&destinations=${encodeURIComponent(manualAddress)}`,
+        `/api/calculate-distance?origins=${encodeURIComponent(startAddress)}&destinations=${encodeURIComponent(manualAddress)}`
       );
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        toast.error(data.error || "Failed to calculate distance");
+        toast.error(data.error || 'Failed to calculate distance');
         return;
       }
-      console.log("📍 Calculated Distance Data:", data);
-      console.log(
-        `🛣️ Distance: ${data.distance}, Value: ${data.distanceValue} meters`,
-      );
+      console.log('📍 Calculated Distance Data:', data);
+      console.log(`🛣️ Distance: ${data.distance}, Value: ${data.distanceValue} meters`);
       const distanceKm = (data.distanceValue || 0) / 1000;
       const ratePerKm = 10;
       setDeliveryFee(Math.ceil(distanceKm) * ratePerKm);
 
       setUserLocation({ address: manualAddress });
       toast.success(
-        `Distance: ${data.distance}, Delivery Fee: Rs. ${Math.ceil(distanceKm) * ratePerKm}`,
+        `Distance: ${data.distance}, Delivery Fee: Rs. ${Math.ceil(distanceKm) * ratePerKm}`
       );
     } catch (error) {
-      toast.error("Failed to fetch distance api.");
+      console.error('Distance API error:', error);
+      toast.error('Failed to fetch distance api.');
     }
   };
 
@@ -158,19 +156,19 @@ export default function TestDrivePage() {
 
     if (!session?.user) {
       toast.error(
-        "Please sign in to book a test drive. You need to be logged in to complete this booking.",
+        'Please sign in to book a test drive. You need to be logged in to complete this booking.'
       );
-      router.push("/sign-in");
+      router.push('/sign-in');
       return;
     }
 
     if (!startDate || !endDate || !startTime || !endTime) {
-      toast.error("Please select date and time range");
+      toast.error('Please select date and time range');
       return;
     }
 
     if (isDelivery && !userLocation) {
-      toast.error("Please set your delivery location");
+      toast.error('Please set your delivery location');
       return;
     }
 
@@ -181,20 +179,20 @@ export default function TestDrivePage() {
     endDateTime.setHours(Number.parseInt(endTime), 0, 0, 0);
 
     if (endDateTime <= startDateTime) {
-      toast.error("End date/time must be after start date/time");
+      toast.error('End date/time must be after start date/time');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const axios = (await import("axios")).default;
-      const response = await axios.post("/api/test-drive/checkout", {
+      const axios = (await import('axios')).default;
+      const response = await axios.post('/api/test-drive/checkout', {
         carId,
         bookingDetails: {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          startTime: `${startTime.padStart(2, "0")}:00`,
-          endTime: `${endTime.padStart(2, "0")}:00`,
+          startTime: `${startTime.padStart(2, '0')}:00`,
+          endTime: `${endTime.padStart(2, '0')}:00`,
           notes,
         },
         isDelivery,
@@ -205,12 +203,12 @@ export default function TestDrivePage() {
         globalThis.location.href = response.data.url;
       }
 
-      toast.success("Test drive booked successfully!");
+      toast.success('Test drive booked successfully!');
       // check the new fields in response.data for debugging
-      console.log("DEBUG: Checkout Response Data:", response.data);
-    } catch (error: any) {
-      console.error("Booking error:", error);
-      toast.error(error.response?.data?.error || "Failed to initiate payment");
+      console.log('DEBUG: Checkout Response Data:', response.data);
+    } catch (error: unknown) {
+      console.error('Booking error:', error);
+      toast.error(getAxiosErrorMessage(error, 'Failed to initiate payment'));
     } finally {
       setIsSubmitting(false);
     }
@@ -218,43 +216,57 @@ export default function TestDrivePage() {
 
   useEffect(() => {
     if (success && sessionId && carDetails && !showSuccess) {
-      const startDisplay = startDate ? format(startDate, "PPP") : "N/A";
-      const endDisplay = endDate ? format(endDate, "PPP") : "N/A";
+      const startDisplay = startDate ? format(startDate, 'PPP') : 'N/A';
+      const endDisplay = endDate ? format(endDate, 'PPP') : 'N/A';
 
       setBookingDetails({
         car: carDetails.name,
         start: `${startDisplay} at ${startTime}:00`,
         end: `${endDisplay} at ${endTime}:00`,
-        dealership: "Vehicl Motors",
+        dealership: 'Vehicl Motors',
       });
       setShowSuccess(true);
     }
     if (canceled) {
-      toast.error("Booking payment was canceled.");
+      toast.error('Booking payment was canceled.');
       router.replace(`/test-drive/${carId}`);
     }
-  }, [success, canceled, sessionId, carDetails]);
+  }, [
+    success,
+    canceled,
+    sessionId,
+    carDetails,
+    showSuccess,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    router,
+    carId,
+  ]);
 
   useEffect(() => {
-    if (!carId) return;
+    if (!carId) {
+      return;
+    }
     let mounted = true;
     (async () => {
       setIsLoading(true);
       try {
-        const axios = (await import("axios")).default;
+        const axios = (await import('axios')).default;
         const res = await axios.get(`/api/cars/${carId}`);
         const json = res.data;
         const fetched = json?.car ?? json;
         if (mounted && fetched) {
           setCarDetails({
             name: fetched.title || fetched.name || `Car ${carId}`,
-            price: fetched.price ? String(fetched.price) : "$0",
+            price: fetched.price ? String(fetched.price) : '$0',
             pricePerHour: fetched.pricePerHour || 10, // default if not set
-            mileage: fetched.specs?.mileage || fetched.mileage || "N/A",
-            fuelType: fetched.specs?.fuelType || fetched.fuelType || "N/A",
-            transmission: fetched.transmission || "N/A",
-            bodyType: fetched.bodyType || fetched.specs?.bodyType || "N/A",
-            color: fetched.specs?.color || fetched.color || "N/A",
+            mileage: fetched.specs?.mileage || fetched.mileage || 'N/A',
+            fuelType: fetched.specs?.fuelType || fetched.fuelType || 'N/A',
+            transmission: fetched.transmission || 'N/A',
+            bodyType: fetched.bodyType || fetched.specs?.bodyType || 'N/A',
+            color: fetched.specs?.color || fetched.color || 'N/A',
             image: fetched.images?.[0] || fetched.image,
             carAddress: fetched.carAddress,
             vendorAddress: fetched.vendorAddress,
@@ -263,7 +275,9 @@ export default function TestDrivePage() {
       } catch (err) {
         console.error(err);
       } finally {
-        if (mounted) setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     })();
     return () => {
@@ -294,9 +308,7 @@ export default function TestDrivePage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           {/* LEFT COLUMN - CAR DETAILS */}
           <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-800 p-6 flex flex-col h-full">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Car Details
-            </h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Car Details</h2>
 
             {/* Car Image */}
             <div className="rounded-lg overflow-hidden mb-6 bg-gray-100 h-64 relative">
@@ -304,8 +316,8 @@ export default function TestDrivePage() {
                 <Skeleton className="w-full h-full" />
               ) : (
                 <Image
-                  src={carDetails?.image || "/placeholder.svg"}
-                  alt={carDetails?.name || "Car image"}
+                  src={carDetails?.image || '/placeholder.svg'}
+                  alt={carDetails?.name || 'Car image'}
                   fill
                   className="object-cover"
                 />
@@ -332,22 +344,20 @@ export default function TestDrivePage() {
                   <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                     {carDetails?.name}
                   </h3>
-                  <p className="text-3xl font-bold text-blue-600 mb-8">
-                    {carDetails?.price}
-                  </p>
+                  <p className="text-3xl font-bold text-blue-600 mb-8">{carDetails?.price}</p>
 
                   {/* Specifications */}
                   <div className="space-y-4">
                     {[
-                      { label: "Mileage", value: carDetails?.mileage },
-                      { label: "Fuel Type", value: carDetails?.fuelType },
+                      { label: 'Mileage', value: carDetails?.mileage },
+                      { label: 'Fuel Type', value: carDetails?.fuelType },
                       {
-                        label: "Transmission",
+                        label: 'Transmission',
                         value: carDetails?.transmission,
                       },
-                      { label: "Body Type", value: carDetails?.bodyType },
-                      { label: "Color", value: carDetails?.color },
-                    ].map((spec, idx) => (
+                      { label: 'Body Type', value: carDetails?.bodyType },
+                      { label: 'Color', value: carDetails?.color },
+                    ].map((spec) => (
                       <div
                         key={spec.label}
                         className="flex justify-between py-2 border-b border-gray-50 dark:border-slate-800 last:border-0 text-gray-700 dark:text-gray-300"
@@ -370,10 +380,7 @@ export default function TestDrivePage() {
               Schedule Your Test Drive
             </h2>
 
-            <form
-              onSubmit={handleSubmit}
-              className="flex-1 flex flex-col space-y-6"
-            >
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-6">
               <div className="space-y-6">
                 {/* Selection Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -386,18 +393,14 @@ export default function TestDrivePage() {
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant={'outline'}
                             className={cn(
-                              "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
-                              !startDate && "text-muted-foreground",
+                              'w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11',
+                              !startDate && 'text-muted-foreground'
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {startDate ? (
-                              format(startDate, "PPP")
-                            ) : (
-                              <span>Pick start date</span>
-                            )}
+                            {startDate ? format(startDate, 'PPP') : <span>Pick start date</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -405,9 +408,7 @@ export default function TestDrivePage() {
                             mode="single"
                             selected={startDate}
                             onSelect={setStartDate}
-                            disabled={(date) =>
-                              date < new Date(new Date().setHours(0, 0, 0, 0))
-                            }
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                           />
                         </PopoverContent>
                       </Popover>
@@ -419,27 +420,22 @@ export default function TestDrivePage() {
                           {Array.from({ length: 24 }, (_, i) => {
                             const hourLabel =
                               i === 0
-                                ? "12 AM"
+                                ? '12 AM'
                                 : i < 12
                                   ? `${i} AM`
                                   : i === 12
-                                    ? "12 PM"
+                                    ? '12 PM'
                                     : `${i - 12} PM`;
 
                             // Validation: If Start Date is TODAY, disable hours before current hour
                             const isToday =
                               startDate &&
-                              format(startDate, "yyyy-MM-dd") ===
-                                format(new Date(), "yyyy-MM-dd");
+                              format(startDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                             const currentHour = new Date().getHours();
                             const disabled = isToday && i < currentHour;
 
                             return (
-                              <SelectItem
-                                key={i}
-                                value={i.toString()}
-                                disabled={disabled}
-                              >
+                              <SelectItem key={i} value={i.toString()} disabled={disabled}>
                                 {hourLabel}
                               </SelectItem>
                             );
@@ -458,18 +454,14 @@ export default function TestDrivePage() {
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
-                            variant={"outline"}
+                            variant={'outline'}
                             className={cn(
-                              "w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11",
-                              !endDate && "text-muted-foreground",
+                              'w-full justify-start text-left font-normal border-gray-300 dark:border-slate-700 h-11',
+                              !endDate && 'text-muted-foreground'
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {endDate ? (
-                              format(endDate, "PPP")
-                            ) : (
-                              <span>Pick end date</span>
-                            )}
+                            {endDate ? format(endDate, 'PPP') : <span>Pick end date</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -480,8 +472,7 @@ export default function TestDrivePage() {
                             disabled={(date) =>
                               startDate
                                 ? date < startDate
-                                : date <
-                                  new Date(new Date().setHours(0, 0, 0, 0))
+                                : date < new Date(new Date().setHours(0, 0, 0, 0))
                             }
                           />
                         </PopoverContent>
@@ -494,31 +485,24 @@ export default function TestDrivePage() {
                           {Array.from({ length: 24 }, (_, i) => {
                             const hourLabel =
                               i === 0
-                                ? "12 AM"
+                                ? '12 AM'
                                 : i < 12
                                   ? `${i} AM`
                                   : i === 12
-                                    ? "12 PM"
+                                    ? '12 PM'
                                     : `${i - 12} PM`;
 
                             // Validation: If same day as start, must be at least 1 hour after start time
                             const isSameDay =
                               startDate &&
                               endDate &&
-                              format(startDate, "yyyy-MM-dd") ===
-                                format(endDate, "yyyy-MM-dd");
+                              format(startDate, 'yyyy-MM-dd') === format(endDate, 'yyyy-MM-dd');
 
                             const disabled =
-                              isSameDay &&
-                              startTime !== "" &&
-                              i < Number.parseInt(startTime) + 1;
+                              isSameDay && startTime !== '' && i < Number.parseInt(startTime) + 1;
 
                             return (
-                              <SelectItem
-                                key={i}
-                                value={i.toString()}
-                                disabled={disabled}
-                              >
+                              <SelectItem key={i} value={i.toString()} disabled={disabled}>
                                 {hourLabel}
                               </SelectItem>
                             );
@@ -559,18 +543,18 @@ export default function TestDrivePage() {
                       if (!checked) {
                         setUserLocation(null);
 
-                        setManualAddress("");
+                        setManualAddress('');
                       }
                     }}
                   />
                 </div>
 
-                {isDelivery && (
+                {isDelivery ? (
                   <div className="space-y-3 pt-1">
                     {!userLocation ? (
                       <div className="space-y-2">
-                        {" "}
-                        {userSavedAddress && (
+                        {' '}
+                        {userSavedAddress ? (
                           <button
                             type="button"
                             onClick={() => setManualAddress(userSavedAddress)}
@@ -578,7 +562,7 @@ export default function TestDrivePage() {
                           >
                             <MapPin className="w-4 h-4" /> Use my saved address
                           </button>
-                        )}{" "}
+                        ) : null}{' '}
                         <input
                           type="text"
                           placeholder="Current Location (e.g. 123 MG Road, Mumbai, Maharashtra)"
@@ -599,14 +583,14 @@ export default function TestDrivePage() {
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-green-600 shrink-0" />
                           <span className="text-sm text-green-800 dark:text-green-300 font-medium">
-                            {userLocation.address || "Location set"}
+                            {userLocation.address || 'Location set'}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
                             setUserLocation(null);
-                            setManualAddress("");
+                            setManualAddress('');
                           }}
                           className="text-xs text-gray-500 dark:text-gray-400 underline underline-offset-2 ml-2 shrink-0"
                         >
@@ -615,22 +599,19 @@ export default function TestDrivePage() {
                       </div>
                     )}
                   </div>
-                )}
+                ) : null}
               </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={
-                  isSubmitting ||
-                  isLoading ||
-                  totalPrice <= 0 ||
-                  (isDelivery && !userLocation)
+                  isSubmitting || isLoading || totalPrice <= 0 || (isDelivery && !userLocation)
                 }
                 className="w-full py-7 text-lg font-bold bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-all shadow-lg hover:shadow-blue-500/25 mt-auto"
               >
                 {isSubmitting
-                  ? "Processing..."
+                  ? 'Processing...'
                   : `Pay Rs. ${totalPrice.toLocaleString()} & Confirm Booking`}
               </Button>
             </form>
@@ -645,7 +626,7 @@ export default function TestDrivePage() {
           <div className="space-y-3">
             {[
               "Bring your driver's license for verification",
-              "Test drives typically last 30-60 minutes",
+              'Test drives typically last 30-60 minutes',
             ].map((item) => (
               <div key={item} className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-green-600 shrink-0" />
@@ -657,15 +638,15 @@ export default function TestDrivePage() {
       </div>
 
       {/* Success Modal */}
-      {showSuccess && bookingDetails && (
+      {showSuccess && bookingDetails ? (
         <SuccessModal
           details={bookingDetails}
           onClose={() => {
             setShowSuccess(false);
-            router.push("/car/" + carId);
+            router.push('/car/' + carId);
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 }

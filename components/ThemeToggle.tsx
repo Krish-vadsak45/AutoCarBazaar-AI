@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useTheme } from "next-themes";
-import React, { useEffect, useState } from "react";
-import { Sun, Moon } from "lucide-react";
+import { useTheme } from 'next-themes';
+import React, { useEffect, useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
 
 export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
@@ -19,21 +19,24 @@ export default function ThemeToggle() {
     );
   }
 
-  const currentTheme = theme === "system" ? systemTheme : theme;
+  const currentTheme = theme === 'system' ? systemTheme : theme;
 
   function toggle() {
-    if (currentTheme === "dark") setTheme("light");
-    else setTheme("dark");
+    if (currentTheme === 'dark') {
+      setTheme('light');
+    } else {
+      setTheme('dark');
+    }
   }
 
   return (
     <button
       onClick={toggle}
       aria-label="Toggle color theme"
-      title={currentTheme === "dark" ? "Switch to light" : "Switch to dark"}
+      title={currentTheme === 'dark' ? 'Switch to light' : 'Switch to dark'}
       className="inline-flex items-center justify-center rounded-md p-2 cursor-pointer hover:bg-muted"
     >
-      {currentTheme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+      {currentTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
     </button>
   );
 }

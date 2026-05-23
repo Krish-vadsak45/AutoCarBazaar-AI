@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import CarCard from "./CarCard";
-import { Button } from "./ui/button";
+import React, { useEffect, useState } from 'react';
+
+import CarCard from './CarCard';
+import { Button } from './ui/button';
 
 type Car = {
   image: string;
@@ -20,10 +21,12 @@ const Hero = () => {
 
   useEffect(() => {
     let mounted = true;
-    fetch("/api/cars")
+    fetch('/api/cars')
       .then((res) => res.json())
       .then((data) => {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         setCars(data?.cars ?? []);
       })
       .catch(() => setCars([]))
@@ -62,14 +65,10 @@ const Hero = () => {
             ))
           ) : cars.length === 0 ? (
             <div className="col-span-full py-12 text-center bg-gray-50 dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
-              <p className="text-muted-foreground">
-                No featured cars available at the moment.
-              </p>
+              <p className="text-muted-foreground">No featured cars available at the moment.</p>
             </div>
           ) : (
-            cars
-              .slice(0, 4)
-              .map((c, i) => <CarCard key={`${c.title}-${i}`} cars={c} />)
+            cars.slice(0, 4).map((c, i) => <CarCard key={`${c.title}-${i}`} cars={c} />)
           )}
         </div>
 

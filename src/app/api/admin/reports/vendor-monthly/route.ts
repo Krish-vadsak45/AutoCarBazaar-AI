@@ -1,21 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
-import TestDrive from "@/models/test-drive.model";
-import Vendor from "@/models/vendor.model";
-import Car from "@/models/car.model";
+import { NextRequest, NextResponse } from 'next/server';
+
+import dbConnect from '@/lib/db';
+import TestDrive from '@/models/test-drive.model';
+import Vendor from '@/models/vendor.model';
+import Car from '@/models/car.model';
+import { ITestDrive } from '@/src/types';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const vendorId = searchParams.get("vendorId");
-    const month = Number.parseInt(searchParams.get("month") || "");
-    const year = Number.parseInt(searchParams.get("year") || "");
+    const vendorId = searchParams.get('vendorId');
+    const month = Number.parseInt(searchParams.get('month') || '');
+    const year = Number.parseInt(searchParams.get('year') || '');
 
     if (!vendorId || Number.isNaN(month) || Number.isNaN(year)) {
-      return NextResponse.json(
-        { error: "Missing required parameters" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
     await dbConnect();
@@ -27,74 +26,73 @@ export async function GET(req: NextRequest) {
     const prevMonth = month === 0 ? 11 : month - 1;
     const prevYear = month === 0 ? year - 1 : year;
     const startOfPrevMonth = new Date(prevYear, prevMonth, 1);
-    const endOfPrevMonth = new Date(
-      prevYear,
-      prevMonth + 1,
-      0,
-      23,
-      59,
-      59,
-      999,
-    );
+    const endOfPrevMonth = new Date(prevYear, prevMonth + 1, 0, 23, 59, 59, 999);
 
     // 2. Fetch data for current month (with populated references for the table)
-    const [vendorData, currentMonthDrives, prevMonthDrives, vendorCars] =
-      await Promise.all([
-        Vendor.findById(vendorId).lean(),
-        TestDrive.find({
-          vendorId,
-          createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-        })
-          .populate({ path: "carId", select: "carModel make price" })
-          .populate({ path: "userId", select: "name email" })
-          .lean(),
-        TestDrive.find({
-          vendorId,
-          createdAt: { $gte: startOfPrevMonth, $lte: endOfPrevMonth },
-        }).lean(),
-        Car.find({ vendorId })
-          .select("carModel make totalBookedCount price")
-          .lean(),
-      ]);
+    const [vendorData, currentMonthDrives, prevMonthDrives, vendorCars] = await Promise.all([
+      Vendor.findById(vendorId).lean(),
+      TestDrive.find({
+        vendorId,
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+      })
+        .populate({ path: 'carId', select: 'carModel make price' })
+        .populate({ path: 'userId', select: 'name email' })
+        .lean(),
+      TestDrive.find({
+        vendorId,
+        createdAt: { $gte: startOfPrevMonth, $lte: endOfPrevMonth },
+      }).lean(),
+      Car.find({ vendorId }).select('carModel make totalBookedCount price').lean(),
+    ]);
 
     if (!vendorData) {
-      return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
     }
 
     // 3. Core Calculations
-    const calculateTotals = (drives: any[]) => {
-      return drives.reduce(
+    const calculateTotals = (drives: (ITestDrive & { bookingFeeAmount?: number })[]) =>
+      drives.reduce(
         (acc, drive) => {
-          if (drive.paymentStatus === "PAID") {
+          if (drive.paymentStatus === 'PAID') {
             acc.revenue += drive.bookingFeeAmount || 0;
           }
-          if (drive.status === "COMPLETED") acc.completed += 1;
-          if (drive.status === "REJECTED") acc.rejected += 1;
-          if (drive.status === "CANCELLED") acc.cancelled += 1;
+          if (drive.status === 'COMPLETED') {
+            acc.completed += 1;
+          }
+          if (drive.status === 'REJECTED') {
+            acc.rejected += 1;
+          }
+          if (drive.status === 'CANCELLED') {
+            acc.cancelled += 1;
+          }
           acc.total += 1;
           return acc;
         },
-        { revenue: 0, completed: 0, rejected: 0, cancelled: 0, total: 0 },
+        { revenue: 0, completed: 0, rejected: 0, cancelled: 0, total: 0 }
       );
-    };
 
-    const currentStats = calculateTotals(currentMonthDrives);
-    const prevStats = calculateTotals(prevMonthDrives);
+    const currentStats = calculateTotals(
+      currentMonthDrives as unknown as (ITestDrive & { bookingFeeAmount?: number })[]
+    );
+    const prevStats = calculateTotals(
+      prevMonthDrives as unknown as (ITestDrive & { bookingFeeAmount?: number })[]
+    );
 
     // Top Cars of the month
-    const carBookingCounts = currentMonthDrives.reduce(
-      (acc: any, drive: any) => {
-        const cid = drive.carId?._id?.toString();
+    const carBookingCounts = (currentMonthDrives as unknown as ITestDrive[]).reduce(
+      (acc: Record<string, number>, drive) => {
+        const carIdObj = drive.carId as unknown as { _id?: { toString(): string } };
+        const cid = carIdObj?._id?.toString() || drive.carId?.toString();
         if (cid) {
           acc[cid] = (acc[cid] || 0) + 1;
         }
         return acc;
       },
-      {},
+      {}
     );
 
-    const top3Cars = vendorCars
-      .map((car: any) => ({
+    const top3Cars = (vendorCars as { _id: { toString(): string } }[])
+      .map((car) => ({
         ...car,
         monthBookings: carBookingCounts[car._id.toString()] || 0,
       }))
@@ -111,11 +109,8 @@ export async function GET(req: NextRequest) {
       bookingsTable: currentMonthDrives,
       reportMonth: { month, year },
     });
-  } catch (error: any) {
-    console.error("Report Generation Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch report data" },
-      { status: 500 },
-    );
+  } catch (error) {
+    console.error('Report Generation Error:', error);
+    return NextResponse.json({ error: 'Failed to fetch report data' }, { status: 500 });
   }
 }

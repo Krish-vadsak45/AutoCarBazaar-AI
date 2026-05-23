@@ -1,14 +1,14 @@
-import NextAuth from "next-auth/next";
+import NextAuth from 'next-auth/next';
+import GoogleProvider from 'next-auth/providers/google';
+import GitHubProvider from 'next-auth/providers/github';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { NextAuthOptions } from 'next-auth';
+import bcrypt from 'bcryptjs';
 
-import GoogleProvider from "next-auth/providers/google";
-import GitHubProvider from "next-auth/providers/github";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { NextAuthOptions } from "next-auth";
-import bcrypt from "bcryptjs";
-
-import connectToDatabase from "@/lib/db";
-import User from "@/models/user.model";
-import Vendor from "@/models/vendor.model";
+import { AuthUser } from '@/src/types';
+import connectToDatabase from '@/lib/db';
+import User from '@/models/user.model';
+import Vendor from '@/models/vendor.model';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -20,21 +20,23 @@ export const authOptions: NextAuthOptions = {
 
     // ✅ GitHub Provider
     GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      clientId: process.env.PROVIDER_GITHUB_CLIENT_ID!,
+      clientSecret: process.env.PROVIDER_GITHUB_CLIENT_SECRET!,
     }),
 
     // ✅ Credentials Provider
     CredentialsProvider({
-      id: "credentials",
-      name: "Credentials",
+      id: 'credentials',
+      name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
       },
 
-      async authorize(credentials: any): Promise<any> {
-        if (!credentials?.email || !credentials?.password) return null;
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
         // ✅ Connect DB
         await connectToDatabase();
@@ -43,54 +45,55 @@ export const authOptions: NextAuthOptions = {
         const user = await User.findOne({ email: credentials.email });
 
         if (!user || !user.password) {
-          throw new Error("User not found");
+          throw new Error('User not found');
         }
 
         // ✅ Compare password
         const isPasswordCorrect = await bcrypt.compare(
-          credentials.password,
-          user.password,
+          credentials?.password as string,
+          user.password
         );
 
         if (!isPasswordCorrect) {
-          throw new Error("Invalid password");
+          throw new Error('Invalid password');
         }
 
         // // ✅ Check verification status BEFORE role validation - removed logic so they can login and pay
         let vendor = null;
-        if (user.role === "vendor" || credentials.role === "vendor") {
+        if (user.role === 'vendor' || (credentials as Record<string, string>).role === 'vendor') {
           vendor = await Vendor.findOne({ userId: user._id.toString() });
 
-          if (credentials.role === "vendor" && !vendor) {
-            throw new Error("Vendor profile not found.");
+          if ((credentials as Record<string, string>).role === 'vendor' && !vendor) {
+            throw new Error('Vendor profile not found.');
           }
 
-          if (vendor && vendor.verificationStatus === "REJECTED") {
-            throw new Error("Your vendor application has been rejected.");
+          if (vendor && vendor.verificationStatus === 'REJECTED') {
+            throw new Error('Your vendor application has been rejected.');
           }
         }
 
         // ✅ If a specific role was requested (e.g. from admin/login), verify it
-        if (credentials.role && user.role !== credentials.role) {
+        if (
+          (credentials as Record<string, string>).role &&
+          user.role !== (credentials as Record<string, string>).role
+        ) {
           throw new Error(
-            `Unauthorized: You do not have ${credentials.role} privileges`,
+            `Unauthorized: You do not have \${(credentials as Record<string, string>).role} privileges`
           );
         }
 
         // ✅ Return user (must match NextAuth User type)
-        const userData: any = {
+        const userData: AuthUser = {
+          id: user._id.toString(),
           _id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          name: user.name ?? user.email ?? 'User',
+          email: user.email ?? '',
+          role: user.role as AuthUser['role'],
           image: user.image,
+          vendorId: vendor?._id.toString(),
+          isVerified: vendor?.isVerified,
+          isActive: vendor?.isActive,
         };
-
-        if (vendor) {
-          userData.vendorId = vendor._id.toString();
-          userData.isVerified = vendor.isVerified;
-          userData.isActive = vendor.isActive;
-        }
 
         return userData;
       },
@@ -98,7 +101,7 @@ export const authOptions: NextAuthOptions = {
   ],
 
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
     maxAge: 24 * 60 * 60,
   },
 
@@ -108,31 +111,34 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "google" || account?.provider === "github") {
+      if (account?.provider === 'google' || account?.provider === 'github') {
         try {
           await connectToDatabase();
           const existingUser = await User.findOne({ email: user.email });
 
           if (!existingUser) {
+            const oauthEmail = user.email ?? '';
+            const oauthName = user.name ?? oauthEmail ?? 'User';
+
             await User.create({
-              name: user.name,
-              email: user.email,
-              role: "user", // Default role
+              name: oauthName,
+              email: oauthEmail,
+              role: 'user', // Default role
               isVerified: true, // OAuth users are verified by provide
               isActive: true,
             });
           }
           return true;
         } catch (error) {
-          console.error("Error checking if user exists: ", error);
+          console.error('Error checking if user exists: ', error);
           return false;
         }
       }
       return true;
     },
 
-    async jwt({ token, user, trigger, session }: any) {
-      if (trigger === "update" && session) {
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === 'update' && session) {
         if (session.isActive !== undefined) {
           token.isActive = session.isActive;
         }
@@ -158,10 +164,10 @@ export const authOptions: NextAuthOptions = {
 
           if (dbUser) {
             token._id = dbUser._id.toString();
-            token.role = dbUser.role;
+            token.role = dbUser.role ?? 'user';
             token.image = dbUser.image;
 
-            if (dbUser.role === "vendor") {
+            if (dbUser.role === 'vendor') {
               const vendor = await Vendor.findOne({
                 userId: dbUser._id.toString(),
               });
@@ -195,7 +201,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   pages: {
-    signIn: "/login",
+    signIn: '/login',
   },
 
   secret: process.env.NEXTAUTH_SECRET,

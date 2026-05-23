@@ -1,53 +1,36 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useRouter, useParams } from "next/navigation";
-import { toast } from "react-toastify";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useRouter, useParams } from 'next/navigation';
+import { toast } from 'react-toastify';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Upload, Plus, X, Loader2, Save, Sparkles, Wand2, Video, Trash2, Lock } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Loading from "@/components/Loading";
-import {
-  Upload,
-  Plus,
-  X,
-  Loader2,
-  Save,
-  Sparkles,
-  Wand2,
-  Video,
-  Trash2,
-  Lock,
-} from "lucide-react";
-import Link from "next/link";
-import FileUpload, { FileUploadRef } from "@/components/FileUpload";
-import { carSchema, CarFormValues } from "@/lib/validations/car";
-import { FeatureLock } from "@/components/FeatureLock";
-import { VIPBadge } from "@/components/VIPBadge";
-import {
-  canUseSmartAddAi,
-  canAddListingVideo,
-  normalizeVendorPriority,
-} from "@/lib/vip";
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Loading from '@/components/Loading';
+import FileUpload from '@/components/FileUpload';
+import { carSchema, CarFormValues } from '@/lib/validations/car';
+import { FeatureLock } from '@/components/FeatureLock';
+import { VIPBadge } from '@/components/VIPBadge';
+import { canUseSmartAddAi, canAddListingVideo, normalizeVendorPriority } from '@/lib/vip';
+import { getAxiosErrorMessage } from '@/lib/errors';
+import { UploadResponse } from '@/src/types';
 
 export default function CarFormPage() {
   const router = useRouter();
@@ -56,28 +39,26 @@ export default function CarFormPage() {
 
   // Check if we are in "Edit Mode"
   const carId = params?.id as string;
-  const isEditMode = carId && carId !== "new-car";
+  const isEditMode = carId && carId !== 'new-car';
 
-  const [activeTab, setActiveTab] = useState("standard");
+  const [activeTab, setActiveTab] = useState('standard');
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const uploadRef = React.useRef<FileUploadRef>(null);
   const [fetching, setFetching] = useState(isEditMode); // Loading state for fetching existing data
   const [vendorPriority, setVendorPriority] = useState(1);
-  const [videoUrl, setVideoUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState('');
   const [isVideoUploading, setIsVideoUploading] = useState(false);
 
   const smartAddLocked = !canUseSmartAddAi(vendorPriority);
   const videoUploadLocked = !canAddListingVideo(vendorPriority);
-  const paymentHref =
-    typeof vendorId === "string" ? `/vendor/${vendorId}/payment` : "/vendor";
+  const paymentHref = typeof vendorId === 'string' ? `/vendor/${vendorId}/payment` : '/vendor';
 
   useEffect(() => {
     const loadStatus = async () => {
       try {
-        const { data } = await axios.get("/api/vendor/status");
+        const { data } = await axios.get('/api/vendor/status');
         setVendorPriority(normalizeVendorPriority(data.priority));
       } catch {
         /* non-vendor session — keep defaults */
@@ -86,8 +67,7 @@ export default function CarFormPage() {
     loadStatus();
   }, []);
 
-  const smartAddLockedTitle =
-    "Smart Add (AI) requires VIP level 4 (priority > 3).";
+  const smartAddLockedTitle = 'Smart Add (AI) requires VIP level 4 (priority > 3).';
 
   const showSmartAddLockedToast = () => {
     toast.info(`${smartAddLockedTitle}`, { autoClose: 6000 });
@@ -100,23 +80,23 @@ export default function CarFormPage() {
     reset,
     formState: { errors },
   } = useForm<CarFormValues>({
-    resolver: zodResolver(carSchema) as any,
+    resolver: zodResolver(carSchema),
     defaultValues: {
-      title: "",
+      title: '',
       price: 0,
-      transmission: "Automatic",
-      bodyType: "Sedan",
-      description: "",
+      transmission: 'Automatic',
+      bodyType: 'Sedan',
+      description: '',
       specs: {
-        make: "",
-        model: "",
+        make: '',
+        model: '',
         year: new Date().getFullYear(),
-        fuelType: "Petrol",
-        mileage: "",
-        color: "",
+        fuelType: 'Petrol',
+        mileage: '',
+        color: '',
       },
-      features: "",
-      tags: "",
+      features: '',
+      tags: '',
     },
   });
 
@@ -130,32 +110,32 @@ export default function CarFormPage() {
 
           if (car) {
             reset({
-              title: car.title || "",
+              title: car.title || '',
               price: car.price || 0,
-              transmission: car.transmission || "Automatic",
-              bodyType: car.bodyType || "Sedan",
-              description: car.description || "",
+              transmission: car.transmission || 'Automatic',
+              bodyType: car.bodyType || 'Sedan',
+              description: car.description || '',
               specs: {
-                make: car.specs?.make || "",
-                model: car.specs?.model || "",
+                make: car.specs?.make || '',
+                model: car.specs?.model || '',
                 year: car.specs?.year || new Date().getFullYear(),
-                fuelType: car.specs?.fuelType || "Petrol",
-                mileage: car.specs?.mileage || "",
-                color: car.specs?.color || "",
+                fuelType: car.specs?.fuelType || 'Petrol',
+                mileage: car.specs?.mileage || '',
+                color: car.specs?.color || '',
               },
-              features: car.features?.join(", ") || "",
-              tags: car.tags?.join(", ") || "",
+              features: car.features?.join(', ') || '',
+              tags: car.tags?.join(', ') || '',
             });
 
             // Handle existing images
             if (car.images && car.images.length > 0) {
               setImagePreviews(car.images);
             }
-            setVideoUrl(car.videoUrl || "");
+            setVideoUrl(car.videoUrl || '');
           }
         } catch (error) {
-          console.error("Failed to fetch car details:", error);
-          toast.error("Failed to load car details");
+          console.error('Failed to fetch car details:', error);
+          toast.error('Failed to load car details');
         } finally {
           setFetching(false);
         }
@@ -169,18 +149,24 @@ export default function CarFormPage() {
 
   // --- Handlers ---
 
-  const handleUploadSuccess = (res: any) => {
+  const handleUploadSuccess = (res: UploadResponse) => {
     if (imagePreviews.length >= 5) {
-      toast.error("You can only upload up to 5 images");
+      toast.error('You can only upload up to 5 images');
       setIsUploading(false);
       return;
     }
-    setImagePreviews((prev) => [...prev, res.url]);
+    if (!res.url) {
+      setIsUploading(false);
+      toast.error('Upload completed but no image URL was returned');
+      return;
+    }
+    const uploadedUrl = res.url;
+    setImagePreviews((prev) => [...prev, uploadedUrl]);
     setIsUploading(false);
-    toast.success("Image uploaded successfully");
+    toast.success('Image uploaded successfully');
   };
 
-  const handleUploadProgress = (progress: number) => {
+  const handleUploadProgress = (_progress: number) => {
     setIsUploading(true);
   };
 
@@ -188,9 +174,14 @@ export default function CarFormPage() {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSmartAdd = async (res: any) => {
+  const handleSmartAdd = async (res: UploadResponse) => {
     if (!canUseSmartAddAi(vendorPriority)) {
       showSmartAddLockedToast();
+      return;
+    }
+    if (!res.url) {
+      setIsAnalyzing(false);
+      toast.error('Upload completed but no image URL was returned');
       return;
     }
     const imageUrl = res.url;
@@ -201,37 +192,35 @@ export default function CarFormPage() {
     }
 
     try {
-      const response = await axios.post("/api/cars/analyze-image", {
+      const response = await axios.post('/api/cars/analyze-image', {
         imageUrl,
       });
       const aiData = response.data;
 
       // Reset form with extracted values
       reset({
-        title: aiData.title || "",
+        title: aiData.title || '',
         price: aiData.price || 0,
-        transmission: aiData.transmission || "Automatic",
-        bodyType: aiData.bodyType || "Sedan",
-        description: aiData.description || "",
+        transmission: aiData.transmission || 'Automatic',
+        bodyType: aiData.bodyType || 'Sedan',
+        description: aiData.description || '',
         specs: {
-          make: aiData.specs?.make || "",
-          model: aiData.specs?.model || "",
+          make: aiData.specs?.make || '',
+          model: aiData.specs?.model || '',
           year: aiData.specs?.year || new Date().getFullYear(),
-          fuelType: aiData.specs?.fuelType || "Petrol",
-          mileage: aiData.specs?.mileage || "",
-          color: aiData.specs?.color || "",
+          fuelType: aiData.specs?.fuelType || 'Petrol',
+          mileage: aiData.specs?.mileage || '',
+          color: aiData.specs?.color || '',
         },
-        features: aiData.features?.join(", ") || "",
-        tags: aiData.tags?.join(", ") || "",
+        features: aiData.features?.join(', ') || '',
+        tags: aiData.tags?.join(', ') || '',
       });
 
-      toast.success("AI extraction complete! Redirecting to form...");
-      setActiveTab("standard");
-    } catch (error: any) {
-      console.error("Smart Add analysis failed:", error);
-      toast.error(
-        error.response?.data?.error || "Failed to analyze car details",
-      );
+      toast.success('AI extraction complete! Redirecting to form...');
+      setActiveTab('standard');
+    } catch (error: unknown) {
+      console.error('Smart Add analysis failed:', error);
+      toast.error(getAxiosErrorMessage(error, 'Failed to analyze car details'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -252,18 +241,18 @@ export default function CarFormPage() {
       if (isEditMode) {
         // PATCH Request
         await axios.patch(`/api/vend-cars/${carId}`, payload);
-        toast.success("Vehicle updated successfully");
+        toast.success('Vehicle updated successfully');
       } else {
         // POST Request
-        await axios.post("/api/cars", payload);
-        toast.success("Vehicle added successfully");
+        await axios.post('/api/cars', payload);
+        toast.success('Vehicle added successfully');
       }
 
       router.push(`/vendor/${vendorId}/add-car`);
       router.refresh();
-    } catch (error: any) {
-      console.error("Submission error:", error);
-      toast.error(error.response?.data?.error || "Failed to save vehicle");
+    } catch (error: unknown) {
+      console.error('Submission error:', error);
+      toast.error(getAxiosErrorMessage(error, 'Failed to save vehicle'));
     } finally {
       setLoading(false);
     }
@@ -273,10 +262,16 @@ export default function CarFormPage() {
   const aiFileRef = React.useRef<HTMLInputElement>(null);
   const videoFileRef = React.useRef<HTMLInputElement>(null);
 
-  const handleVideoUploadSuccess = (res: any) => {
-    setVideoUrl(res.url);
+  const handleVideoUploadSuccess = (res: UploadResponse) => {
+    if (!res.url) {
+      setIsVideoUploading(false);
+      toast.error('Upload completed but no video URL was returned');
+      return;
+    }
+    const uploadedVideoUrl = res.url;
+    setVideoUrl(uploadedVideoUrl);
     setIsVideoUploading(false);
-    toast.success("Video uploaded");
+    toast.success('Video uploaded');
   };
 
   if (fetching) {
@@ -290,14 +285,14 @@ export default function CarFormPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="h-10 w-3 rounded-full bg-gradient-to-b from-blue-600 to-blue-400"></div>
             <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              {isEditMode ? "Edit Vehicle" : "Add Vehicle"}
+              {isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}
             </h1>
             <VIPBadge priority={vendorPriority} />
           </div>
           <p className="text-muted-foreground">
             {isEditMode
-              ? "Update vehicle details and specifications."
-              : "Add a new car to your inventory based on standard specs."}
+              ? 'Update vehicle details and specifications.'
+              : 'Add a new car to your inventory based on standard specs.'}
           </p>
         </div>
         <Link href={`/vendor/${params?.vendorId}/add-car`}>
@@ -317,10 +312,7 @@ export default function CarFormPage() {
               title={smartAddLocked ? smartAddLockedTitle : undefined}
             >
               {smartAddLocked ? (
-                <Lock
-                  className="h-4 w-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
+                <Lock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               ) : null}
               <Sparkles className="h-4 w-4 text-primary" /> Smart Add (AI)
             </TabsTrigger>
@@ -340,28 +332,19 @@ export default function CarFormPage() {
                     <Label htmlFor="title">Listing Title</Label>
                     <Input
                       id="title"
-                      {...register("title")}
+                      {...register('title')}
                       placeholder="e.g. 2023 Toyota Camry LE"
                     />
-                    {errors.title && (
-                      <p className="text-sm text-destructive">
-                        {errors.title.message}
-                      </p>
-                    )}
+                    {errors.title ? (
+                      <p className="text-sm text-destructive">{errors.title.message}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="price">Price ($)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      {...register("price")}
-                      placeholder="25000"
-                    />
-                    {errors.price && (
-                      <p className="text-sm text-destructive">
-                        {errors.price.message}
-                      </p>
-                    )}
+                    <Input id="price" type="number" {...register('price')} placeholder="25000" />
+                    {errors.price ? (
+                      <p className="text-sm text-destructive">{errors.price.message}</p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -372,10 +355,7 @@ export default function CarFormPage() {
                       name="transmission"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
@@ -387,11 +367,9 @@ export default function CarFormPage() {
                         </Select>
                       )}
                     />
-                    {errors.transmission && (
-                      <p className="text-sm text-destructive">
-                        {errors.transmission.message}
-                      </p>
-                    )}
+                    {errors.transmission ? (
+                      <p className="text-sm text-destructive">{errors.transmission.message}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label>Body Type</Label>
@@ -399,10 +377,7 @@ export default function CarFormPage() {
                       name="bodyType"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
@@ -417,11 +392,9 @@ export default function CarFormPage() {
                         </Select>
                       )}
                     />
-                    {errors.bodyType && (
-                      <p className="text-sm text-destructive">
-                        {errors.bodyType.message}
-                      </p>
-                    )}
+                    {errors.bodyType ? (
+                      <p className="text-sm text-destructive">{errors.bodyType.message}</p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -429,22 +402,20 @@ export default function CarFormPage() {
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     id="description"
-                    {...register("description")}
+                    {...register('description')}
                     placeholder="Detailed vehicle description..."
                     rows={4}
                   />
-                  {errors.description && (
-                    <p className="text-sm text-destructive">
-                      {errors.description.message}
-                    </p>
-                  )}
+                  {errors.description ? (
+                    <p className="text-sm text-destructive">{errors.description.message}</p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="carAddress">Car Location (Address)</Label>
                   <Input
                     id="carAddress"
-                    {...register("carAddress")}
+                    {...register('carAddress')}
                     placeholder="Enter single line address (e.g. 123 Main St, Mumbai, Maharashtra 400001)"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -458,42 +429,30 @@ export default function CarFormPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Specifications</CardTitle>
-                <CardDescription>
-                  Technical details stored in specs object
-                </CardDescription>
+                <CardDescription>Technical details stored in specs object</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-3">
                   <div className="space-y-2">
                     <Label>Make</Label>
-                    <Input {...register("specs.make")} placeholder="Toyota" />
-                    {errors.specs?.make?.message && (
-                      <p className="text-sm text-destructive">
-                        {errors.specs.make.message}
-                      </p>
-                    )}
+                    <Input {...register('specs.make')} placeholder="Toyota" />
+                    {errors.specs?.make?.message ? (
+                      <p className="text-sm text-destructive">{errors.specs.make.message}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label>Model</Label>
-                    <Input {...register("specs.model")} placeholder="Camry" />
-                    {errors.specs?.model?.message && (
-                      <p className="text-sm text-destructive">
-                        {errors.specs.model.message}
-                      </p>
-                    )}
+                    <Input {...register('specs.model')} placeholder="Camry" />
+                    {errors.specs?.model?.message ? (
+                      <p className="text-sm text-destructive">{errors.specs.model.message}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label>Year</Label>
-                    <Input
-                      type="number"
-                      {...register("specs.year")}
-                      placeholder="2023"
-                    />
-                    {errors.specs?.year?.message && (
-                      <p className="text-sm text-destructive">
-                        {errors.specs.year.message}
-                      </p>
-                    )}
+                    <Input type="number" {...register('specs.year')} placeholder="2023" />
+                    {errors.specs?.year?.message ? (
+                      <p className="text-sm text-destructive">{errors.specs.year.message}</p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -504,10 +463,7 @@ export default function CarFormPage() {
                       name="specs.fuelType"
                       control={control}
                       render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
@@ -520,35 +476,23 @@ export default function CarFormPage() {
                         </Select>
                       )}
                     />
-                    {errors.specs?.fuelType?.message && (
-                      <p className="text-sm text-destructive">
-                        {errors.specs.fuelType.message}
-                      </p>
-                    )}
+                    {errors.specs?.fuelType?.message ? (
+                      <p className="text-sm text-destructive">{errors.specs.fuelType.message}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label>Mileage</Label>
-                    <Input
-                      {...register("specs.mileage")}
-                      placeholder="e.g. 15,000 km"
-                    />
-                    {errors.specs?.mileage?.message && (
-                      <p className="text-sm text-destructive">
-                        {errors.specs.mileage.message}
-                      </p>
-                    )}
+                    <Input {...register('specs.mileage')} placeholder="e.g. 15,000 km" />
+                    {errors.specs?.mileage?.message ? (
+                      <p className="text-sm text-destructive">{errors.specs.mileage.message}</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label>Color</Label>
-                    <Input
-                      {...register("specs.color")}
-                      placeholder="e.g. Midnight Black"
-                    />
-                    {errors.specs?.color?.message && (
-                      <p className="text-sm text-destructive">
-                        {errors.specs.color.message}
-                      </p>
-                    )}
+                    <Input {...register('specs.color')} placeholder="e.g. Midnight Black" />
+                    {errors.specs?.color?.message ? (
+                      <p className="text-sm text-destructive">{errors.specs.color.message}</p>
+                    ) : null}
                   </div>
                 </div>
               </CardContent>
@@ -563,14 +507,14 @@ export default function CarFormPage() {
                 <div className="space-y-2">
                   <Label>Features (Comma separated)</Label>
                   <Textarea
-                    {...register("features")}
+                    {...register('features')}
                     placeholder="Bluetooth, Backup Camera, Heated Seats, Navigation"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Tags (Comma separated)</Label>
                   <Input
-                    {...register("tags")}
+                    {...register('tags')}
                     placeholder="Best Seller, New Arrival, Low Mileage"
                   />
                 </div>
@@ -589,11 +533,7 @@ export default function CarFormPage() {
                       key={index}
                       className="relative group aspect-square rounded-lg overflow-hidden border"
                     >
-                      <img
-                        src={src}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                      <Image src={src} alt="Preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
@@ -624,9 +564,7 @@ export default function CarFormPage() {
                   ) : isUploading ? (
                     <div className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-primary/30 rounded-lg bg-primary/5 animate-pulse">
                       <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
-                      <span className="text-xs text-primary font-medium">
-                        Uploading...
-                      </span>
+                      <span className="text-xs text-primary font-medium">Uploading...</span>
                     </div>
                   ) : null}
                 </div>
@@ -652,9 +590,8 @@ export default function CarFormPage() {
                   Listing video
                 </CardTitle>
                 <CardDescription>
-                  Optional walk-around video appears on the public listing with
-                  your images. Requires VIP level 3+ (priority &gt; 2) to upload
-                  new video.
+                  Optional walk-around video appears on the public listing with your images.
+                  Requires VIP level 3+ (priority &gt; 2) to upload new video.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -670,7 +607,7 @@ export default function CarFormPage() {
                       variant="outline"
                       size="sm"
                       className="gap-2"
-                      onClick={() => setVideoUrl("")}
+                      onClick={() => setVideoUrl('')}
                     >
                       <Trash2 className="h-4 w-4" />
                       Remove video
@@ -703,8 +640,8 @@ export default function CarFormPage() {
                           <Video className="h-10 w-10 text-primary" />
                         )}
                         {isVideoUploading
-                          ? "Uploading video…"
-                          : "Click to upload video (max 100 MB)"}
+                          ? 'Uploading video…'
+                          : 'Click to upload video (max 100 MB)'}
                       </button>
                     </div>
                   </FeatureLock>
@@ -719,24 +656,16 @@ export default function CarFormPage() {
                   Cancel
                 </Button>
               </Link>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="min-w-[150px] gap-2"
-              >
+              <Button type="submit" disabled={loading} className="min-w-[150px] gap-2">
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    {isEditMode ? "Updating..." : "Saving..."}
+                    {isEditMode ? 'Updating...' : 'Saving...'}
                   </>
                 ) : (
                   <>
-                    {isEditMode ? (
-                      <Save className="h-4 w-4" />
-                    ) : (
-                      <Plus className="h-4 w-4" />
-                    )}
-                    {isEditMode ? "Update Vehicle" : "Add Vehicle"}
+                    {isEditMode ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {isEditMode ? 'Update Vehicle' : 'Add Vehicle'}
                   </>
                 )}
               </Button>
@@ -749,25 +678,22 @@ export default function CarFormPage() {
             <Card
               className={
                 smartAddLocked
-                  ? "border-2 border-dashed border-border bg-muted/20"
-                  : "border-2 border-dashed border-primary/20 bg-primary/5"
+                  ? 'border-2 border-dashed border-border bg-muted/20'
+                  : 'border-2 border-dashed border-primary/20 bg-primary/5'
               }
             >
               <CardHeader className="text-center">
                 <CardTitle className="flex items-center justify-center gap-2 text-2xl">
                   {smartAddLocked ? (
-                    <Lock
-                      className="h-6 w-6 text-muted-foreground"
-                      aria-hidden
-                    />
+                    <Lock className="h-6 w-6 text-muted-foreground" aria-hidden />
                   ) : (
                     <Sparkles className="h-6 w-6 text-primary" />
                   )}
                   Smart Add with AI
                 </CardTitle>
                 <CardDescription>
-                  Upload a single photo of the car. Our AI will automatically
-                  extract specs, features, and descriptions for you.
+                  Upload a single photo of the car. Our AI will automatically extract specs,
+                  features, and descriptions for you.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center py-12">
@@ -781,10 +707,7 @@ export default function CarFormPage() {
                     >
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Lock className="h-8 w-8 shrink-0" aria-hidden />
-                        <Upload
-                          className="h-8 w-8 shrink-0 opacity-60"
-                          aria-hidden
-                        />
+                        <Upload className="h-8 w-8 shrink-0 opacity-60" aria-hidden />
                       </div>
                       <h3 className="text-lg font-medium text-muted-foreground">
                         Select Car Image
@@ -801,9 +724,7 @@ export default function CarFormPage() {
                       <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-primary animate-pulse" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">
-                        Analyzing your car...
-                      </h3>
+                      <h3 className="text-lg font-semibold">Analyzing your car...</h3>
                       <p className="text-sm text-muted-foreground">
                         Extracting technical specs and features using Gemini AI
                       </p>
@@ -823,12 +744,9 @@ export default function CarFormPage() {
                       <div className="bg-primary/10 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
                         <Upload className="h-8 w-8 text-primary" />
                       </div>
-                      <h3 className="text-lg font-medium mb-1">
-                        Select Car Image
-                      </h3>
+                      <h3 className="text-lg font-medium mb-1">Select Car Image</h3>
                       <p className="text-sm text-muted-foreground text-center">
-                        Upload a front or side view of the vehicle for best
-                        results.
+                        Upload a front or side view of the vehicle for best results.
                       </p>
                     </div>
                   </div>
@@ -839,26 +757,21 @@ export default function CarFormPage() {
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {[
                 {
-                  title: "Instant Extraction",
-                  desc: "Gets Year, Make, Model & Color automatically.",
+                  title: 'Instant Extraction',
+                  desc: 'Gets Year, Make, Model & Color automatically.',
                 },
                 {
-                  title: "Feature Detection",
-                  desc: "Identifies Sunroof, Alloys, and exterior features.",
+                  title: 'Feature Detection',
+                  desc: 'Identifies Sunroof, Alloys, and exterior features.',
                 },
                 {
-                  title: "Smart Tags",
-                  desc: "Categorizes your car for better search visibility.",
+                  title: 'Smart Tags',
+                  desc: 'Categorizes your car for better search visibility.',
                 },
               ].map((item, i) => (
-                <div
-                  key={i}
-                  className="p-4 rounded-lg bg-muted/50 border flex gap-3"
-                >
+                <div key={i} className="p-4 rounded-lg bg-muted/50 border flex gap-3">
                   <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-primary">
-                      {i + 1}
-                    </span>
+                    <span className="text-xs font-bold text-primary">{i + 1}</span>
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold">{item.title}</h4>
